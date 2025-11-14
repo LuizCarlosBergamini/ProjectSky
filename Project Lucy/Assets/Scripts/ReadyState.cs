@@ -26,14 +26,24 @@ public class ReadyState : GrappleState {
         );
         Vector2 fireDirection = (mousePosition - (Vector2)owner.transform.position).normalized;
 
-        Debug.Log($"Aiming Direction: {fireDirection}");
         RaycastHit2D hit = Physics2D.Raycast(owner.transform.position, fireDirection, owner.maxGrappleDistance, owner.grappleableLayer);
 
-        if (hit.collider != null && hit.collider.CompareTag("Grappleable"))
+        Debug.DrawRay(owner.transform.position, fireDirection * owner.maxGrappleDistance, Color.green, 2f);
+
+        if (hit.collider != null)
         {
-            owner.grapplePoint = hit.point;
-            owner.grappledObject = hit.collider.gameObject;
-            owner.ChangeState(owner.attachedState);
+            Debug.Log("Raycast Fired - Hit: " + hit.collider.name);
+
+            if (hit.collider.CompareTag("Grappleable"))
+            {
+                owner.grapplePoint = hit.point;
+                owner.grappledObject = hit.collider.gameObject;
+                owner.ChangeState(owner.attachedState);
+            }
+        }
+        else
+        {
+            Debug.Log("Raycast Fired - No Hit");
         }
     }
 }
