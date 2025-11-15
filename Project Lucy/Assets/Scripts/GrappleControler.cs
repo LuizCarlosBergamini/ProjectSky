@@ -6,7 +6,7 @@ public class GrappleController : MonoBehaviour
 {
     public float springConstant;
     public float dampingCoefficient;
-    public float ropeRestLength;
+    public float ropeRestLength = 1;
     public float minRopeLength;
     public float maxGrappleDistance;
 
