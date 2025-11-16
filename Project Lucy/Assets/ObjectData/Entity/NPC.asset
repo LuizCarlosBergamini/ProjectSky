@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: NPC
   m_EditorClassIdentifier: 
   entityName: NPC
-  entitySprite: {fileID: 2546757870057634713, guid: 8da1e0b93a13f7e48908001864c3c71b, type: 3}
+  entitySprite: {fileID: 0}

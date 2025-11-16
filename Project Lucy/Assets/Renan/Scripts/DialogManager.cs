@@ -2,24 +2,30 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
 using TMPro;
-using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(AudioSource))]
 public class DialogManager : MonoBehaviour
 {
     public static DialogManager instance;
+
+    private readonly float _DIALOG_ANIMATION_DURATION_IN_SECONDS = 0.25f;
+    private readonly float _ENTITY_ANIMATION_DURATION_IN_SECONDS = 0.25f;
+    private readonly float[] _DIALOG_AUDIO_PITCH_RANGE = { 0.8f, 1.2f };
+    private readonly float[] _DIALOG_AUDIO_VOLUME_RANGE = { 0.2f, 0.4f };
 
     [Header("Configurações")]
     [SerializeField] private int _typeSpeed = 20;
     [SerializeField] private int _clearTypeSpeed = 1;
     [SerializeField] private bool _instantClear = false;
-    [SerializeField] private Vector2 _hiddenPosition;
-    [SerializeField] private Vector2 _showPosition;
+
+    [Header("Áudio")]
+    [SerializeField] private AudioClip _audioEmit;
+    [SerializeField] private int _audioPlayInterval = 100;
 
     [Header("Referências UI")]
     [SerializeField] private RectTransform _dialogContainer;
@@ -28,6 +34,13 @@ public class DialogManager : MonoBehaviour
     [SerializeField] private Image _dialogEntitySprite;
     [SerializeField] private RectTransform _dialogOptionContainer;
     [SerializeField] private Button _dialogOptionPrefab;
+
+    [Header("Animação")]
+    [SerializeField] private Vector2 _hiddenContainerPosition;
+    [SerializeField] private Vector2 _showContainerPosition;
+    [SerializeField] private bool _useEntityAnimation = false;
+    [SerializeField] private Vector2 _hiddenEntityPosition;
+    [SerializeField] private Vector2 _showEntityPosition;
 
     [Header("Keybinds")]
     [SerializeField] private InputActionReference _interactAction;
@@ -38,11 +51,17 @@ public class DialogManager : MonoBehaviour
 
     private Dialog_SO _dialogData;
     private DialogItem _actualDialog = null;
-    private List<string> _typing = new ();
+    private readonly List<string> _typing = new ();
     private bool _skipRequested = false;
+    private AudioSource _audioSource;
+
+    #region Unity Functions
 
     private void Start()
     {
+        _dialogData = null;
+        _actualDialog = null;
+        _audioSource = GetComponent<AudioSource>();
         if (EventManager.instance == null)
         {
             Debug.LogWarning("EventManager instance not found!");
@@ -64,7 +83,7 @@ public class DialogManager : MonoBehaviour
 
     private void Update()
     {
-        if (_interactAction.action.WasPressedThisFrame())
+        if (_actualDialog != null && _interactAction != null && _interactAction.action.WasPressedThisFrame())
         {
             if (_typing.Count > 0)
             {
@@ -72,34 +91,57 @@ public class DialogManager : MonoBehaviour
                 return;
             }
             
-            if (_actualDialog == null || _actualDialog.dialogOptions.Count == 0) {
+            if (_actualDialog.dialogOptions.Count == 0) {
                 NextDialog();
             }
         }
     }
 
-    public void StartDialog(Dialog_SO dialogData)
+    #endregion
+
+    #region Public Functions
+
+    public void Init(Dialog_SO dialogData)
     {
         if (_actualDialog != null)
         {
             Debug.Log("Dialogo em andamento");
             return;
         }
-        Debug.Log("Dialogo iniciado");
-        _dialogData = dialogData;
-
-        _onStartDialog?.Invoke();
-        StartCoroutine(_dialogContainer.Move(_showPosition, 1));
-        StartCoroutine(ShowDialog(dialogData.dialogs[0]));
+        if (dialogData != null)
+        {
+            StartCoroutine(StartDialog(dialogData));
+        }
     }
 
-    public void EndDialog()
+    public void End()
     {
         Debug.Log("Dialogo finalizado");
         _actualDialog = null;
+        _dialogData = null;
 
         _onFinishDialog?.Invoke();
-        StartCoroutine(_dialogContainer.Move(_hiddenPosition, 1));
+        StartCoroutine(_dialogContainer.Move(_hiddenContainerPosition, _DIALOG_ANIMATION_DURATION_IN_SECONDS));
+    }
+
+    #endregion
+
+    #region Private Functions
+
+    private IEnumerator StartDialog(Dialog_SO dialogData)
+    {
+        Debug.Log("Dialogo iniciado");
+        _dialogData = dialogData;
+
+        _dialogContent.text = "";
+        _dialogEntityName.text = "";
+        _dialogEntitySprite.canvasRenderer.SetAlpha(0f);
+        _dialogEntitySprite.sprite = null;
+
+        _onStartDialog?.Invoke();
+        StartCoroutine(_dialogContainer.Move(_showContainerPosition, _DIALOG_ANIMATION_DURATION_IN_SECONDS));
+        yield return new WaitForSeconds(_DIALOG_ANIMATION_DURATION_IN_SECONDS / 2);
+        StartCoroutine(ShowDialog(dialogData.dialogs[0]));
     }
 
     private IEnumerator ShowDialog(DialogItem dialog)
@@ -107,7 +149,7 @@ public class DialogManager : MonoBehaviour
         _actualDialog = dialog;
         if (_actualDialog == null)
         {
-            EndDialog();
+            End();
             yield break;
         }
         if (!_instantClear)
@@ -126,8 +168,13 @@ public class DialogManager : MonoBehaviour
             }
         }
 
-        if (_dialogEntitySprite != null && dialog.dialogEntity != null)
-            _dialogEntitySprite.sprite = dialog.dialogEntity.entitySprite;
+        if (_useEntityAnimation)
+        {
+            StartCoroutine(ChangeEntityAsync(dialog.dialogEntity));
+        } else
+        {
+            ChangeEntity(dialog.dialogEntity);
+        }
 
         CallEvent(dialog.triggerEvent);
 
@@ -152,6 +199,7 @@ public class DialogManager : MonoBehaviour
                 StartCoroutine(TypeText(optionTextField, option.optionContent));
             }
         }
+        StartCoroutine(PlayDialogAudio());
         yield return new WaitUntil(() => _typing.Count == 0);
 
         if (dialog.dialogDuration > 0)
@@ -208,6 +256,18 @@ public class DialogManager : MonoBehaviour
         _typing.Remove(textField.name);
     }
 
+    private IEnumerator PlayDialogAudio()
+    {
+        if (_audioSource == null || _audioEmit == null) yield break;
+        do
+        {
+            _audioSource.pitch = UnityEngine.Random.Range(_DIALOG_AUDIO_PITCH_RANGE[0], _DIALOG_AUDIO_PITCH_RANGE[1]);
+            _audioSource.volume = UnityEngine.Random.Range(_DIALOG_AUDIO_VOLUME_RANGE[0], _DIALOG_AUDIO_VOLUME_RANGE[1]);
+            _audioSource.PlayOneShot(_audioEmit);
+            yield return new WaitForSeconds(_audioPlayInterval / 1000f);
+        } while (_typing.Count > 0);
+    }
+
     private DialogItem GetDialogItemByName(string dialogName)
     {
         if (string.IsNullOrWhiteSpace(dialogName)) return null;
@@ -226,4 +286,41 @@ public class DialogManager : MonoBehaviour
         DialogItem nextDialog = GetDialogItemByName(_actualDialog.nextDialog);
         StartCoroutine(ShowDialog(nextDialog));
     }
+
+    private IEnumerator ChangeEntityAsync(Entity_SO entity)
+    {
+        if (_dialogEntitySprite != null && _dialogEntitySprite.TryGetComponent(out RectTransform transform)) {
+            if (entity != null && entity.entitySprite != null)
+            {
+                yield return StartCoroutine(transform.Move(_hiddenEntityPosition, _ENTITY_ANIMATION_DURATION_IN_SECONDS));
+                _dialogEntitySprite.canvasRenderer.SetAlpha(1f);
+                _dialogEntitySprite.sprite = entity.entitySprite;
+            } else
+            {
+                _dialogEntitySprite.canvasRenderer.SetAlpha(0f);
+                _dialogEntitySprite.sprite = null;
+            }
+            StartCoroutine(transform.Move(_showEntityPosition, _ENTITY_ANIMATION_DURATION_IN_SECONDS));
+            yield return new WaitForSeconds(_ENTITY_ANIMATION_DURATION_IN_SECONDS / 2);
+        }
+    }
+
+    private void ChangeEntity(Entity_SO entity)
+    {
+        if (_dialogEntitySprite != null && _dialogEntitySprite.TryGetComponent(out RectTransform transform))
+        {
+            if (entity != null && entity.entitySprite != null)
+            {
+                _dialogEntitySprite.canvasRenderer.SetAlpha(1f);
+                _dialogEntitySprite.sprite = entity.entitySprite;
+            }
+            else
+            {
+                _dialogEntitySprite.canvasRenderer.SetAlpha(0f);
+                _dialogEntitySprite.sprite = null;
+            }
+        }
+    }
+
+    #endregion
 }
