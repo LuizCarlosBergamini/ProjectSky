@@ -15,10 +15,10 @@ public class TasksItem
 
 public class TaskManager : MonoBehaviour
 {
+    public static TaskManager instance;
     [SerializeField] private List<TasksItem> tasks = new();
     [SerializeField] private List<string> startedTasks = new ();
     [SerializeField] private List<string> finishedTasks = new();
-    [SerializeField] private InventoryManager _inventoryManager;
 
     private void Start()
     {
@@ -26,6 +26,17 @@ public class TaskManager : MonoBehaviour
         {
             Debug.LogWarning("EventManager instance not found!");
         }
+    }
+    private void Awake()
+    {
+        if (instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     public void StartTask(string taskId)
@@ -56,6 +67,7 @@ public class TaskManager : MonoBehaviour
 
     public void ValidateIfTaskCompleted()
     {
+        if (InventoryManager.instance == null) return;
         for (int i = 0; i < startedTasks.Count; i++)
         {
             string taskId = startedTasks[i];
@@ -64,7 +76,7 @@ public class TaskManager : MonoBehaviour
                 TasksItem taskData = tasks.Find(t => t.taskId == taskId);
                 if (taskData != null && taskData.requiredItems.item != null)
                 {
-                    InventorySlot item = _inventoryManager.GetItem(taskData.requiredItems.item.itemId);
+                    InventorySlot item = InventoryManager.instance.GetItem(taskData.requiredItems.item.itemId);
                     if (item != null && item.quantity >= taskData.requiredItems.quantity)
                     {
                         CompleteTask(taskId);

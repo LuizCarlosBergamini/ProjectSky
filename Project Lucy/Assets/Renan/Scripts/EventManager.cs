@@ -16,16 +16,16 @@ public class EventManager : MonoBehaviour
 
     [SerializeField] private List<Event> _events = new ();
 
-    private void OnEnable()
+    private void Awake()
     {
-        if (instance == null)
+        if (instance != null)
         {
-            instance = this;
-        } else
-        {
-            _events.AddRange(instance._events);
-            instance = this;
+            Destroy(gameObject);
+            return;
         }
+
+        instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     public void Call(string eventName)

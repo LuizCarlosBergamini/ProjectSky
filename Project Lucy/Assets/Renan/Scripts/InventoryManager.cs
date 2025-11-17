@@ -11,8 +11,22 @@ public class InventorySlot
 
 public class InventoryManager : MonoBehaviour
 {
+    public static InventoryManager instance;
+
     private readonly Dictionary<string, InventorySlot> _inventory = new();
     [SerializeField] private TaskManager _taskManager;
+
+    private void Awake()
+    {
+        if (instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
 
     public void AddItem(Item_SO item, int quantity)
     {

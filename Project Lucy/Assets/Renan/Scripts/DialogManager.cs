@@ -68,17 +68,16 @@ public class DialogManager : MonoBehaviour
         }
     }
 
-    private void OnEnable()
+    private void Awake()
     {
-        _dialogContent.text = "";
-        _dialogEntityName.text = "";
+        if (instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
 
         instance = this;
-    }
-
-    private void OnDisable()
-    {
-        instance = null;
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Update()
