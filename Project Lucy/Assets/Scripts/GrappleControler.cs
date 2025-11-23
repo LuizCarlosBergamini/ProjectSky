@@ -7,6 +7,7 @@ public class GrappleController : MonoBehaviour
     public float springConstant;
     public float dampingCoefficient;
     public float ropeRestLength = 1;
+    public float ropeRestLengthFixed = 5;
     public float minRopeLength;
     public float maxGrappleDistance;
 
@@ -27,9 +28,14 @@ public class GrappleController : MonoBehaviour
     private GrappleState currentState;
     public PlayerInputs.InGameActions grappleActions;
 
+    // Flags
+    public bool isGrappling = false;
+
+    // Store the player's normal drag to restore it after swinging
+    [HideInInspector] public float defaultDrag;
+
     void Awake()
     {
-        // --- NEW: Instantiate and set up the input actions ---
         grappleActions = new PlayerInputs().InGame;
 
         // --- Assign Component References ---
@@ -37,7 +43,7 @@ public class GrappleController : MonoBehaviour
         mainCamera = Camera.main;
         ropeRenderer = GetComponent<LineRenderer>();
 
-        // (Any other Awake() logic...)
+        defaultDrag = playerRigidbody.linearDamping;
     }
 
     private void OnEnable()

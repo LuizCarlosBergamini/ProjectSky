@@ -5,6 +5,7 @@ public class RetractingState : GrappleState {
 
     public override void Enter()
     {
+        owner.isGrappling = false;
         // Disable visuals
         owner.ropeRenderer.enabled = false;
 

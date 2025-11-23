@@ -32,6 +32,7 @@ public class ReadyState : GrappleState {
 
         if (hit.collider != null)
         {
+            owner.isGrappling = true;
             Debug.Log("Raycast Fired - Hit: " + hit.collider.name);
 
             if (hit.collider.CompareTag("Grappleable"))
