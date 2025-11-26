@@ -5,14 +5,15 @@ TagManager:
   serializedVersion: 3
   tags:
   - grap
+  - Grappleable
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Ground
   - Water
   - UI
-  - 
+  - Grapple Layer
   - 
   - 
   - 

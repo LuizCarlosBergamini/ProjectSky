@@ -7,55 +7,81 @@ public class PlayerMovement : MonoBehaviour
 
     private Vector2 movement;
     private Rigidbody2D rb;
-    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float moveSpeed = 10f;
 
     private Animator animator;
     private SpriteRenderer spriteRenderer;
+    private GrappleController GrappleController;
 
-    public float jump = 5f;
+    public PlayerInputs.InGameActions playerActions;
+
+    public float jump = 2f;
+    // Ajuste de responsividade do controle (quanto maior, mais rápido chega à velocidade alvo)
+    [SerializeField] private float velocityResponsiveness = 1f;
+
+    public Transform groundCheck;      // Assign an empty GameObject positioned at the player's feet
+    public float groundCheckRadius = 0.2f; // Size of the detection circle
+    public LayerMask groundLayer;      // Select the layer that counts as "Ground"
+      private bool isGrounded;
+
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        GrappleController = GetComponent<GrappleController>();
+
+        playerActions = new PlayerInputs().InGame;
     }
 
-    public void Move(InputAction.CallbackContext context)
+    private void OnEnable()
     {
-        movement = context.ReadValue<Vector2>();
+        playerActions.Enable();
+    }
 
-        if (movement.x != 0)
-        {
-            animator.SetBool("IsWalking", true);
-        }
-        else
-        {
-            animator.SetBool("IsWalking", false);
-        }
+    public void Move()
+    {
+        if (GrappleController.isGrappling) return;
 
-        if (movement.x < 0)
-        {
-            spriteRenderer.flipX = true;
-        }
-        else if (movement.x > 0)
-        {
-            spriteRenderer.flipX = false;
-        }
+        movement = playerActions.Movement.ReadValue<Vector2>();
+
+        animator.SetBool("IsWalking", movement.x != 0);
+
+        if (movement.x < 0) spriteRenderer.flipX = true;
+        else if (movement.x > 0) spriteRenderer.flipX = false;
+
+        // Converte input em velocidade alvo
+        float targetVelX = movement.x * moveSpeed;
+
+        // Calcula diferença entre velocidade alvo e velocidade atual
+        float velDiff = targetVelX - rb.linearVelocity.x;
+
+        // Força necessária aproximada para corrigir a diferença num passo de física
+        float forceX = velDiff * rb.mass * velocityResponsiveness;
+
+        // Aplica força horizontal (ForceMode2D.Force é contínuo e respeita massa)
+        rb.AddForce(new Vector2(forceX, 0f), ForceMode2D.Force);
     }
 
     private void FixedUpdate()
     {
-        //rb.MovePosition(rb.position + movement * Time.fixedDeltaTime * moveSpeed);
-
-        if (movement.x != 0) rb.linearVelocity = new Vector2(movement.x * moveSpeed, rb.linearVelocityY);
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        if (GrappleController.isGrappling) return;
+        Move();
     }
 
-    public void Jump(InputAction.CallbackContext context)
+    private void Update()
     {
-        if (context.performed)
+        if (playerActions.Jump.WasPressedThisFrame() && isGrounded)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jump);
+            Jump();
         }
+    }
+
+    public void Jump()
+    {
+        Debug.Log("Jump action triggered");
+        rb.AddForce(new Vector2(0f, jump), ForceMode2D.Impulse);
     }
 }
