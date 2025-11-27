@@ -28,6 +28,8 @@ public class GrappleController : MonoBehaviour
     private GrappleState currentState;
     public PlayerInputs.InGameActions grappleActions;
 
+    public AudioClip grapplingAudioClip;
+
     // Flags
     public bool isGrappling = false;
 

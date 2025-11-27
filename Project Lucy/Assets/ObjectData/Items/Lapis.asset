@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7736f259fa3d6ef48978f884933ef6e0, type: 3}
-  m_Name: Jogador
+  m_Script: {fileID: 11500000, guid: d910d301c33305546b264e189ede8364, type: 3}
+  m_Name: Lapis
   m_EditorClassIdentifier: 
-  entityName: Jogador
-  entitySprite: {fileID: 2546757870057634713, guid: 8da1e0b93a13f7e48908001864c3c71b, type: 3}
+  itemId: lapis
+  itemName: "L\xE1pis"

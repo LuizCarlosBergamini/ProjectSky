@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -8,7 +9,7 @@ public class TasksItem
 {
     public string taskId;
     public string taskDescription;
-    public InventorySlot requiredItems;
+    public List<InventorySlot> requiredItems;
     public string onStartEventTrigger;
     public string onFinishEventTrigger;
 }
@@ -68,17 +69,38 @@ public class TaskManager : MonoBehaviour
     public void ValidateIfTaskCompleted()
     {
         if (InventoryManager.instance == null) return;
+
+        Debug.Log("foo3");
         for (int i = 0; i < startedTasks.Count; i++)
         {
             string taskId = startedTasks[i];
             if (taskId != null)
             {
                 TasksItem taskData = tasks.Find(t => t.taskId == taskId);
-                if (taskData != null && taskData.requiredItems.item != null)
+                Debug.Log("foo4");
+                if (taskData != null && taskData.requiredItems.Count > 0)
                 {
-                    InventorySlot item = InventoryManager.instance.GetItem(taskData.requiredItems.item.itemId);
-                    if (item != null && item.quantity >= taskData.requiredItems.quantity)
+                    Debug.Log("foo5");
+                    bool hasAllItem = taskData.requiredItems.All((requiredItem) =>
                     {
+                        if (requiredItem.item == null) return false;
+                        InventorySlot item = InventoryManager.instance.GetItem(requiredItem.item.itemId);
+                        Debug.Log($"required {requiredItem.item.itemName}: {requiredItem.quantity}");
+                        if (item != null)
+                        {
+                            Debug.Log($"inventory {item.item.itemName}: {item.quantity}");
+                        }
+                        if (item != null && item.quantity >= requiredItem.quantity)
+                        {
+                            return true;
+                        }
+                        return false;
+
+                    });
+                    Debug.Log("foo6");
+                    if (hasAllItem)
+                    {
+                        Debug.Log("foo7");
                         CompleteTask(taskId);
                     }
                 }

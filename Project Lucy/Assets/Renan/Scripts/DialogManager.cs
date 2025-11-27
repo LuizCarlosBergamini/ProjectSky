@@ -43,7 +43,7 @@ public class DialogManager : MonoBehaviour
     [SerializeField] private Vector2 _showEntityPosition;
 
     [Header("Keybinds")]
-    [SerializeField] private InputActionReference _interactAction;
+    [SerializeField] private InputActionReference _jumpAction;
 
     [Header("Eventos")]
     [SerializeField] private UnityEvent _onStartDialog;
@@ -82,7 +82,7 @@ public class DialogManager : MonoBehaviour
 
     private void Update()
     {
-        if (_actualDialog != null && _interactAction != null && _interactAction.action.WasPressedThisFrame())
+        if (_actualDialog != null && _jumpAction != null && _jumpAction.action.WasPressedThisFrame())
         {
             if (_typing.Count > 0)
             {
@@ -306,7 +306,7 @@ public class DialogManager : MonoBehaviour
 
     private void ChangeEntity(Entity_SO entity)
     {
-        if (_dialogEntitySprite != null && _dialogEntitySprite.TryGetComponent(out RectTransform transform))
+        if (_dialogEntitySprite != null)
         {
             if (entity != null && entity.entitySprite != null)
             {

@@ -11,6 +11,10 @@ public class AttachedState : GrappleState {
 
     public override void Enter()
     {
+        if (owner.grapplingAudioClip != null && AudioManager.instance != null)
+        {
+            AudioManager.instance.PlayWithVariation(owner.grapplingAudioClip);
+        }
         Debug.Log("Entered Attached State");
         // Determine the target for the force application
         Rigidbody2D grappledRigidbody = owner.grappledObject.GetComponent<Rigidbody2D>();

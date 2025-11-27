@@ -4,6 +4,7 @@ using UnityEngine;
 public class Collectable : MonoBehaviour
 {
     public Item_SO item;
+    [SerializeField] private AudioClip _collectClip;
 
     public void OnTriggerEnter2D(Collider2D collision)
     {
@@ -11,6 +12,10 @@ public class Collectable : MonoBehaviour
         {
             InventoryManager.instance.AddItem(item);
             Destroy(gameObject);
+            if (_collectClip != null && AudioManager.instance != null)
+            {
+                AudioManager.instance.PlayWithVariation(_collectClip);
+            }
         }
     }
 }

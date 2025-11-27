@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d910d301c33305546b264e189ede8364, type: 3}
-  m_Name: Maca
+  m_Script: {fileID: 11500000, guid: 7736f259fa3d6ef48978f884933ef6e0, type: 3}
+  m_Name: Wallace
   m_EditorClassIdentifier: 
-  itemId: maca
-  itemName: "Ma\xE7\xE3"
+  entityName: Wallace
+  entitySprite: {fileID: 3484455860787592995, guid: fd42311ffae910649a3005b2000206db, type: 3}

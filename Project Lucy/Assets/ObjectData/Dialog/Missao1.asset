@@ -10,20 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0229f9af6181a38469057567674f0751, type: 3}
-  m_Name: DialogoVazio
+  m_Name: Missao1
   m_EditorClassIdentifier: 
   dialogs:
-  - dialogId: npc-01
-    dialogContent: ...
-    nextDialog: npc-02
-    triggerEvent: 
-    dialogDuration: 0
-    dialogOptions: []
-    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: npc-02
-    dialogContent: Vaza
+  - dialogId: daisy-01
+    dialogContent: "Ah, Lucy, to precisando de mais folhas e l\xE1pis, mas bem, eu
+      e Wallace n\xE3o temos uma fama muito boa na cidade, mais o Wallace por ser
+      um vagabundo, por\xE9m a minha \xE9 manchada por ter o mesmo sangue, acho que
+      \xE9 bom voc\xEA ir conhecer a cidade, s\xF3 evite problemas ok? Vou te dar
+      o dinheiro certo pra comprar o que precisa."
     nextDialog: 
-    triggerEvent: 
+    triggerEvent: missao-01-iniciada
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}

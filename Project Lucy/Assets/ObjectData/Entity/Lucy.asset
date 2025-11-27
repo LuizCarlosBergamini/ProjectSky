@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7736f259fa3d6ef48978f884933ef6e0, type: 3}
-  m_Name: NPC
+  m_Name: Lucy
   m_EditorClassIdentifier: 
-  entityName: NPC
-  entitySprite: {fileID: 0}
+  entityName: Lucy
+  entitySprite: {fileID: 4723107735738678597, guid: 8de2b15bae447d648ac055841c512825, type: 3}

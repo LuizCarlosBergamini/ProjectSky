@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0229f9af6181a38469057567674f0751, type: 3}
-  m_Name: DialogoNaMissao
+  m_Name: Missao1-iniciada
   m_EditorClassIdentifier: 
   dialogs:
-  - dialogId: npc-01
-    dialogContent: "Vai pegar a ma\xE7\xE3 l\xE1 z\xE9"
+  - dialogId: daisy-01
+    dialogContent: "Preciso de 3 pap\xE9is e 1 l\xE1pis"
     nextDialog: 
     triggerEvent: 
     dialogDuration: 0

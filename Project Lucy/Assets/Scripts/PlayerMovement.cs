@@ -22,8 +22,11 @@ public class PlayerMovement : MonoBehaviour
     public Transform groundCheck;      // Assign an empty GameObject positioned at the player's feet
     public float groundCheckRadius = 0.2f; // Size of the detection circle
     public LayerMask groundLayer;      // Select the layer that counts as "Ground"
-      private bool isGrounded;
+    //private bool isGrounded;
 
+    [SerializeField] private float footstepSoundDelay = 1f;
+    private float footstepSoundDuration = 0f;
+    [SerializeField] private AudioClip footstepAudioClip;
 
     private void Awake()
     {
@@ -40,11 +43,31 @@ public class PlayerMovement : MonoBehaviour
         playerActions.Enable();
     }
 
+    public void TogglePlayerInGameAction(bool toggle)
+    {
+        if (toggle) playerActions.Enable();
+        else playerActions.Disable();
+    }
+
+    bool IsGrounded => Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+
     public void Move()
     {
         if (GrappleController.isGrappling) return;
 
         movement = playerActions.Movement.ReadValue<Vector2>();
+
+        if (IsGrounded && movement.x != 0 && AudioManager.instance != null && footstepAudioClip != null)
+        {
+            footstepSoundDuration += Time.fixedDeltaTime;
+            if (footstepSoundDuration > footstepSoundDelay)
+            {
+                Debug.Log("foo");
+                footstepSoundDuration = 0;
+                AudioManager.instance.PlayWithVariation(footstepAudioClip);
+            }
+        }
 
         animator.SetBool("IsWalking", movement.x != 0);
 
@@ -66,14 +89,13 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
         if (GrappleController.isGrappling) return;
         Move();
     }
 
     private void Update()
     {
-        if (playerActions.Jump.WasPressedThisFrame() && isGrounded)
+        if (playerActions.Jump.WasPressedThisFrame() && IsGrounded)
         {
             Jump();
         }

@@ -10,20 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0229f9af6181a38469057567674f0751, type: 3}
-  m_Name: DialogoPosMissao
+  m_Name: Missao1-finalizada
   m_EditorClassIdentifier: 
   dialogs:
-  - dialogId: jogador-01
-    dialogContent: "Aqui sua ma\xE7\xE3"
-    nextDialog: npc-01
-    triggerEvent: 
-    dialogDuration: 0
-    dialogOptions: []
-    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
-  - dialogId: npc-01
-    dialogContent: Valeu!
+  - dialogId: daisy-01
+    dialogContent: Obrigada
     nextDialog: 
-    triggerEvent: missao-maca-concluida
+    triggerEvent: missao-01-entregue
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}

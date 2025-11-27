@@ -23,12 +23,14 @@ public class NPC : MonoBehaviour
 
     public void OnTriggerEnter2D(Collider2D collision)
     {
+        if (_dialog == null) return;
         _inCollider = true;
         _displayActionContainer.SetActive(true);
     }
 
     private void OnTriggerExit2D(Collider2D collision)
     {
+        if (_dialog == null) return;
         _inCollider = false;
         _displayActionContainer.SetActive(false);
     }

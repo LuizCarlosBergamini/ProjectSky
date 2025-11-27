@@ -14,7 +14,6 @@ public class InventoryManager : MonoBehaviour
     public static InventoryManager instance;
 
     private readonly Dictionary<string, InventorySlot> _inventory = new();
-    [SerializeField] private TaskManager _taskManager;
 
     private void Awake()
     {
@@ -34,6 +33,7 @@ public class InventoryManager : MonoBehaviour
         if (_inventory.TryGetValue(item.itemId, out InventorySlot slot))
         {
             slot.quantity += quantity;
+            _inventory.Remove(item.itemId);
             _inventory.Add(item.itemId, slot);
         } else
         {
@@ -44,7 +44,13 @@ public class InventoryManager : MonoBehaviour
             };
             _inventory.Add(item.itemId, newSlot);
         }
-        _taskManager.ValidateIfTaskCompleted();
+
+        Debug.Log("foo");
+        if (TaskManager.instance != null)
+        {
+            Debug.Log("foo2");
+            TaskManager.instance.ValidateIfTaskCompleted();
+        }
     }
 
     public void AddItem(Item_SO item)
