@@ -2,8 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerMovement : MonoBehaviour
-{
+public class PlayerMovement : MonoBehaviour {
 
     private Vector2 movement;
     private Rigidbody2D rb;
@@ -20,13 +19,20 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float velocityResponsiveness = 1f;
 
     public Transform groundCheck;      // Assign an empty GameObject positioned at the player's feet
-    public float groundCheckRadius = 0.2f; // Size of the detection circle
+    public float groundCheckRadius = 0.4f; // Size of the detection circle
     public LayerMask groundLayer;      // Select the layer that counts as "Ground"
     //private bool isGrounded;
 
     [SerializeField] private float footstepSoundDelay = 1f;
     private float footstepSoundDuration = 0f;
     [SerializeField] private AudioClip footstepAudioClip;
+
+    [Header("Attack")]
+    private RaycastHit2D[] hits;
+    [SerializeField] private float attackDamage = 10f;
+    [SerializeField] private Transform attackPoint;
+    [SerializeField] private float attackRange = 1.5f;
+    [SerializeField] private LayerMask attackableLayer;
 
     private void Awake()
     {
@@ -99,11 +105,35 @@ public class PlayerMovement : MonoBehaviour
         {
             Jump();
         }
+        if (playerActions.Attack.WasPressedThisFrame() && !GrappleController.isGrappling)
+        {
+            Attack();
+        }
     }
 
     public void Jump()
     {
         Debug.Log("Jump action triggered");
         rb.AddForce(new Vector2(0f, jump), ForceMode2D.Impulse);
+    }
+
+    public void Attack()
+    {
+        hits = Physics2D.CircleCastAll(attackPoint.position, attackRange, transform.right, 0f, attackableLayer);
+        foreach (RaycastHit2D hit in hits)
+        {
+            IDamageable damageable = hit.collider.gameObject.GetComponent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.TakeDamage(attackDamage);
+            }
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (attackPoint == null) return;
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(attackPoint.position, attackRange);
     }
 }
