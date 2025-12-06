@@ -3,15 +3,18 @@ using UnityEngine;
 public class Enemy : MonoBehaviour, IDamageable
 {
     [SerializeField] private EnemyScriptableObject enemyData;
+    [SerializeField] private Animator animator;
     private float currentHealth;
 
     private void Start()
     {
         currentHealth = enemyData.maxHealth;
+        animator = GetComponent<Animator>();
     }
 
     public void TakeDamage(float damage)
     {
+        animator.SetTrigger("hitted");
         currentHealth -= damage;
         if (currentHealth <= 0)
         {

@@ -33,6 +33,8 @@ public class PlayerMovement : MonoBehaviour {
     [SerializeField] private Transform attackPoint;
     [SerializeField] private float attackRange = 1.5f;
     [SerializeField] private LayerMask attackableLayer;
+    [SerializeField] private float timeBetweenAttacks = 0.5f;
+    private float attackTimeCounter;
 
     private void Awake()
     {
@@ -77,8 +79,8 @@ public class PlayerMovement : MonoBehaviour {
 
         animator.SetBool("IsWalking", movement.x != 0);
 
-        if (movement.x < 0) spriteRenderer.flipX = true;
-        else if (movement.x > 0) spriteRenderer.flipX = false;
+        if (movement.x < 0) transform.rotation = Quaternion.Euler(new Vector3(transform.rotation.x, 180f, transform.rotation.z));
+        else if (movement.x > 0) transform.rotation = Quaternion.Euler(new Vector3(transform.rotation.x, 0, transform.rotation.z)); ;
 
         // Converte input em velocidade alvo
         float targetVelX = movement.x * moveSpeed;
@@ -105,10 +107,13 @@ public class PlayerMovement : MonoBehaviour {
         {
             Jump();
         }
-        if (playerActions.Attack.WasPressedThisFrame() && !GrappleController.isGrappling)
+        if (playerActions.Attack.WasPressedThisFrame() && !GrappleController.isGrappling && attackTimeCounter >= timeBetweenAttacks)
         {
+            // Reset attack counter
+            attackTimeCounter = 0f;
             Attack();
         }
+        attackTimeCounter += Time.deltaTime;
     }
 
     public void Jump()
@@ -119,6 +124,7 @@ public class PlayerMovement : MonoBehaviour {
 
     public void Attack()
     {
+        animator.SetTrigger("attack");
         hits = Physics2D.CircleCastAll(attackPoint.position, attackRange, transform.right, 0f, attackableLayer);
         foreach (RaycastHit2D hit in hits)
         {
