@@ -1,10 +1,12 @@
 using UnityEngine;
+using UnityEngine.Audio;
 
 [RequireComponent(typeof(AudioSource))]
 public class AudioManager : MonoBehaviour
 {
     private AudioSource _source;
     public static AudioManager instance;
+    public AudioMixer audioMixer;
 
     private void Awake()
     {
