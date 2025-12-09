@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -35,6 +37,8 @@ public class PlayerMovement : MonoBehaviour {
     [SerializeField] private LayerMask attackableLayer;
     [SerializeField] private float timeBetweenAttacks = 0.5f;
     private float attackTimeCounter;
+    public bool shouldBeDamaging { get; private set; } = false;
+    private List<IDamageable> damageables = new List<IDamageable>();
 
     private void Awake()
     {
@@ -107,13 +111,23 @@ public class PlayerMovement : MonoBehaviour {
         {
             Jump();
         }
-        if (playerActions.Attack.WasPressedThisFrame() && !GrappleController.isGrappling && attackTimeCounter >= timeBetweenAttacks)
+        if (!GrappleController.isGrappling)
         {
-            // Reset attack counter
-            attackTimeCounter = 0f;
-            Attack();
+            if (playerActions.Attack.WasPressedThisFrame() && attackTimeCounter >= timeBetweenAttacks)
+            {
+                // Reset attack counter
+                attackTimeCounter = 0f;
+                animator.SetTrigger("attack");
+                animator.SetBool("IsAttacking", true);
+            }
+
+            // Animate jump
+            animator.SetFloat("yVelocity", rb.linearVelocityY);
+            animator.SetBool("isGrounded", IsGrounded);
         }
         attackTimeCounter += Time.deltaTime;
+
+
     }
 
     public void Jump()
@@ -122,19 +136,59 @@ public class PlayerMovement : MonoBehaviour {
         rb.AddForce(new Vector2(0f, jump), ForceMode2D.Impulse);
     }
 
-    public void Attack()
+
+    private void ReturnAttackablesToDamageable()
     {
-        animator.SetTrigger("attack");
-        hits = Physics2D.CircleCastAll(attackPoint.position, attackRange, transform.right, 0f, attackableLayer);
-        foreach (RaycastHit2D hit in hits)
+        foreach (IDamageable thingThatWasHit in damageables)
         {
-            IDamageable damageable = hit.collider.gameObject.GetComponent<IDamageable>();
-            if (damageable != null)
-            {
-                damageable.TakeDamage(attackDamage);
-            }
+            thingThatWasHit.HasTakenDamage = false;
         }
+
+        damageables.Clear();
     }
+
+    public IEnumerator DamageWhileSlashIsActive()
+    {
+        shouldBeDamaging = true;
+
+        while (shouldBeDamaging)
+        {
+            hits = Physics2D.CircleCastAll(attackPoint.position, attackRange, transform.right, 0f, attackableLayer);
+            foreach (RaycastHit2D hit in hits)
+            {
+                IDamageable damageable = hit.collider.gameObject.GetComponent<IDamageable>();
+                if (damageable != null && !damageable.HasTakenDamage)
+                {
+                    damageable.TakeDamage(attackDamage);
+                    damageables.Add(damageable);
+                }
+            }
+
+            yield return null;
+        }
+
+        ReturnAttackablesToDamageable();
+    }
+
+    #region Animation Triggers
+
+    public void ShouldBeDamagingToTrue()
+    {
+        shouldBeDamaging = true;
+    }
+
+    public void ShouldBeDamagingToFalse()
+    {
+        shouldBeDamaging = false;
+        
+    }
+
+    public void IsAttackingToFalse()
+    {
+        animator.SetBool("IsAttacking", false);
+    }
+
+    #endregion
 
     private void OnDrawGizmosSelected()
     {

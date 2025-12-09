@@ -5,6 +5,7 @@ public class Enemy : MonoBehaviour, IDamageable
     [SerializeField] private EnemyScriptableObject enemyData;
     [SerializeField] private Animator animator;
     private float currentHealth;
+    public bool HasTakenDamage { get; set; }
 
     private void Start()
     {
@@ -14,6 +15,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
     public void TakeDamage(float damage)
     {
+        HasTakenDamage = true;
         animator.SetTrigger("hitted");
         currentHealth -= damage;
         if (currentHealth <= 0)
