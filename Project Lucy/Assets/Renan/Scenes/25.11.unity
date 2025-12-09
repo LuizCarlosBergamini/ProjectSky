@@ -3909,7 +3909,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-        - m_Target: {fileID: 1227975621}
+        - m_Target: {fileID: 4896921262683269241}
           m_TargetAssemblyTypeName: TaskManager, Assembly-CSharp
           m_MethodName: StartTask
           m_Mode: 5
@@ -3937,7 +3937,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-        - m_Target: {fileID: 1227975621}
+        - m_Target: {fileID: 4896921262683269241}
           m_TargetAssemblyTypeName: TaskManager, Assembly-CSharp
           m_MethodName: CompleteTask
           m_Mode: 5
@@ -3947,6 +3947,18 @@ MonoBehaviour:
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: missao-01
+            m_BoolArgument: 0
+          m_CallState: 2
+        - m_Target: {fileID: 4896921262683269241}
+          m_TargetAssemblyTypeName: TaskManager, Assembly-CSharp
+          m_MethodName: StartTask
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: missao-02
             m_BoolArgument: 0
           m_CallState: 2
   - eventName: missao-01-entregue
@@ -3963,6 +3975,18 @@ MonoBehaviour:
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+        - m_Target: {fileID: 4896921262683269241}
+          m_TargetAssemblyTypeName: TaskManager, Assembly-CSharp
+          m_MethodName: CompleteTask
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: missao-02
             m_BoolArgument: 0
           m_CallState: 2
 --- !u!4 &262715848
@@ -4161,11 +4185,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4139816621239890569, guid: fa7714cee09094446b2aea2d10ddfe37, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 5.62
+      value: 80.8
       objectReference: {fileID: 0}
     - target: {fileID: 4139816621239890569, guid: fa7714cee09094446b2aea2d10ddfe37, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 6.64
+      value: -1.6
       objectReference: {fileID: 0}
     - target: {fileID: 4139816621239890569, guid: fa7714cee09094446b2aea2d10ddfe37, type: 3}
       propertyPath: m_LocalPosition.z
@@ -4891,7 +4915,7 @@ Transform:
   m_GameObject: {fileID: 457996675}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.62, y: 8.41, z: -10}
+  m_LocalPosition: {x: 80.8, y: 0.16999996, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5587,62 +5611,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2c76a0628f432da4b94ad3771e5bef5f, type: 3}
---- !u!1 &1227975620
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1227975622}
-  - component: {fileID: 1227975621}
-  m_Layer: 0
-  m_Name: TaskManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1227975621
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1227975620}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c0bc2a9b168a17a4eb84373597128dc8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tasks:
-  - taskId: missao-01
-    taskDescription: "Miss\xE3o 1"
-    requiredItems:
-    - item: {fileID: 11400000, guid: 99afb718f0275314c9c88e3c26181fd6, type: 2}
-      quantity: 3
-    - item: {fileID: 11400000, guid: 20bd044b88717f04ab90300f16b113d9, type: 2}
-      quantity: 1
-    onStartEventTrigger: missao-01-iniciada
-    onFinishEventTrigger: missao-01-finalizada
-  startedTasks: []
-  finishedTasks: []
---- !u!4 &1227975622
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1227975620}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1312123157
 GameObject:
   m_ObjectHideFlags: 0
@@ -56447,7 +56415,7 @@ Transform:
   m_GameObject: {fileID: 1521522715}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 5.62, y: 8.41, z: -10}
+  m_LocalPosition: {x: 80.8, y: 0.16999996, z: -10}
   m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -57174,12 +57142,128 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f01a5711c67046946bb010c0082053bc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &4896921262683269241 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+  m_PrefabInstance: {fileID: 5334800528315420216}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0bc2a9b168a17a4eb84373597128dc8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!1001 &5334800528315420216
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 12316162849757973, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 12316162849757973, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 12316162849757973, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 12316162849757973, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 12316162849757973, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 12316162849757973, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 12316162849757973, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 12316162849757973, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 12316162849757973, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 12316162849757973, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3177875285527142374, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: m_Name
+      value: TaskManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[1].taskId
+      value: missao-02
+      objectReference: {fileID: 0}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[1].taskTitle
+      value: Entregar Materiais
+      objectReference: {fileID: 0}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[0].taskDescription
+      value: Consiga 3 papeis e um lapis
+      objectReference: {fileID: 0}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[1].taskDescription
+      value: Entregue os Materiais
+      objectReference: {fileID: 0}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[1].onStartEventTrigger
+      value: missao-02-iniciada
+      objectReference: {fileID: 0}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[1].onFinishEventTrigger
+      value: missao-02-finalizada
+      objectReference: {fileID: 0}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[1].requiredItems.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[1].requiredItems.Array.data[0].item
+      value: 
+      objectReference: {fileID: 11400000, guid: 99afb718f0275314c9c88e3c26181fd6, type: 2}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[1].requiredItems.Array.data[1].item
+      value: 
+      objectReference: {fileID: 11400000, guid: 20bd044b88717f04ab90300f16b113d9, type: 2}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[1].requiredItems.Array.data[0].quantity
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
+      propertyPath: tasks.Array.data[1].requiredItems.Array.data[1].quantity
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1150517137}
-  - {fileID: 1227975622}
+  - {fileID: 5334800528315420216}
   - {fileID: 262715848}
   - {fileID: 277694349}
   - {fileID: 1164746088}
