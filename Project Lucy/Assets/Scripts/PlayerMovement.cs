@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerMovement : MonoBehaviour {
+public class PlayerMovement : MonoBehaviour, IDamageable {
 
     private Vector2 movement;
     private Rigidbody2D rb;
@@ -23,7 +23,6 @@ public class PlayerMovement : MonoBehaviour {
     public Transform groundCheck;      // Assign an empty GameObject positioned at the player's feet
     public float groundCheckRadius = 0.4f; // Size of the detection circle
     public LayerMask groundLayer;      // Select the layer that counts as "Ground"
-    //private bool isGrounded;
 
     [SerializeField] private float footstepSoundDelay = 1f;
     private float footstepSoundDuration = 0f;
@@ -37,8 +36,20 @@ public class PlayerMovement : MonoBehaviour {
     [SerializeField] private LayerMask attackableLayer;
     [SerializeField] private float timeBetweenAttacks = 0.5f;
     private float attackTimeCounter;
+    [SerializeField] private float knockbackForce = 20f;
     public bool shouldBeDamaging { get; private set; } = false;
     private List<IDamageable> damageables = new List<IDamageable>();
+    [SerializeField] private float verticalKnockback = 0.5f;
+
+    [Header("Health and Damage Taken")]
+    [SerializeField] private float health = 100f;
+    public bool HasTakenDamage { get; set; } = false;
+    public bool canWalk = true;
+
+    // --- Knockback handling (non-blocking) ---
+    private Coroutine knockbackCoroutine;
+    private bool isKnockedBack = false;
+    [SerializeField] private float knockbackLandingGrace = 0.05f; // short delay to ignore immediate grounded checks
 
     private void Awake()
     {
@@ -63,10 +74,9 @@ public class PlayerMovement : MonoBehaviour {
 
     bool IsGrounded => Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-
     public void Move()
     {
-        if (GrappleController.isGrappling) return;
+        if (GrappleController.isGrappling || !canWalk) return;
 
         movement = playerActions.Movement.ReadValue<Vector2>();
 
@@ -159,7 +169,14 @@ public class PlayerMovement : MonoBehaviour {
                 IDamageable damageable = hit.collider.gameObject.GetComponent<IDamageable>();
                 if (damageable != null && !damageable.HasTakenDamage)
                 {
-                    damageable.TakeDamage(attackDamage);
+                    Vector2 knockbackDirection = (hit.collider.transform.position - transform.position).normalized;
+                    // combine horizontal direction with a fixed upward component
+                    // keep horizontal sign from knockbackDirection.x and force an upward Y value
+                    float upward = Mathf.Abs(verticalKnockback); // ensure upward is positive
+                    Vector2 combinedDir = new Vector2(knockbackDirection.x, upward).normalized;
+
+                    Vector2 knockback = combinedDir * knockbackForce;
+                    damageable.TakeDamage(attackDamage, knockback);
                     damageables.Add(damageable);
                 }
             }
@@ -195,5 +212,66 @@ public class PlayerMovement : MonoBehaviour {
         if (attackPoint == null) return;
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(attackPoint.position, attackRange);
+    }
+
+    public bool IsAlive()
+    {
+        return health > 0;
+    }
+
+    public void Heal(int amount)
+    {
+        health += amount;
+    }
+
+    public void TakeDamage(float amount, Vector2 knockback)
+    {
+        animator.SetTrigger("hitted");
+        HasTakenDamage = true;
+        health -= amount;
+        if (health < 0)
+        {
+            Die();
+            return;
+        }
+        rb.AddForce(knockback, ForceMode2D.Impulse);
+        // Start a coroutine to wait for landing instead.
+        if (knockbackCoroutine != null)
+        {
+            StopCoroutine(knockbackCoroutine);
+            knockbackCoroutine = null;
+        }
+        knockbackCoroutine = StartCoroutine(HandleKnockbackLanding());
+        HasTakenDamage = false;
+    }
+
+    private IEnumerator HandleKnockbackLanding()
+    {
+        isKnockedBack = true;
+        canWalk = false;
+
+        // small grace time to avoid immediately considering already-grounded state
+        if (knockbackLandingGrace > 0f)
+            yield return new WaitForSeconds(knockbackLandingGrace);
+
+        // Wait until the player becomes grounded again
+        while (!IsGrounded)
+        {
+            yield return null;
+        }
+
+        // Optionally wait one FixedUpdate to ensure physics settled
+        yield return new WaitForFixedUpdate();
+
+        canWalk = true;
+        HasTakenDamage = false;
+        isKnockedBack = false;
+        knockbackCoroutine = null;
+    }
+
+    public void Die()
+    {
+        // Add death effects here (animations, sounds, etc.)
+        Destroy(gameObject);
     }
 }
