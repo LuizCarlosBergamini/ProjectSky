@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d910d301c33305546b264e189ede8364, type: 3}
-  m_Name: Lapis
-  m_EditorClassIdentifier: 
-  itemId: lapis
-  itemName: "L\xE1pis"
-  itemSprite: {fileID: 7594956863893306589, guid: 7cf7e0a058a88124991a0bb855d10a46, type: 3}
-  itemAnimationClip: {fileID: 0}
+  m_Name: Engrenagem
+  m_EditorClassIdentifier: Assembly-CSharp::Item_SO
+  itemId: engrenagem_bronze
+  itemName: Engrenagem de Bronze
+  itemSprite: {fileID: 0}
+  itemAnimationClip: {fileID: 7400000, guid: 6cb7c40fc747eaf458c90121d486219e, type: 2}

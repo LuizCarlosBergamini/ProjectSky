@@ -9,10 +9,18 @@ using UnityEngine.InputSystem.Utilities;
 [RequireComponent(typeof(Collider2D))]
 public class NPC : MonoBehaviour
 {
+    [SerializeField] private Entity_SO _entity;
     [SerializeField] private Dialog_SO _dialog;
     [SerializeField] private InputActionReference _dialogAction;
     [SerializeField] private GameObject _displayActionContainer;
     [SerializeField] private TextMeshProUGUI _displayActionText;
+
+    private SpriteRenderer _spriteRenderer;
+    private Animator _animator;
+
+    private AnimatorOverrideController _overrideController;
+
+    private GameObject _player;
 
     private bool _inCollider;
 
@@ -35,6 +43,17 @@ public class NPC : MonoBehaviour
         _displayActionContainer.SetActive(false);
     }
 
+    private void Awake()
+    {
+        if (_animator != null && _animator.runtimeAnimatorController != null)
+        {
+            _overrideController = new AnimatorOverrideController(_animator.runtimeAnimatorController);
+        }
+        _spriteRenderer = GetComponent<SpriteRenderer>();
+        _animator = GetComponent<Animator>();
+        _player = GameObject.FindWithTag("Player");
+    }
+
     private void Start()
     {
         if (_dialogAction && _displayActionText != null)
@@ -49,6 +68,13 @@ public class NPC : MonoBehaviour
                 textTransform.sizeDelta = size;
             }
         }
+
+        if (_entity != null && _entity.enitityAnimation != null && _animator != null)
+        {
+            _overrideController["BaseClip"] = _entity.enitityAnimation;
+            _animator.runtimeAnimatorController = _overrideController;
+            _animator.Play("BaseClip", 0, 0f);
+        }
     }
 
     private void Update()
@@ -56,6 +82,11 @@ public class NPC : MonoBehaviour
         if (_inCollider && _dialogAction != null && _dialogAction.action.WasPressedThisFrame())
         {
             DialogManager.instance.Init(_dialog);
+        }
+
+        if (_player != null && _spriteRenderer != null)
+        {
+            _spriteRenderer.flipX = _player.transform.position.x < transform.position.x;
         }
     }
 }

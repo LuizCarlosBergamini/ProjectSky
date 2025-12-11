@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: folha
   itemName: Folha de papel
+  itemSprite: {fileID: -4654850926754821772, guid: a54c653c840c9b84eacbc33a0f79b73c, type: 3}
+  itemAnimationClip: {fileID: 0}

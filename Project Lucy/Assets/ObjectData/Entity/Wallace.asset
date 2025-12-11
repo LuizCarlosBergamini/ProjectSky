@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entityName: Wallace
   entitySprite: {fileID: 3484455860787592995, guid: fd42311ffae910649a3005b2000206db, type: 3}
+  enitityAnimation: {fileID: 7400000, guid: ddac818b0673a384fa8f8f5bed8c1c18, type: 2}

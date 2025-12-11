@@ -6,4 +6,5 @@ public class Entity_SO : ScriptableObject
 {
     public string entityName;
     public Sprite entitySprite;
+    public AnimationClip enitityAnimation;
 }
