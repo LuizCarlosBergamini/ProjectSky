@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class AttachedState : GrappleState {
     public AttachedState(GrappleController owner) : base(owner) { }
@@ -8,6 +9,7 @@ public class AttachedState : GrappleState {
 
     public float swingForce = 100f; // Example swing force magnitude
     public float reelSpeed = 10f; // Speed at which the rope is reeled in
+    public float jump = 30f; // Upward force applied when releasing the grapple
 
     public override void Enter()
     {
@@ -116,6 +118,7 @@ public class AttachedState : GrappleState {
 
         if (owner.grappleActions.Release.WasPressedThisFrame())
         {
+            forceTarget.AddForce(new Vector2(0f, jump), ForceMode2D.Impulse);
             owner.ropeRestLength = owner.ropeRestLengthFixed;
             owner.ChangeState(owner.retractingState);
         }

@@ -9,8 +9,14 @@ EditorBuildSettings:
     path: Assets/Scenes/cutscene.unity
     guid: 09dfdd2f0a14fc14db7c2783b38f2ae3
   - enabled: 1
-    path: Assets/Renan/Scenes/25.11.unity
+    path: Assets/Scenes/25.11.unity
     guid: edd0ce66b0ac55d489cf8f6c36fc2779
+  - enabled: 1
+    path: Assets/Scenes/caverna.unity
+    guid: 95ffddddafe77bd4babd271c459c1d35
+  - enabled: 1
+    path: Assets/Scenes/telhado.unity
+    guid: af3321be396e96146aed8c485e38d0ab
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 0e9c7d865e9ee634bba4db25e72d31a7, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: cf940d471362bea409b2de06fbc33bb2, type: 3}

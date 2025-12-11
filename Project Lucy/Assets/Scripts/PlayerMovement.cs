@@ -16,6 +16,8 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
 
     public PlayerInputs.InGameActions playerActions;
 
+    public bool isDead = false;
+
     public float jump = 2f;
     // Ajuste de responsividade do controle (quanto maior, mais rápido chega à velocidade alvo)
     [SerializeField] private float velocityResponsiveness = 1f;
@@ -59,6 +61,11 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
         GrappleController = GetComponent<GrappleController>();
 
         playerActions = new PlayerInputs().InGame;
+    }
+
+    private void OnDisable()
+    {
+        playerActions.Disable();
     }
 
     private void OnEnable()
@@ -229,7 +236,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
         animator.SetTrigger("hitted");
         HasTakenDamage = true;
         health -= amount;
-        if (health < 0)
+        if (health < 0 && !isDead)
         {
             Die();
             return;
@@ -273,5 +280,6 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
     {
         // Add death effects here (animations, sounds, etc.)
         Destroy(gameObject);
+        GameManager.instance.GameOver();
     }
 }

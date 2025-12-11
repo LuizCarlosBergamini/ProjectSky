@@ -42,7 +42,7 @@ public class GrappleController : MonoBehaviour
 
         // --- Assign Component References ---
         playerRigidbody = GetComponent<Rigidbody2D>();
-        mainCamera = Camera.main;
+        //mainCamera = Camera.main;
         ropeRenderer = GetComponent<LineRenderer>();
 
         defaultDrag = playerRigidbody.linearDamping;

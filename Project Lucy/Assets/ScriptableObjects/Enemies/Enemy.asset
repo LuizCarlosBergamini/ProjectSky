@@ -15,4 +15,4 @@ MonoBehaviour:
   moveSpeed: 0
   maxHealth: 100
   damage: 10
-  knockbackForce: 60
+  knockbackForce: 30

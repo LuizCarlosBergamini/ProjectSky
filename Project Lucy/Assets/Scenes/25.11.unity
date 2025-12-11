@@ -4202,10 +4202,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5169098247201286079, guid: fa7714cee09094446b2aea2d10ddfe37, type: 3}
-      propertyPath: knockbackForce
-      value: 25
-      objectReference: {fileID: 0}
     - target: {fileID: 8133799409112364491, guid: fa7714cee09094446b2aea2d10ddfe37, type: 3}
       propertyPath: m_Camera
       value: 
