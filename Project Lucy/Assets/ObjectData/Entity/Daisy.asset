@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Daisy
   m_EditorClassIdentifier: 
   entityName: Daisy
-  entitySprite: {fileID: 8211628435803740865, guid: 10891699522e4084780775fbdaadc59e, type: 3}
+  entitySprite: {fileID: 469569346117080418, guid: 4acdc20789ec5f54e8b66d61a3c8b765, type: 3}
   enitityAnimation: {fileID: 7400000, guid: 466ed66f7831b91489ce8ecaadd20fd1, type: 2}

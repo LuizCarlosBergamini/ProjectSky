@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialogs:
   - dialogId: daisy-01
-    dialogContent: "Ah, Lucy, to precisando de mais folhas e l\xE1pis, mas bem, eu
-      e Wallace n\xE3o temos uma fama muito boa na cidade, mais o Wallace por ser
-      um vagabundo, por\xE9m a minha \xE9 manchada por ter o mesmo sangue, acho que
-      \xE9 bom voc\xEA ir conhecer a cidade, s\xF3 evite problemas ok? Vou te dar
-      o dinheiro certo pra comprar o que precisa."
+    dialogContent: "Ah, Lucy, to precisando de mais engrenagens, mas bem, eu e o
+      Wallace n\xE3o somos muito bons em luta e tem alguns inimigos no caminho. Acredito
+      que vc seja capaz de super\xE1-los. Ah... tava quase esquecendo. No fim da
+      caverna cont\xE9m uma esmeralda muito rara, traga ela para mim tamb\xE9m por
+      favor!"
     nextDialog: 
     triggerEvent: missao-01-iniciada
     dialogDuration: 0

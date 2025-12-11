@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Playables;
+using static UnityEngine.InputSystem.DefaultInputActions;
 
 public class TimelineEndTrigger : MonoBehaviour
 {
@@ -15,5 +16,14 @@ public class TimelineEndTrigger : MonoBehaviour
     {
         Debug.Log("Cutscene terminada!");
         SceneControl.instance.NextLevel();
+    }
+
+    private void Update()
+    {
+        // if space is pressed, skip the timeline
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            dir.Stop();
+        }
     }
 }

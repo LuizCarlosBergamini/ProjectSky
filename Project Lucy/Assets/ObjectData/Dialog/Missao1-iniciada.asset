@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialogs:
   - dialogId: daisy-01
-    dialogContent: "Preciso de 3 pap\xE9is e 1 l\xE1pis"
+    dialogContent: Preciso de 5 engrenagens e 1 esmeralda
     nextDialog: 
     triggerEvent: 
     dialogDuration: 0

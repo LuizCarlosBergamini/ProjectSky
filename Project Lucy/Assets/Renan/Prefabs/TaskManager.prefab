@@ -252,7 +252,7 @@ MonoBehaviour:
   tasks:
   - taskId: missao-01
     taskTitle: Pegar Materiais
-    taskDescription: "Miss\xE3o 1"
+    taskDescription: Consiga 3 papeis e um lapis
     requiredItems:
     - item: {fileID: 11400000, guid: 99afb718f0275314c9c88e3c26181fd6, type: 2}
       quantity: 3
@@ -260,6 +260,12 @@ MonoBehaviour:
       quantity: 1
     onStartEventTrigger: missao-01-iniciada
     onFinishEventTrigger: missao-01-finalizada
+  - taskId: missao-02
+    taskTitle: Entregar Materiais
+    taskDescription: Entregue os Materiais
+    requiredItems: []
+    onStartEventTrigger: missao-02-iniciada
+    onFinishEventTrigger: missao-02-finalizada
   startedTasks: []
   finishedTasks: []
   taskItemPrefab: {fileID: 6163826808770669789, guid: 13e00af672ffee440aad4f77c9f49192, type: 3}

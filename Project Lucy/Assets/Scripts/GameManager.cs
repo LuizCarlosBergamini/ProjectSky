@@ -29,7 +29,8 @@ public class GameManager : MonoBehaviour
 
     public void RestartGame()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        gameOverUI.SetActive(false);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); 
     }
 
     public void QuitGame()

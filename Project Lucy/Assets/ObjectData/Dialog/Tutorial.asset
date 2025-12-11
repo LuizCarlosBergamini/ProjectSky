@@ -13,26 +13,69 @@ MonoBehaviour:
   m_Name: Tutorial
   m_EditorClassIdentifier: 
   dialogs:
-  - dialogId: daisy-01
-    dialogContent: "Ok Lucy, antes de voc\xEA poder sair, precisamos confirmar que
-      voc\xEA consegue se virar bem por a\xED."
-    nextDialog: wallace-01
+  - dialogId: npc-01
+    dialogContent: "Ei... Voc\xEA!!"
+    nextDialog: jogador-01
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: wallace-01
-    dialogContent: "Mas relaxa, se n\xE3o conseguir pode ficar comigo escrevendo
-      poemas!"
-    nextDialog: daisy-02
+  - dialogId: jogador-01
+    dialogContent: ...
+    nextDialog: jogador-02
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
+  - dialogId: jogador-02
+    dialogContent: "O que \xE9 voc\xEA?"
+    nextDialog: alma-02
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
+  - dialogId: alma-02
+    dialogContent: "Meu nome \xE9 Daisy e esse aqui \xE9 o Wallace, encontramos vc
+      ca\xEDda por aqui e resolvemos te concertar. Ou melhor, eu resolvi te concertar
+      n\xE9, meu irm\xE3o s\xF3 sabe ficar escrevendo os poemas esquisitos dele."
+    nextDialog: alma-03
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: alma-03
+    dialogContent: "Ei, pelo menos eu n\xE3o fico com minha mao toda suja de gracha!"
+    nextDialog: alma-04
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 1d7e921bde50cdb4a955a7e9536defb4, type: 2}
-  - dialogId: daisy-02
-    dialogContent: "Este \xE9 um espa\xE7o que n\xF3s temos aqui, consegui montar
-      uma pequena pista de testes pra voc\xEA Lucy, teste sua mobilidade, seus pulos
-      e seu gancho, boa sorte Lucy."
+  - dialogId: alma-04
+    dialogContent: Vou te explicar como as coisas funcionam aqui.
+    nextDialog: alma-05
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: alma-05
+    dialogContent: "Voc\xEA pode se movimentar para os lados usando 'A' e 'D'\nPara
+      pular 'W' ou 'Espa\xE7o'"
+    nextDialog: alma-06
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: alma-06
+    dialogContent: "Ah... Al\xE9m disso voc\xEA pode se pendurar em algumas coisas
+      com seu agarrador.\nUse o 'Bot\xE3o esquerdo do Mouse' para agarrar e 'Bot\xE3o
+      direito do Mouse' ou 'Espa\xE7o' para se soltar."
+    nextDialog: alma-07
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: alma-07
+    dialogContent: Boa Sorte... Te encontro do outro lado.
     nextDialog: 
     triggerEvent: 
     dialogDuration: 0

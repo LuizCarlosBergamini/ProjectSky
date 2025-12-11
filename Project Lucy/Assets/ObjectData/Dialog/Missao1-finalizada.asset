@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialogs:
   - dialogId: daisy-01
-    dialogContent: Obrigada
+    dialogContent: "Muito obrigada Lucy! Agora estou mais perto de construir a nave
+      para voltarmos ao laborat\xF3rio e descobrir seu passado."
     nextDialog: 
     triggerEvent: missao-01-entregue
     dialogDuration: 0
