@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -8,7 +9,8 @@ using UnityEngine.Events;
 public class TasksItem
 {
     public string taskId;
-    public string taskDescription;
+    public string taskTitle;
+    [TextArea] public string taskDescription;
     public List<InventorySlot> requiredItems;
     public string onStartEventTrigger;
     public string onFinishEventTrigger;
@@ -18,8 +20,13 @@ public class TaskManager : MonoBehaviour
 {
     public static TaskManager instance;
     [SerializeField] private List<TasksItem> tasks = new();
-    [SerializeField] private List<string> startedTasks = new ();
+    [SerializeField] private List<string> startedTasks = new();
     [SerializeField] private List<string> finishedTasks = new();
+
+    [SerializeField] private TaskItem taskItemPrefab;
+    [SerializeField] private GameObject taskItemContainer;
+    [SerializeField] private Dictionary<string, TaskItem> taskItems = new();
+
 
     private void Start()
     {
@@ -49,6 +56,22 @@ public class TaskManager : MonoBehaviour
         {
             EventManager.instance.Call(taskData.onStartEventTrigger);
             Debug.Log($"Task '{taskData.taskDescription}' iniciada!");
+            Debug.Log($"Task '{taskId}' iniciada!");
+            if (taskItems.TryGetValue(taskId, out TaskItem value)) 
+            {
+                taskItems.Remove(taskId);
+            }
+            if (taskItemContainer != null && taskItemPrefab != null)
+            {
+                var clone = Instantiate(taskItemPrefab, taskItemContainer.transform);
+                clone.Apply(taskData.taskTitle, taskData.taskDescription);
+                taskItems.Add(taskId, clone);
+                if (clone.TryGetComponent(out Animator animator))
+                {
+                    animator.Play("ShowTask");
+                }
+            }
+            
             ValidateIfTaskCompleted();
         } else
         {
@@ -58,11 +81,26 @@ public class TaskManager : MonoBehaviour
 
     public void CompleteTask(string taskId)
     {
-        if (!startedTasks.Contains(taskId) || finishedTasks.Contains(taskId)) return;
+        StartCoroutine(CompleteTaskAsync(taskId));
+    }
+
+    public IEnumerator CompleteTaskAsync(string taskId)
+    {
+        if (!startedTasks.Contains(taskId) || finishedTasks.Contains(taskId)) yield break;
         TasksItem taskData = tasks.Find(t => t.taskId == taskId);
         startedTasks.Remove(taskId);
         finishedTasks.Add(taskId);
         EventManager.instance.Call(taskData.onFinishEventTrigger);
+        if (taskItems.TryGetValue(taskId, out TaskItem value))
+        {
+            if (value.TryGetComponent(out Animator animator))
+            {
+                animator.Play("HideTask");
+                yield return new WaitForSeconds(1);
+            }
+            Destroy(value.gameObject);
+            taskItems.Remove(taskId);
+        }
         Debug.Log($"Task '{taskData.taskDescription}' finalizada!");
     }
 
@@ -70,17 +108,15 @@ public class TaskManager : MonoBehaviour
     {
         if (InventoryManager.instance == null) return;
 
-        Debug.Log("foo3");
         for (int i = 0; i < startedTasks.Count; i++)
         {
             string taskId = startedTasks[i];
             if (taskId != null)
             {
                 TasksItem taskData = tasks.Find(t => t.taskId == taskId);
-                Debug.Log("foo4");
+
                 if (taskData != null && taskData.requiredItems.Count > 0)
                 {
-                    Debug.Log("foo5");
                     bool hasAllItem = taskData.requiredItems.All((requiredItem) =>
                     {
                         if (requiredItem.item == null) return false;
@@ -97,10 +133,9 @@ public class TaskManager : MonoBehaviour
                         return false;
 
                     });
-                    Debug.Log("foo6");
+
                     if (hasAllItem)
                     {
-                        Debug.Log("foo7");
                         CompleteTask(taskId);
                     }
                 }

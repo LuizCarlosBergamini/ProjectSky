@@ -45,10 +45,8 @@ public class InventoryManager : MonoBehaviour
             _inventory.Add(item.itemId, newSlot);
         }
 
-        Debug.Log("foo");
         if (TaskManager.instance != null)
         {
-            Debug.Log("foo2");
             TaskManager.instance.ValidateIfTaskCompleted();
         }
     }

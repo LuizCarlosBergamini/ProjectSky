@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: lapis
   itemName: "L\xE1pis"
+  itemSprite: {fileID: 7594956863893306589, guid: 7cf7e0a058a88124991a0bb855d10a46, type: 3}
+  itemAnimationClip: {fileID: 0}
