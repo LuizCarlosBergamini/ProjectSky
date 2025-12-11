@@ -59,7 +59,7 @@ MonoBehaviour:
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: alma-05
     dialogContent: "Voc\xEA pode se movimentar para os lados usando 'A' e 'D'\nPara
-      pular 'W' ou 'Espa\xE7o'"
+      pular 'W' ou 'Espa\xE7o'\nPara atacar aperte 'F'"
     nextDialog: alma-06
     triggerEvent: 
     dialogDuration: 0
