@@ -38,6 +38,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &4815367967004721269
 SpriteRenderer:
+  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -83,6 +84,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_Sprite: {fileID: 469569346117080418, guid: fbc5f709cc38dbb40aee2630c800f1b2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -92,7 +94,6 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!61 &1144438318006347558
 BoxCollider2D:
@@ -157,7 +158,6 @@ MonoBehaviour:
   _dialogAction: {fileID: 8577910489477151222, guid: cf940d471362bea409b2de06fbc33bb2, type: 3}
   _displayActionContainer: {fileID: 7346756584926443905}
   _displayActionText: {fileID: 4784474269131706598}
-  _animator: {fileID: 4549458727867766862}
 --- !u!95 &4549458727867766862
 Animator:
   serializedVersion: 7
@@ -168,7 +168,7 @@ Animator:
   m_GameObject: {fileID: 2807794914072246818}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: d0d04f8af28d94e479d774d0359174ef, type: 2}
+  m_Controller: {fileID: 9100000, guid: bff622c7bbec17745877dbeaee983234, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -509,6 +509,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0

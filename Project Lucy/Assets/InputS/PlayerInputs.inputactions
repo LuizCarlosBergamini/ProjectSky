@@ -103,9 +103,31 @@
                     "isPartOfComposite": true
                 },
                 {
+                    "name": "Up",
+                    "id": "719f97e3-5876-40d9-9f2c-73c282ee1b2f",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Movement",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
                     "name": "right",
                     "id": "70f8bd70-b745-46bf-8207-728df814e7a3",
                     "path": "<Keyboard>/d",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Movement",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Down",
+                    "id": "0f900f84-ff4d-4e65-98b6-5d8fb2275095",
+                    "path": "<Keyboard>/s",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
