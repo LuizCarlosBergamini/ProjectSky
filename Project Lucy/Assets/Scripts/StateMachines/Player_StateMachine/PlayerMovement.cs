@@ -5,18 +5,32 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerMovement : MonoBehaviour, IDamageable {
-
+public class PlayerMovement : MonoBehaviour, IDamageable
+{
+    public PlayerStateMachine playerStateMachine;
+    public PlayerRunState playerRunState;
+    public PlayerIdleState playerIdleState;
+    public PlayerAirState playerAirState;
+    
+    private Rigidbody2D _rb;
+    public Rigidbody2D body => _rb;
+    
+    [SerializeField] private Animator _animator;
+    public Animator animator => _animator;
+    
+    public bool IsGrounded => Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+    public void ChangeState(PlayerState state) => playerStateMachine.ChangeState(state);
+    public Vector2 MovementInput { get; private set; }
+    
     [Header("PlayerData")]
     public PlayerData Data;
 
-    private Vector2 movement;
-    private Rigidbody2D rb;
+    
+    
     [SerializeField] private float moveSpeed = 10f;
 
-    private Animator animator;
-    private SpriteRenderer spriteRenderer;
-    private GrappleController GrappleController;
+    
+    private GrappleController _grappleController;
 
     public PlayerInputs.InGameActions playerActions;
 
@@ -26,22 +40,20 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
 
     // Jump Variables
     public float jump = 2f;
-    private bool _isJumpCut;
-    private bool _isJumpFalling;
-    public bool IsJumping { get; private set; }
-    public float LastOnGroundTime { get; private set; }
-    public float LastPressedJumpTime { get; private set; }
+    public bool _isJumpCut;
+    public bool _isJumpFalling;
+    public bool IsJumping;
+    public float LastOnGroundTime { get; set; }
+    public float LastPressedJumpTime { get; set; }
 
-    // Ajuste de responsividade do controle (quanto maior, mais rápido chega à velocidade alvo)
+    // Ajuste de responsividade do controle (quanto maior, mais rï¿½pido chega ï¿½ velocidade alvo)
     [SerializeField] private float velocityResponsiveness = 1f;
 
     public Transform groundCheck;      // Assign an empty GameObject positioned at the player's feet
     public float groundCheckRadius = 0.4f; // Size of the detection circle
     public LayerMask groundLayer;      // Select the layer that counts as "Ground"
 
-    [SerializeField] private float footstepSoundDelay = 1f;
-    private float footstepSoundDuration = 0f;
-    [SerializeField] private AudioClip footstepAudioClip;
+    
 
     [Header("Attack")]
     private RaycastHit2D[] hits;
@@ -68,32 +80,29 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
 
     // --- Handling Camera ---
     [SerializeField] CameraFollowObject CameraFollowObject;
-    private float fallSpeedYDampingChangeThreshold;
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
-        animator = GetComponent<Animator>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        GrappleController = GetComponent<GrappleController>();
-
+        _rb = GetComponent<Rigidbody2D>();
+        _grappleController = GetComponent<GrappleController>();
         playerActions = new PlayerInputs().InGame;
+    }
+    
+    private void OnEnable()
+    {
+        playerActions.Get().actionTriggered += OnAnyActionTriggered;
+        playerActions.Enable();
+    }
+    
+    private void OnDisable()
+    {
+        playerActions.Get().actionTriggered -= OnAnyActionTriggered;
+        playerActions.Disable();
     }
 
     private void Start()
     {
-        SetGravityScale(Data.gravityScale);
-        fallSpeedYDampingChangeThreshold = CameraManager.instance.fallSpeedYDampingChangeThreshold;
-    }
-
-    private void OnDisable()
-    {
-        playerActions.Disable();
-    }
-
-    private void OnEnable()
-    {
-        playerActions.Enable();
+        playerStateMachine.Initialize(playerIdleState);
     }
 
     public void TogglePlayerInGameAction(bool toggle)
@@ -101,76 +110,16 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
         if (toggle) playerActions.Enable();
         else playerActions.Disable();
     }
-
-    bool IsGrounded => Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
-    private void FixedUpdate()
-    {
-        if (GrappleController.isGrappling) return;
-        Run(1);
-
-        if (movement.x > 0 || movement.x < 0) TurnCheck();
-
-        // Clamp vertical velocity to zero when grounded to avoid floating-point precision errors
-        if (IsGrounded && Mathf.Abs(rb.linearVelocityY) < 0.01f)
-        {
-            rb.linearVelocity = new Vector2(rb.linearVelocityX, 0f);
-        }
-    }
-
+    
+    
     private void Update()
     {
-        #region TIMERS
+        if (IsGrounded) LastOnGroundTime = Data.coyoteTime;
+        else LastOnGroundTime -= Time.deltaTime;
 
-        LastOnGroundTime -= Time.deltaTime;
         LastPressedJumpTime -= Time.deltaTime;
-
-        #endregion
-
-        #region INPUT CHECKS
-
-        if (playerActions.Jump.WasPressedThisFrame())
-        {
-            OnJumpInput();
-        }
-
-        if (playerActions.Jump.WasReleasedThisFrame())
-        {
-            OnJumpUpInput();
-        }
-
-        #endregion
-
-
-
-        #region JUMP CHECKS
-
-        if (IsGrounded)
-        {
-            if (CanJump() && LastPressedJumpTime > 0)
-            {
-                IsJumping = true;
-                _isJumpCut = false;
-                _isJumpFalling = false;
-                Jump();
-            }
-        }
-
-        if (IsJumping && rb.linearVelocityY < 0)
-        {
-            IsJumping = false;
-
-            _isJumpFalling = true;
-        }
-
-        if (LastOnGroundTime > 0 && !IsJumping)
-        {
-            _isJumpCut = false;
-
-            _isJumpFalling = false;
-        }
-
-        #endregion
+        
+        playerStateMachine.LogicUpdateState();
 
         #region GRAVITY
         //Higher gravity if we've released the jump input or are falling
@@ -178,113 +127,55 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
         //{
         //    SetGravityScale(0);
         //}
-        if (rb.linearVelocityY < 0 && movement.y < 0)
+        if (_rb.linearVelocityY < 0 && MovementInput.y < 0)
         {
             //Much higher gravity if holding down
             SetGravityScale(Data.gravityScale * Data.fastFallGravityMult);
             //Caps maximum fall speed, so when falling over large distances we don't accelerate to insanely high speeds
-            rb.linearVelocity = new Vector2(rb.linearVelocityX, Mathf.Max(rb.linearVelocityY, -Data.maxFastFallSpeed));
+            _rb.linearVelocity = new Vector2(_rb.linearVelocityX, Mathf.Max(_rb.linearVelocityY, -Data.maxFastFallSpeed));
         }
         else if (_isJumpCut)
         {
             //Higher gravity if jump button released
             SetGravityScale(Data.gravityScale * Data.jumpCutGravityMult);
-            rb.linearVelocity = new Vector2(rb.linearVelocityX, Mathf.Max(rb.linearVelocityY, -Data.maxFallSpeed));
+            _rb.linearVelocity = new Vector2(_rb.linearVelocityX, Mathf.Max(_rb.linearVelocityY, -Data.maxFallSpeed));
         }
-        else if ((IsJumping || _isJumpFalling) && Mathf.Abs(rb.linearVelocityY) < Data.jumpHangTimeThreshold)
+        else if ((IsJumping || _isJumpFalling) && Mathf.Abs(_rb.linearVelocityY) < Data.jumpHangTimeThreshold)
         {
             SetGravityScale(Data.gravityScale * Data.jumpHangGravityMult);
         }
-        else if (rb.linearVelocityY < 0)
+        else if (_rb.linearVelocityY < 0)
         {
             //Higher gravity if falling
             SetGravityScale(Data.gravityScale * Data.fallGravityMult);
             //Caps maximum fall speed, so when falling over large distances we don't accelerate to insanely high speeds
-            rb.linearVelocity = new Vector2(rb.linearVelocityX, Mathf.Max(rb.linearVelocityY, -Data.maxFallSpeed));
+            _rb.linearVelocity = new Vector2(_rb.linearVelocityX, Mathf.Max(_rb.linearVelocityY, -Data.maxFallSpeed));
         }
         else
         {
             //Default gravity if standing on a platform or moving upwards
             SetGravityScale(Data.gravityScale);
         }
-        #endregion
-
-        #region COLLISION CHECKS
-
-        if (Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer))
-        {
-            LastOnGroundTime = Data.coyoteTime;
-        }
-
-        #endregion
-
-        if (rb.linearVelocityY < fallSpeedYDampingChangeThreshold && !CameraManager.instance.IsLerpingYDamping && !CameraManager.instance.LerpedFromPlayerFalling)
-        {
-            CameraManager.instance.LerpYDamping(true);
-        }
         
-        if (rb.linearVelocityY >= 0f && !CameraManager.instance.IsLerpingYDamping && CameraManager.instance.LerpedFromPlayerFalling)
-        {
-            CameraManager.instance.LerpedFromPlayerFalling = false;
-            CameraManager.instance.LerpYDamping(false);
-        }
-
-        if (!GrappleController.isGrappling)
-        {
-            if (playerActions.Attack.WasPressedThisFrame() && attackTimeCounter >= timeBetweenAttacks)
-            {
-                // Reset attack counter
-                attackTimeCounter = 0f;
-                animator.SetTrigger("attack");
-                animator.SetBool("IsAttacking", true);
-            }
-
-            // Animate jump
-            animator.SetFloat("yVelocity", rb.linearVelocityY);
-            animator.SetBool("isGrounded", IsGrounded);
-        }
-        attackTimeCounter += Time.deltaTime;
-
-
+        #endregion
+        
     }
-
-    #region GENERAL METHODS
+    
+    private void FixedUpdate()
+    {
+        if (_grappleController.isGrappling) return;
+        
+        MovementInput = playerActions.Movement.ReadValue<Vector2>();
+        
+        playerStateMachine.PhysicsUpdateState();
+        
+        Run(1);
+    }
+    
     public void SetGravityScale(float scale)
     {
-        rb.gravityScale = scale;
+        _rb.gravityScale = scale;
     }
-    #endregion
-
-    #region CHECK METHODS
-
-    private bool CanJump()
-    {
-        return LastOnGroundTime > 0 && !IsJumping;
-    }
-
-    #endregion
-
-    #region JUMP METHODS
-
-    public void Jump()
-    {
-        //Ensures we can't call Jump multiple times from one press
-        LastPressedJumpTime = 0;
-        LastOnGroundTime = 0;
-
-        float force = Data.jumpForce;
-        if (rb.linearVelocityY < 0)
-            force -= rb.linearVelocityY;
-
-        rb.AddForce(Vector2.up * force, ForceMode2D.Impulse);
-    }
-
-    private bool CanJumpCut()
-    {
-        return IsJumping && rb.linearVelocityY > 0;
-    }
-
-    #endregion
 
     #region INPUT CALLBACKS
 
@@ -293,10 +184,9 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
         LastPressedJumpTime = Data.jumpInputBufferTime;
     }
 
-    public void OnJumpUpInput()
+    private void OnAnyActionTriggered(InputAction.CallbackContext context)
     {
-        if (CanJumpCut())
-            _isJumpCut = true;
+        if (context.started || context.performed) playerStateMachine.HandleInput();
     }
 
     #endregion
@@ -305,32 +195,18 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
 
     private void Run(float lerpAmount)
     {
-        if (GrappleController.isGrappling || !canWalk) return;
-
-        movement = playerActions.Movement.ReadValue<Vector2>();
-
-        if (IsGrounded && movement.x != 0 && AudioManager.instance != null && footstepAudioClip != null)
-        {
-            footstepSoundDuration += Time.fixedDeltaTime;
-            if (footstepSoundDuration > footstepSoundDelay)
-            {
-                footstepSoundDuration = 0;
-                AudioManager.instance.PlayWithVariation(footstepAudioClip);
-            }
-        }
-
-        animator.SetBool("IsWalking", movement.x != 0);
+        if (_grappleController.isGrappling || !canWalk) return;
 
         //Calculate the direction we want to move in and our desired velocity
-        float targetSpeed = movement.x * Data.runMaxSpeed;
-        //We can reduce are control using Lerp() this smooths changes to are direction and speed
-        targetSpeed = Mathf.Lerp(rb.linearVelocityX, targetSpeed, lerpAmount);
+        float targetSpeed = MovementInput.x * Data.runMaxSpeed;
+        //We can reduce control using Lerp() this smooths changes to direction and speed
+        targetSpeed = Mathf.Lerp(_rb.linearVelocityX, targetSpeed, lerpAmount);
 
         #region Calculate AccelRate
         float accelRate;
 
         //Gets an acceleration value based on if we are accelerating (includes turning) 
-        //or trying to decelerate (stop). As well as applying a multiplier if we're air borne.
+        //or trying to decelerate (stop). As well as applying a multiplier if we're airborne.
         if (LastOnGroundTime > 0)
             accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? Data.runAccelAmount : Data.runDeccelAmount;
         else
@@ -339,7 +215,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
 
         #region Add Bonus Jump Apex Acceleration
         //Increase acceleration and maxSpeed when at the apex of their jump, makes the jump feel a bit more bouncy, responsive and natural
-        if ((IsJumping || _isJumpFalling) && Mathf.Abs(rb.linearVelocityY) < Data.jumpHangTimeThreshold)
+        if ((IsJumping || _isJumpFalling) && Mathf.Abs(_rb.linearVelocityY) < Data.jumpHangTimeThreshold)
         {
             accelRate *= Data.jumpHangAccelerationMult;
             targetSpeed *= Data.jumpHangMaxSpeedMult;
@@ -348,7 +224,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
 
         #region Conserve Momentum
         //We won't slow the player down if they are moving in their desired direction but at a greater speed than their maxSpeed
-        if (Data.doConserveMomentum && Mathf.Abs(rb.linearVelocityX) > Mathf.Abs(targetSpeed) && Mathf.Sign(rb.linearVelocityX) == Mathf.Sign(targetSpeed) && Mathf.Abs(targetSpeed) > 0.01f && LastOnGroundTime < 0)
+        if (Data.doConserveMomentum && Mathf.Abs(_rb.linearVelocityX) > Mathf.Abs(targetSpeed) && Mathf.Sign(_rb.linearVelocityX) == Mathf.Sign(targetSpeed) && Mathf.Abs(targetSpeed) > 0.01f && LastOnGroundTime < 0)
         {
             //Prevent any deceleration from happening, or in other words conserve are current momentum
             //You could experiment with allowing for the player to slightly increae their speed whilst in this "state"
@@ -357,26 +233,20 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
         #endregion
 
         //Calculate difference between current velocity and desired velocity
-        float speedDif = targetSpeed - rb.linearVelocityX;
+        float speedDif = targetSpeed - _rb.linearVelocityX;
         //Calculate force along x-axis to apply to thr player
-
         float movementLocal = speedDif * accelRate;
 
         //Convert this to a vector and apply to rigidbody
-        rb.AddForce(movementLocal * Vector2.right, ForceMode2D.Force);
-
-        /*
-		 * For those interested here is what AddForce() will do
-		 * RB.velocity = new Vector2(RB.velocity.x + (Time.fixedDeltaTime  * speedDif * accelRate) / RB.mass, RB.velocity.y);
-		 * Time.fixedDeltaTime is by default in Unity 0.02 seconds equal to 50 FixedUpdate() calls per second
-		*/
+        _rb.AddForce(movementLocal * Vector2.right, ForceMode2D.Force);
+        TurnCheck();
     }
 
-    private void TurnCheck()
+    public void TurnCheck()
     {
         // changes direction of player based on movement
-        if (movement.x > 0 && isFacingRight) Turn();
-        else if (movement.x < 0 && !isFacingRight) Turn();
+        if (MovementInput.x > 0 && isFacingRight) Turn();
+        else if (MovementInput.x < 0 && !isFacingRight) Turn();
     }
 
     private void Turn()
@@ -399,7 +269,25 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
 
     #endregion
 
+    #region ATTACK METHODS
 
+    public void OnAttackInput()
+    {
+        if (CombatManager.Instance.canReceiveInput)
+        {
+            CombatManager.Instance.inputReceived = true;
+            CombatManager.Instance.canReceiveInput = false;
+        }
+        else
+        {
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+            if (!state.IsName("Player_Attack") && !state.IsName("TransitionAttack1") && !state.IsName("Player_Attack2"))
+            {
+                animator.Play("Player_Attack");
+            }
+        }
+    }
+    
     private void ReturnAttackablesToDamageable()
     {
         foreach (IDamageable thingThatWasHit in damageables)
@@ -439,34 +327,24 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
 
         ReturnAttackablesToDamageable();
     }
-
-    #region Animation Triggers
-
-    public void ShouldBeDamagingToTrue()
-    {
-        shouldBeDamaging = true;
-    }
-
+    
     public void ShouldBeDamagingToFalse()
     {
         shouldBeDamaging = false;
         
     }
-
-    public void IsAttackingToFalse()
-    {
-        animator.SetBool("IsAttacking", false);
-    }
-
-    #endregion
-
+    
     private void OnDrawGizmosSelected()
     {
         if (attackPoint == null) return;
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(attackPoint.position, attackRange);
     }
+    
+    #endregion
 
+    #region PLAYER LIFE METHODS
+    
     public bool IsAlive()
     {
         return health > 0;
@@ -479,7 +357,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
 
     public void TakeDamage(float amount, Vector2 knockback)
     {
-        animator.SetTrigger("hitted");
+        //animator.SetTrigger("hitted");
         HasTakenDamage = true;
         health -= amount;
         if (health < 0 && !isDead)
@@ -487,7 +365,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
             Die();
             return;
         }
-        rb.AddForce(knockback, ForceMode2D.Impulse);
+        _rb.AddForce(knockback, ForceMode2D.Impulse);
         // Start a coroutine to wait for landing instead.
         if (knockbackCoroutine != null)
         {
@@ -498,6 +376,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
         HasTakenDamage = false;
     }
 
+    // TODO: Transform this function in a separate file for using in all objects that need knockback
     private IEnumerator HandleKnockbackLanding()
     {
         isKnockedBack = true;
@@ -528,4 +407,6 @@ public class PlayerMovement : MonoBehaviour, IDamageable {
         Destroy(gameObject);
         GameManager.instance.GameOver();
     }
+    
+    #endregion
 }
