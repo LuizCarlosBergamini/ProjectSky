@@ -31,7 +31,6 @@ public class PlayerRunState : PlayerState
         }
         if (ctx.playerActions.Attack.WasPressedThisFrame())
         {
-            ctx.OnAttackInput();
         }
     }
 

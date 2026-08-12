@@ -23,9 +23,9 @@ public class PlayerIdleState : PlayerState
             ctx.OnJumpInput();
             ctx.ChangeState(ctx.playerAirState);
         }
-        if (ctx.playerActions.Attack.WasPressedThisFrame())
+        if (ctx.playerActions.Attack.WasPressedThisFrame() && ctx.CanAttack())
         {
-            ctx.OnAttackInput();
+            ctx.ChangeState(ctx.playerAttackState);
         }
     }
 

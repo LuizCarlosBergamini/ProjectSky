@@ -41,4 +41,4 @@ MonoBehaviour:
   slideSpeed: 0
   slideAccel: 0
   coyoteTime: 0.2
-  jumpInputBufferTime: 0.15
+  jumpInputBufferTime: 0.158

@@ -5,7 +5,6 @@ public abstract class PlayerState : MonoBehaviour
 {
     protected PlayerMovement playerScript;
     
-    public bool isComplete { get; protected set; }
     protected float startTime;
     public float time => Time.time - startTime;
     

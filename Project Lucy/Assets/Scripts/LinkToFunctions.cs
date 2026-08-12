@@ -1,16 +1,18 @@
+using HierarchicalStateMachine;
 using UnityEngine;
 
 public class LinkToFunctions : MonoBehaviour
 {
-    [SerializeField] private PlayerMovement playerScript;
+    [SerializeField] private PlayerStateDriver playerStateDriver;
 
     void StartAttacking()
     {
-        StartCoroutine(playerScript.DamageWhileSlashIsActive());
+        playerStateDriver.OpenComboWindow();
     }
 
     void StopAttacking()
     {
-        playerScript.ShouldBeDamagingToFalse();
+        playerStateDriver.CloseComboWindow();
+        playerStateDriver.FinishAttack();
     }
 }

@@ -20,51 +20,7 @@ public class PlayerAirState : PlayerState
 
     public override void LogicUpdate()
     {
-        if (ctx.IsGrounded && Mathf.Abs(ctx.body.linearVelocityY) <= 0.01f)
-        {
-            _isFallingLocal = false;
-            
-            if (ctx.LastPressedJumpTime > 0f)
-            {
-                Jump();
-                return;
-            }
-
-            if (Mathf.Abs(ctx.MovementInput.x) > 0.01f)
-                ctx.ChangeState(ctx.playerRunState);
-            else
-                ctx.ChangeState(ctx.playerIdleState);
-
-            return; 
-        }
         
-        if (ctx.body.linearVelocityY < 0)
-        {
-            ctx._isJumpFalling = true;
-        }
-        
-        if (ctx.body.linearVelocityY < fallSpeedYDampingChangeThreshold && !CameraManager.instance.IsLerpingYDamping && !CameraManager.instance.LerpedFromPlayerFalling)
-        {
-            CameraManager.instance.LerpYDamping(true);
-        }
-        
-        if (ctx.body.linearVelocityY >= 0f && !CameraManager.instance.IsLerpingYDamping && CameraManager.instance.LerpedFromPlayerFalling)
-        {
-            CameraManager.instance.LerpedFromPlayerFalling = false;
-            CameraManager.instance.LerpYDamping(false);
-        }
-        
-        if (ctx.playerActions.Jump.WasReleasedThisFrame())
-        {
-            Debug.Log("Jump button released");
-            if (CanJumpCut()) ctx._isJumpCut = true;
-        }
-
-        if (!ctx.IsGrounded && ctx.body.linearVelocityY < 0 && !_isFallingLocal)
-        {
-            _isFallingLocal = true;
-            ctx.animator.Play("Player_Fall");
-        }
     }
 
     public override void HandleInput()
@@ -79,7 +35,7 @@ public class PlayerAirState : PlayerState
         }
         if (ctx.playerActions.Attack.WasPressedThisFrame())
         {
-            ctx.OnAttackInput();
+            
         }
     }
 
@@ -95,8 +51,6 @@ public class PlayerAirState : PlayerState
         float force = ctx.Data.jumpForce;
         if (ctx.body.linearVelocityY < 0)
             force -= ctx.body.linearVelocityY;
-        
-        ctx.animator.Play("Player_Jump");
         ctx.body.AddForce(Vector2.up * force, ForceMode2D.Impulse);
     }
     

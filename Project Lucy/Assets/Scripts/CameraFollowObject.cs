@@ -1,4 +1,5 @@
 using System.Collections;
+using HierarchicalStateMachine;
 using UnityEngine;
 
 public class CameraFollowObject : MonoBehaviour
@@ -12,15 +13,15 @@ public class CameraFollowObject : MonoBehaviour
 
     private Coroutine turnCouroutine;
 
-    private PlayerMovement player;
+    private PlayerStateDriver player;
 
     private bool isFacingRight;
 
     private void Awake()
     {
-        player = playerTransform.GetComponent<PlayerMovement>();
+        player = playerTransform.GetComponent<PlayerStateDriver>();
 
-        isFacingRight = player.isFacingRight;
+        isFacingRight = player.isFacingRightLocal;
     }
 
     private void Update()
@@ -30,11 +31,12 @@ public class CameraFollowObject : MonoBehaviour
 
     public void CallTurn()
     {
+        Debug.Log("CallTurn called");   
         // Cancela qualquer animação de rotação anterior
         LeanTween.cancel(gameObject);
 
         // Sincroniza com o estado atual do player antes de rotacionar
-        isFacingRight = player.isFacingRight;
+        isFacingRight = player.isFacingRightLocal;
 
         // Executa a rotação
         LeanTween.rotateY(gameObject, DetermineEndRotation(), flipDuration).setEaseInOutSine();

@@ -1,7 +1,9 @@
 using Unity.Cinemachine;
 using UnityEngine;
-using UnityEditor;
 using Unity.VisualScripting;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class CameraControlTrigger : MonoBehaviour
 {
@@ -73,8 +75,9 @@ public enum PanDirection
     Right
 }
 
+#if UNITY_EDITOR
 [CustomEditor(typeof(CameraControlTrigger))]
-public class MyScriptEditor : Editor
+public class CameraControlTriggerEditor : Editor
 {
     CameraControlTrigger cameraControlTrigger;
 
@@ -104,3 +107,4 @@ public class MyScriptEditor : Editor
         }
     }
 }
+#endif

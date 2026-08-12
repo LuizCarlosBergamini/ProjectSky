@@ -11,25 +11,25 @@ public class PlayerMovement : MonoBehaviour, IDamageable
     public PlayerRunState playerRunState;
     public PlayerIdleState playerIdleState;
     public PlayerAirState playerAirState;
-    
+    public PlayerAttackState playerAttackState;
+
     private Rigidbody2D _rb;
     public Rigidbody2D body => _rb;
-    
+
     [SerializeField] private Animator _animator;
     public Animator animator => _animator;
-    
+
     public bool IsGrounded => Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
     public void ChangeState(PlayerState state) => playerStateMachine.ChangeState(state);
     public Vector2 MovementInput { get; private set; }
-    
-    [Header("PlayerData")]
-    public PlayerData Data;
 
-    
-    
+    [Header("PlayerData")] public PlayerData Data;
+
+
+
     [SerializeField] private float moveSpeed = 10f;
 
-    
+
     private GrappleController _grappleController;
 
     public PlayerInputs.InGameActions playerActions;
@@ -49,27 +49,13 @@ public class PlayerMovement : MonoBehaviour, IDamageable
     // Ajuste de responsividade do controle (quanto maior, mais r�pido chega � velocidade alvo)
     [SerializeField] private float velocityResponsiveness = 1f;
 
-    public Transform groundCheck;      // Assign an empty GameObject positioned at the player's feet
+    public Transform groundCheck; // Assign an empty GameObject positioned at the player's feet
     public float groundCheckRadius = 0.4f; // Size of the detection circle
-    public LayerMask groundLayer;      // Select the layer that counts as "Ground"
+    public LayerMask groundLayer; // Select the layer that counts as "Ground"
 
-    
+    [Header("Health and Damage Taken")] [SerializeField]
+    private float health = 100f;
 
-    [Header("Attack")]
-    private RaycastHit2D[] hits;
-    [SerializeField] private float attackDamage = 10f;
-    [SerializeField] private Transform attackPoint;
-    [SerializeField] private float attackRange = 1.5f;
-    [SerializeField] private LayerMask attackableLayer;
-    [SerializeField] private float timeBetweenAttacks = 0.5f;
-    private float attackTimeCounter;
-    [SerializeField] private float knockbackForce = 20f;
-    public bool shouldBeDamaging { get; private set; } = false;
-    private List<IDamageable> damageables = new List<IDamageable>();
-    [SerializeField] private float verticalKnockback = 0.5f;
-
-    [Header("Health and Damage Taken")]
-    [SerializeField] private float health = 100f;
     public bool HasTakenDamage { get; set; } = false;
     public bool canWalk = true;
 
@@ -80,6 +66,9 @@ public class PlayerMovement : MonoBehaviour, IDamageable
 
     // --- Handling Camera ---
     [SerializeField] CameraFollowObject CameraFollowObject;
+    
+    [SerializeField] private float timeBetweenAttacks = 10f;
+    private float attackTimeCounter;
 
     private void Awake()
     {
@@ -87,18 +76,8 @@ public class PlayerMovement : MonoBehaviour, IDamageable
         _grappleController = GetComponent<GrappleController>();
         playerActions = new PlayerInputs().InGame;
     }
+
     
-    private void OnEnable()
-    {
-        playerActions.Get().actionTriggered += OnAnyActionTriggered;
-        playerActions.Enable();
-    }
-    
-    private void OnDisable()
-    {
-        playerActions.Get().actionTriggered -= OnAnyActionTriggered;
-        playerActions.Disable();
-    }
 
     private void Start()
     {
@@ -110,18 +89,21 @@ public class PlayerMovement : MonoBehaviour, IDamageable
         if (toggle) playerActions.Enable();
         else playerActions.Disable();
     }
-    
-    
+
+
     private void Update()
     {
         if (IsGrounded) LastOnGroundTime = Data.coyoteTime;
         else LastOnGroundTime -= Time.deltaTime;
 
         LastPressedJumpTime -= Time.deltaTime;
-        
+
+        if (attackTimeCounter > 0) attackTimeCounter -= Time.deltaTime;
+
         playerStateMachine.LogicUpdateState();
 
         #region GRAVITY
+
         //Higher gravity if we've released the jump input or are falling
         //if (IsSliding)
         //{
@@ -132,7 +114,8 @@ public class PlayerMovement : MonoBehaviour, IDamageable
             //Much higher gravity if holding down
             SetGravityScale(Data.gravityScale * Data.fastFallGravityMult);
             //Caps maximum fall speed, so when falling over large distances we don't accelerate to insanely high speeds
-            _rb.linearVelocity = new Vector2(_rb.linearVelocityX, Mathf.Max(_rb.linearVelocityY, -Data.maxFastFallSpeed));
+            _rb.linearVelocity =
+                new Vector2(_rb.linearVelocityX, Mathf.Max(_rb.linearVelocityY, -Data.maxFastFallSpeed));
         }
         else if (_isJumpCut)
         {
@@ -156,22 +139,22 @@ public class PlayerMovement : MonoBehaviour, IDamageable
             //Default gravity if standing on a platform or moving upwards
             SetGravityScale(Data.gravityScale);
         }
-        
+
         #endregion
-        
+
     }
-    
+
     private void FixedUpdate()
     {
         if (_grappleController.isGrappling) return;
-        
+
         MovementInput = playerActions.Movement.ReadValue<Vector2>();
-        
+
         playerStateMachine.PhysicsUpdateState();
-        
+
         Run(1);
     }
-    
+
     public void SetGravityScale(float scale)
     {
         _rb.gravityScale = scale;
@@ -203,6 +186,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable
         targetSpeed = Mathf.Lerp(_rb.linearVelocityX, targetSpeed, lerpAmount);
 
         #region Calculate AccelRate
+
         float accelRate;
 
         //Gets an acceleration value based on if we are accelerating (includes turning) 
@@ -210,26 +194,35 @@ public class PlayerMovement : MonoBehaviour, IDamageable
         if (LastOnGroundTime > 0)
             accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? Data.runAccelAmount : Data.runDeccelAmount;
         else
-            accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? Data.runAccelAmount * Data.accelInAir : Data.runDeccelAmount * Data.deccelInAir;
+            accelRate = (Mathf.Abs(targetSpeed) > 0.01f)
+                ? Data.runAccelAmount * Data.accelInAir
+                : Data.runDeccelAmount * Data.deccelInAir;
+
         #endregion
 
         #region Add Bonus Jump Apex Acceleration
+
         //Increase acceleration and maxSpeed when at the apex of their jump, makes the jump feel a bit more bouncy, responsive and natural
         if ((IsJumping || _isJumpFalling) && Mathf.Abs(_rb.linearVelocityY) < Data.jumpHangTimeThreshold)
         {
             accelRate *= Data.jumpHangAccelerationMult;
             targetSpeed *= Data.jumpHangMaxSpeedMult;
         }
+
         #endregion
 
         #region Conserve Momentum
+
         //We won't slow the player down if they are moving in their desired direction but at a greater speed than their maxSpeed
-        if (Data.doConserveMomentum && Mathf.Abs(_rb.linearVelocityX) > Mathf.Abs(targetSpeed) && Mathf.Sign(_rb.linearVelocityX) == Mathf.Sign(targetSpeed) && Mathf.Abs(targetSpeed) > 0.01f && LastOnGroundTime < 0)
+        if (Data.doConserveMomentum && Mathf.Abs(_rb.linearVelocityX) > Mathf.Abs(targetSpeed) &&
+            Mathf.Sign(_rb.linearVelocityX) == Mathf.Sign(targetSpeed) && Mathf.Abs(targetSpeed) > 0.01f &&
+            LastOnGroundTime < 0)
         {
             //Prevent any deceleration from happening, or in other words conserve are current momentum
             //You could experiment with allowing for the player to slightly increae their speed whilst in this "state"
             accelRate = 0;
         }
+
         #endregion
 
         //Calculate difference between current velocity and desired velocity
@@ -271,80 +264,23 @@ public class PlayerMovement : MonoBehaviour, IDamageable
 
     #region ATTACK METHODS
 
-    public void OnAttackInput()
+    public void ResetAttackCooldown()
     {
-        if (CombatManager.Instance.canReceiveInput)
-        {
-            CombatManager.Instance.inputReceived = true;
-            CombatManager.Instance.canReceiveInput = false;
-        }
-        else
-        {
-            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
-            if (!state.IsName("Player_Attack") && !state.IsName("TransitionAttack1") && !state.IsName("Player_Attack2"))
-            {
-                animator.Play("Player_Attack");
-            }
-        }
+        Debug.Log("Starting Attack Cooldown");
+        attackTimeCounter = timeBetweenAttacks;
     }
+
+    public bool CanAttack()
+    {
+        return attackTimeCounter <= 0;
+    }
+
     
-    private void ReturnAttackablesToDamageable()
-    {
-        foreach (IDamageable thingThatWasHit in damageables)
-        {
-            thingThatWasHit.HasTakenDamage = false;
-        }
 
-        damageables.Clear();
-    }
-
-    public IEnumerator DamageWhileSlashIsActive()
-    {
-        shouldBeDamaging = true;
-
-        while (shouldBeDamaging)
-        {
-            hits = Physics2D.CircleCastAll(attackPoint.position, attackRange, transform.right, 0f, attackableLayer);
-            foreach (RaycastHit2D hit in hits)
-            {
-                IDamageable damageable = hit.collider.gameObject.GetComponent<IDamageable>();
-                if (damageable != null && !damageable.HasTakenDamage)
-                {
-                    Vector2 knockbackDirection = (hit.collider.transform.position - transform.position).normalized;
-                    // combine horizontal direction with a fixed upward component
-                    // keep horizontal sign from knockbackDirection.x and force an upward Y value
-                    float upward = Mathf.Abs(verticalKnockback); // ensure upward is positive
-                    Vector2 combinedDir = new Vector2(knockbackDirection.x, upward).normalized;
-
-                    Vector2 knockback = combinedDir * knockbackForce;
-                    damageable.TakeDamage(attackDamage, knockback);
-                    damageables.Add(damageable);
-                }
-            }
-
-            yield return null;
-        }
-
-        ReturnAttackablesToDamageable();
-    }
-    
-    public void ShouldBeDamagingToFalse()
-    {
-        shouldBeDamaging = false;
-        
-    }
-    
-    private void OnDrawGizmosSelected()
-    {
-        if (attackPoint == null) return;
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(attackPoint.position, attackRange);
-    }
-    
     #endregion
 
     #region PLAYER LIFE METHODS
-    
+
     public bool IsAlive()
     {
         return health > 0;
@@ -365,6 +301,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable
             Die();
             return;
         }
+
         _rb.AddForce(knockback, ForceMode2D.Impulse);
         // Start a coroutine to wait for landing instead.
         if (knockbackCoroutine != null)
@@ -372,6 +309,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable
             StopCoroutine(knockbackCoroutine);
             knockbackCoroutine = null;
         }
+
         knockbackCoroutine = StartCoroutine(HandleKnockbackLanding());
         HasTakenDamage = false;
     }
@@ -407,6 +345,6 @@ public class PlayerMovement : MonoBehaviour, IDamageable
         Destroy(gameObject);
         GameManager.instance.GameOver();
     }
-    
+
     #endregion
 }

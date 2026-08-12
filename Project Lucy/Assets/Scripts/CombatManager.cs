@@ -21,44 +21,22 @@ public class CombatManager : MonoBehaviour
         Instance = this;
     }
 
-    private void Update()
-    {
-        
-    }
-
-    public void InitiateAttackTimer()
-    {
-        if (_attackTimerCoroutine != null)
-        {
-            StopCoroutine(TimerBeforeAttack());
-        }
-        _attackTimerCoroutine = StartCoroutine(TimerBeforeAttack());
-    }
-
-    private IEnumerator TimerBeforeAttack()
-    {
-        Debug.Log("canReceiveInput: " + canReceiveInput);
-        yield return new WaitForSeconds(timeBetweenAttacks);
-        canReceiveInput = true;
-        Debug.Log("canReceiveInput: " + canReceiveInput);
-    } 
-
-    public void Attack(InputAction.CallbackContext context)
-    {
-        if (context.performed)
-        {
-            if (canReceiveInput)
-            {
-                Debug.Log("changing input to true");
-                inputReceived = true;
-                canReceiveInput = false;
-            }
-            else
-            {
-                return;
-            }
-        }
-    }
+    // public void Attack(InputAction.CallbackContext context)
+    // {
+    //     if (context.performed)
+    //     {
+    //         if (canReceiveInput)
+    //         {
+    //             Debug.Log("changing input to true");
+    //             inputReceived = true;
+    //             canReceiveInput = false;
+    //         }
+    //         else
+    //         {
+    //             return;
+    //         }
+    //     }
+    // }
 
     public void InputManager()
     {
