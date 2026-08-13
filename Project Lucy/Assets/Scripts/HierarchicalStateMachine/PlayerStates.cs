@@ -4,6 +4,7 @@ namespace HierarchicalStateMachine
 {
     public class Attack : State
     {
+        private const float AttackCooldownDuration = 0.35f;
         private readonly PlayerContext ctx;
         private bool shouldExit;
         
@@ -16,7 +17,7 @@ namespace HierarchicalStateMachine
         {
             ctx.IsAttacking = true;
             ctx.WantsComboGravity = true;
-            ctx.canWalk = false;
+            // ctx.Data.runMaxSpeed = 6.5f;
 
             StartNextAttack();
         }
@@ -26,8 +27,8 @@ namespace HierarchicalStateMachine
             Debug.Log("shoudExit" + shouldExit);
             if (!ctx.AttackFinished) return;
             
-            int maxComboStep = Mathf.Max(1, ctx.MaxComboStep);
-            if (ctx.ComboQueued && ctx.ComboStep < maxComboStep)
+            // int maxComboStep = Mathf.Max(1, ctx.MaxComboStep);
+            if (ctx.ComboQueued && ctx.ComboStep < ctx.MaxComboStep)
             {
                 StartNextAttack();
                 return;
@@ -41,12 +42,14 @@ namespace HierarchicalStateMachine
             if (!shouldExit) return null;
             
             ctx.ComboStep = 0;
+            ctx.AttackCooldownTime = AttackCooldownDuration;
             var root = (PlayerRoot)Parent;
             return ctx.IsGrounded ? root.Grounded : root.Airborne;
         }
 
         protected override void OnExit()
         {
+            // ctx.Data.runMaxSpeed = ctx.Data.runMaxSpeed;
             ctx.IsAttacking = false;
             ctx.WantsComboGravity = false;
             ctx.canWalk = true;
@@ -64,8 +67,8 @@ namespace HierarchicalStateMachine
             ctx.CanReceiveComboInput = false;
             ctx.LastPressedAttackTime = 0f;
 
-            int maxComboStep = Mathf.Max(1, ctx.MaxComboStep);
-            ctx.ComboStep = Mathf.Clamp(ctx.ComboStep + 1, 1, maxComboStep);
+            // int maxComboStep = Mathf.Max(1, ctx.MaxComboStep);
+            ctx.ComboStep = Mathf.Clamp(ctx.ComboStep + 1, 1, ctx.MaxComboStep);
             ctx.animator.Play("Player_Attack" + ctx.ComboStep);
         }
     }
@@ -149,7 +152,7 @@ namespace HierarchicalStateMachine
                 return ((PlayerRoot)Parent).Airborne;
             }
 
-            if (ctx.LastPressedAttackTime > 0f)
+            if (ctx.LastPressedAttackTime > 0f && ctx.AttackCooldownTime <= 0f)
             {
                 return ((PlayerRoot)Parent).Attack;
             }
@@ -226,7 +229,7 @@ namespace HierarchicalStateMachine
         protected override State GetTransition()
         {
             if (ctx.IsGrounded && ctx.rb.linearVelocityY <= 0f) return ((PlayerRoot)Parent).Grounded;
-            if (ctx.LastPressedAttackTime > 0f) return ((PlayerRoot)Parent).Attack;
+            if (ctx.LastPressedAttackTime > 0f && ctx.AttackCooldownTime <= 0f) return ((PlayerRoot)Parent).Attack;
             return null;
         }
         

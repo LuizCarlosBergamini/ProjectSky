@@ -42,3 +42,6 @@ MonoBehaviour:
   slideAccel: 0
   coyoteTime: 0.2
   jumpInputBufferTime: 0.158
+  attackInputBufferTime: 0.25
+  comboGravityMultiplier: 0.75
+  maxComboStep: 2

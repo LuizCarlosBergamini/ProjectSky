@@ -105,6 +105,7 @@ namespace HierarchicalStateMachine
             
             ctx.LastPressedJumpTime = Mathf.Max(0f, ctx.LastPressedJumpTime - Time.deltaTime);
             ctx.LastPressedAttackTime = Mathf.Max(0f, ctx.LastPressedAttackTime - Time.deltaTime);
+            ctx.AttackCooldownTime = Mathf.Max(0f, ctx.AttackCooldownTime - Time.deltaTime);
             ApplyGravity();
         }
 
@@ -444,6 +445,7 @@ namespace HierarchicalStateMachine
         public bool CanReceiveComboInput;
         public bool ComboQueued;
         public bool AttackFinished;
+        public float AttackCooldownTime;
         public Action StartAttackHitbox;
         public Action StopAttackHitbox;
     }

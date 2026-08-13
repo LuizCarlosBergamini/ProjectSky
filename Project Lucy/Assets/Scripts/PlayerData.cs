@@ -15,10 +15,9 @@ public class PlayerData : ScriptableObject
                                       //Seen in games such as Celeste, lets the player fall extra fast if they wish.
     public float maxFastFallSpeed; //Maximum fall speed(terminal velocity) of the player when performing a faster fall.
 
-    [Space(20)]
-
-    [Header("Run")]
+    [Space(20)] [Header("Run")] 
     public float runMaxSpeed; //Target speed we want the player to reach.
+    // public float runMaxSpeedAttack; //Target speed we want the player to reach during an attack.
     public float runAcceleration; //The speed at which our player accelerates to max speed, can be set to runMaxSpeed for instant acceleration down to 0 for none at all
     [HideInInspector] public float runAccelAmount; //The actual force (multiplied with speedDiff) applied to the player.
     public float runDecceleration; //The speed at which our player decelerates from their current speed, can be set to runMaxSpeed for instant deceleration down to 0 for none at all
