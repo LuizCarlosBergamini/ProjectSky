@@ -96,19 +96,44 @@ namespace HierarchicalStateMachine
             if (!_started) Start();
             InternalTick(deltaTime);
         }
+
+        public void FixedTick(float fixedDeltaTime)
+        {
+            if (!_started) Start();
+            Root.FixedUpdate(fixedDeltaTime);
+        }
         
         public void InternalTick(float deltaTime) => Root.Update(deltaTime);
 
         public void ChangeState(State from, State to)
         {
             if (from == to || from == null || to == null) return;
-            
+
             State lca = TransitionSequencer.Lca(from, to);
-            
-            for (State s = from; s != null && s != lca; s = s.Parent) s.Exit();
-            
+            // When the target IS the common ancestor we have to re-enter it, so the walls of the
+            // transition move one level up. Otherwise the LCA stays active and is never touched.
+            State stop = (to == lca && lca != null) ? lca.Parent : lca;
+
+            // Exit everything below the stop state, clearing the back-reference on the way up so
+            // Leaf() never points at a state that has already exited.
+            for (State s = from; s != null && s != stop; s = s.Parent)
+            {
+                s.Exit();
+                if (s.Parent != null && s.Parent.ActiveChild == s) s.Parent.ActiveChild = null;
+            }
+
+            // 'from' may have been an ancestor of the currently active leaf (e.g. Grounded requesting
+            // a transition while Idle is active), or a sibling branch may still be marked active.
+            if (stop != null && stop.ActiveChild != null)
+            {
+                stop.ActiveChild.Exit();
+                stop.ActiveChild = null;
+            }
+
+            // Only enter the branch below the stop state. Pushing all the way to the root would
+            // re-enter the root and replay its initial child on every single transition.
             var stack = new Stack<State>();
-            for (State s = to; s != null; s = s.Parent) stack.Push(s);
+            for (State s = to; s != null && s != stop; s = s.Parent) stack.Push(s);
             while (stack.Count > 0) stack.Pop().Enter();
         }
     }

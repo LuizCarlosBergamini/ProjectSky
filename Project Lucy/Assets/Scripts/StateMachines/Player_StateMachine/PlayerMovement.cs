@@ -30,8 +30,6 @@ public class PlayerMovement : MonoBehaviour, IDamageable
     [SerializeField] private float moveSpeed = 10f;
 
 
-    private GrappleController _grappleController;
-
     public PlayerInputs.InGameActions playerActions;
 
     public bool isDead = false;
@@ -73,7 +71,6 @@ public class PlayerMovement : MonoBehaviour, IDamageable
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
-        _grappleController = GetComponent<GrappleController>();
         playerActions = new PlayerInputs().InGame;
     }
 
@@ -146,8 +143,6 @@ public class PlayerMovement : MonoBehaviour, IDamageable
 
     private void FixedUpdate()
     {
-        if (_grappleController.isGrappling) return;
-
         MovementInput = playerActions.Movement.ReadValue<Vector2>();
 
         playerStateMachine.PhysicsUpdateState();
@@ -178,7 +173,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable
 
     private void Run(float lerpAmount)
     {
-        if (_grappleController.isGrappling || !canWalk) return;
+        if (!canWalk) return;
 
         //Calculate the direction we want to move in and our desired velocity
         float targetSpeed = MovementInput.x * Data.runMaxSpeed;

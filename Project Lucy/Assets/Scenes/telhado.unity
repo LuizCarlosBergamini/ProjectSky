@@ -408,6 +408,7 @@ GameObject:
   - component: {fileID: 244262759}
   - component: {fileID: 244262758}
   - component: {fileID: 244262757}
+  - component: {fileID: 244262762}
   m_Layer: 6
   m_Name: grab
   m_TagString: Grappleable
@@ -415,6 +416,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &244262762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 244262755}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f5cb7c0c6a4482c9d5e9b9f6d7e41ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grappleRadius: 1.5
+  gizmoColor: {r: 0.2, g: 0.9, b: 1, a: 0.9}
 --- !u!4 &244262756
 Transform:
   m_ObjectHideFlags: 0

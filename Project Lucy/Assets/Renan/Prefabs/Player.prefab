@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 206589674282787104}
   - component: {fileID: 8133799409112364491}
   - component: {fileID: 1962982509723309680}
-  - component: {fileID: 9209072041529124162}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -342,35 +341,6 @@ LineRenderer:
   m_UseWorldSpace: 1
   m_Loop: 0
   m_ApplyActiveColorSpace: 1
---- !u!114 &9209072041529124162
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 471230429505692834}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 491aad669fbce0a42ad999075f59c495, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  springConstant: 150
-  dampingCoefficient: 5
-  ropeRestLength: 10
-  ropeRestLengthFixed: 10
-  minRopeLength: 0
-  maxGrappleDistance: 20
-  grappleableLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  grapplePoint: {x: 0, y: 0}
-  grappledObject: {fileID: 0}
-  playerRigidbody: {fileID: 1802384821168252001}
-  mainCamera: {fileID: 0}
-  ropeRenderer: {fileID: 1962982509723309680}
-  grapplingAudioClip: {fileID: 8300000, guid: 97ce861bcf5229d4f841c01900a82110, type: 3}
-  isGrappling: 0
-  defaultDrag: 0
 --- !u!1 &482227086916469963
 GameObject:
   m_ObjectHideFlags: 0

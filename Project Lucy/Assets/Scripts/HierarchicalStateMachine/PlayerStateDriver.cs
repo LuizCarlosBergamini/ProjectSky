@@ -28,6 +28,19 @@ namespace HierarchicalStateMachine
         [SerializeField] private int upperCornerCorrectionSteps = 4;
         
         [SerializeField] CameraFollowObject CameraFollowObject;
+
+        [Header("Grappling")]
+        [SerializeField] private LineRenderer ropeRenderer;
+        [SerializeField] private LayerMask grappleableLayer = 1 << 6;
+        [SerializeField] private AudioClip grapplingAudioClip;
+        [SerializeField] private float springConstant = 150f;
+        [SerializeField] private float dampingCoefficient = 5f;
+        [SerializeField] private float maxGrappleDistance = 5f;
+        [SerializeField] private float playerGrappleRadius = 5f;
+        [SerializeField] private float minRopeLength;
+        [SerializeField] private float reelSpeed = 10f;
+        [SerializeField] private float swingForce = 100f;
+        [SerializeField] private float releaseJumpForce = 30f;
         
         private string lastPath;
         private readonly RaycastHit2D[] groundHits = new RaycastHit2D[8];
@@ -40,8 +53,8 @@ namespace HierarchicalStateMachine
         {
             rb = GetComponent<Rigidbody2D>();
             if (bodyCollider == null) bodyCollider = GetComponent<Collider2D>();
+            if (ropeRenderer == null) ropeRenderer = GetComponent<LineRenderer>();
             ctx.rb = rb;
-            // _grappleController = GetComponent<GrappleController>();
             ctx.playerActions = new PlayerInputs().InGame;
             ctx.animator = this.animator;
             ctx.Data = this.Data;
@@ -51,6 +64,28 @@ namespace HierarchicalStateMachine
             ctx.ComboGravityMultiplier = ctx.Data.comboGravityMultiplier;
             ctx.MaxComboStep = ctx.Data.maxComboStep;
             this.isFacingRightLocal = ctx.isFacingRight;
+            ctx.playerTransform = transform;
+            ctx.ropeRenderer = ropeRenderer;
+            ctx.grappleableLayer = grappleableLayer;
+            ctx.grapplingAudioClip = grapplingAudioClip;
+            ctx.SpringConstant = springConstant;
+            ctx.DampingCoefficient = dampingCoefficient;
+            ctx.MaxGrappleDistance = maxGrappleDistance;
+            ctx.PlayerGrappleRadius = playerGrappleRadius;
+            ctx.MinRopeLength = minRopeLength;
+            ctx.ReelSpeed = reelSpeed;
+            ctx.SwingForce = swingForce;
+            ctx.ReleaseJumpForce = releaseJumpForce;
+            ctx.DefaultDrag = rb.linearDamping;
+
+            if (ctx.ropeRenderer != null)
+            {
+                ctx.ropeRenderer.positionCount = 2;
+                // The rope is fed world-space points, and the player transform flips 180° on turn,
+                // which would mirror the rope if the renderer used local space.
+                ctx.ropeRenderer.useWorldSpace = true;
+                ctx.ropeRenderer.enabled = false;
+            }
             
             
             // Initialize state machine
@@ -111,6 +146,14 @@ namespace HierarchicalStateMachine
 
         private void ApplyGravity()
         {
+            if (ctx.IsGrappling)
+            {
+                // Plain gravity while swinging: the fall multipliers and the maxFallSpeed clamp
+                // would eat the momentum the player builds at the bottom of the arc.
+                SetGravityScale(ctx.Data.gravityScale);
+                return;
+            }
+
             if (ctx.WantsComboGravity)
             {
                 SetGravityScale(ctx.Data.gravityScale * ctx.ComboGravityMultiplier);
@@ -200,6 +243,7 @@ namespace HierarchicalStateMachine
 
         public void FixedUpdate()
         {
+            sm.FixedTick(Time.fixedDeltaTime);
             RunFunction(1);
             // ApplyGroundEdgeSnap();
             // ApplyUpperCornerCorrection();
@@ -292,7 +336,12 @@ namespace HierarchicalStateMachine
 
         private void RunFunction(float lerpAmount)
         {
-            if (!ctx.canWalk) return;
+            if (!ctx.canWalk)
+            {
+                // Still let the sprite face the input direction (e.g. while swinging).
+                TurnCheck();
+                return;
+            }
 
             //Calculate the direction we want to move in and our desired velocity
             float targetSpeed = ctx.MovementInput.x * ctx.Data.runMaxSpeed;
@@ -382,6 +431,9 @@ namespace HierarchicalStateMachine
         private void OnDrawGizmosSelected()
         {
             if (!drawGizmos) return;
+
+            Gizmos.color = new Color(0.2f, 0.9f, 1f, 0.9f);
+            Gizmos.DrawWireSphere(transform.position, playerGrappleRadius);
             
             if (groundCheck != null)
             {
@@ -448,6 +500,99 @@ namespace HierarchicalStateMachine
         public float AttackCooldownTime;
         public Action StartAttackHitbox;
         public Action StopAttackHitbox;
+        public Transform playerTransform;
+        public LineRenderer ropeRenderer;
+        public LayerMask grappleableLayer;
+        public AudioClip grapplingAudioClip;
+        public float SpringConstant;
+        public float DampingCoefficient;
+        public float MaxGrappleDistance;
+        public float PlayerGrappleRadius;
+        public float MinRopeLength;
+        public float ReelSpeed;
+        public float SwingForce;
+        public float ReleaseJumpForce;
+        public float DefaultDrag;
+        public bool IsGrappling;
+        public Vector2 GrapplePoint;
+        public GrappleableTarget GrappleTarget;
+        public GameObject GrappledObject;
+        public Rigidbody2D ForceTarget;
+        public bool PullTargetIsPlayer;
+        public float RopeRestLength;
+        public float RopeRestLengthFixed;
+
+        public bool TryStartGrapple()
+        {
+            if (!TryFindGrappleTarget(out GrappleableTarget target)) return false;
+
+            GrappleTarget = target;
+            GrappledObject = target.gameObject;
+            GrapplePoint = target.GetAnchorPoint();
+            IsGrappling = true;
+            return true;
+        }
+
+        public void ClearGrapple()
+        {
+            IsGrappling = false;
+            GrappleTarget = null;
+            GrappledObject = null;
+            GrapplePoint = Vector2.zero;
+            ForceTarget = null;
+            PullTargetIsPlayer = false;
+            RopeRestLength = 0f;
+            RopeRestLengthFixed = 0f;
+
+            if (ropeRenderer != null) ropeRenderer.enabled = false;
+        }
+
+        public void UpdateRopeVisuals()
+        {
+            if (ropeRenderer == null || !ropeRenderer.enabled || playerTransform == null) return;
+
+            ropeRenderer.SetPosition(0, playerTransform.position);
+            Vector3 anchorPoint = GrapplePoint;
+
+            if (!PullTargetIsPlayer && GrappledObject != null)
+            {
+                anchorPoint = GrappledObject.transform.position;
+            }
+
+            ropeRenderer.SetPosition(1, anchorPoint);
+        }
+
+        private bool TryFindGrappleTarget(out GrappleableTarget target)
+        {
+            target = null;
+            if (rb == null) return false;
+
+            float playerRadius = Mathf.Min(PlayerGrappleRadius, MaxGrappleDistance);
+            if (playerRadius <= 0f) return false;
+
+            var targets = GrappleableTarget.Active;
+            float bestDistanceSqr = float.PositiveInfinity;
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                GrappleableTarget candidate = targets[i];
+                if (candidate == null) continue;
+                if ((grappleableLayer.value & (1 << candidate.gameObject.layer)) == 0) continue;
+
+                Vector2 anchorPoint = candidate.GetAnchorPoint();
+                float distanceSqr = ((Vector2)rb.position - anchorPoint).sqrMagnitude;
+                float allowedDistance = playerRadius + candidate.grappleRadius;
+                if (distanceSqr > allowedDistance * allowedDistance) continue;
+
+                if (distanceSqr < bestDistanceSqr)
+                {
+                    bestDistanceSqr = distanceSqr;
+                    target = candidate;
+                }
+            }
+
+            return target != null;
+        }
     }
 }
 
