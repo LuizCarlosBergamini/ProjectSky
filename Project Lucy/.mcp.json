@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "unity": {
+      "command": "${USERPROFILE}/.unity/relay/relay_win.exe",
+      "args": [
+        "--mcp",
+        "--project-path",
+        "C:/Users/carlo/Documents/GitHub/ProjectSky/Project Lucy"
+      ]
+    }
+  }
+}

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1144438318006347558}
   - component: {fileID: 7704999965166568101}
   - component: {fileID: 4549458727867766862}
+  - component: {fileID: 180990584574284893}
   m_Layer: 0
   m_Name: Daisy
   m_TagString: Untagged
@@ -28,7 +29,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2807794914072246818}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 88.499, y: -1.959, z: 0}
   m_LocalScale: {x: 5, y: 5, z: 5}
   m_ConstrainProportionsScale: 1
@@ -62,7 +63,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -129,7 +130,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: -0.11506677, y: 0.04091263}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -139,7 +140,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.2, y: 0.35}
+  m_Size: {x: 0.8085753, y: 0.5647913}
   m_EdgeRadius: 0
 --- !u!114 &7704999965166568101
 MonoBehaviour:
@@ -154,7 +155,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _entity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  _dialog: {fileID: 11400000, guid: 19d72b84f66f4a54a82a70be1a462135, type: 2}
+  _dialog: {fileID: 11400000, guid: 8b92816720fc56547b86f3c8f9214587, type: 2}
+  _dialogRules:
+  - taskId: missao-02
+    status: 1
+    requiresItems: 0
+    dialog: {fileID: 11400000, guid: 9d16b0f0a12030f449796f2d8fd19391, type: 2}
+  - taskId: missao-02
+    status: 2
+    requiresItems: 0
+    dialog: {fileID: 11400000, guid: 1de78fe56295bd446a8fb262453e690c, type: 2}
+  - taskId: missao-01
+    status: 1
+    requiresItems: 0
+    dialog: {fileID: 11400000, guid: 94d5eef96165fbe46980fed3027c4b95, type: 2}
+  - taskId: missao-01
+    status: 0
+    requiresItems: 0
+    dialog: {fileID: 11400000, guid: 19d72b84f66f4a54a82a70be1a462135, type: 2}
   _dialogAction: {fileID: 8577910489477151222, guid: cf940d471362bea409b2de06fbc33bb2, type: 3}
   _displayActionContainer: {fileID: 7346756584926443905}
   _displayActionText: {fileID: 4784474269131706598}
@@ -180,6 +198,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &180990584574284893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2807794914072246818}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 054e70a20e2fba54c91b09d897f8bd55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestObjective
+  _objectiveId: daisy
+  _anchor: {fileID: 0}
 --- !u!1 &5622429239212326032
 GameObject:
   m_ObjectHideFlags: 0

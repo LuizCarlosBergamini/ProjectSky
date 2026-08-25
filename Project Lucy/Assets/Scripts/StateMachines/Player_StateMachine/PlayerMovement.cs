@@ -291,7 +291,7 @@ public class PlayerMovement : MonoBehaviour, IDamageable
         //animator.SetTrigger("hitted");
         HasTakenDamage = true;
         health -= amount;
-        if (health < 0 && !isDead)
+        if (health <= 0 && !isDead)
         {
             Die();
             return;
@@ -336,9 +336,25 @@ public class PlayerMovement : MonoBehaviour, IDamageable
 
     public void Die()
     {
+        if (isDead) return;
+        isDead = true;
+        canWalk = false;
+
         // Add death effects here (animations, sounds, etc.)
-        Destroy(gameObject);
-        GameManager.instance.GameOver();
+
+        // Inside a mission level the run manager restarts the level and takes back
+        // everything gathered during this attempt.
+        if (LevelRunManager.instance != null)
+        {
+            LevelRunManager.instance.HandlePlayerDeath();
+            return;
+        }
+
+        // Anywhere else, fall back to the game over screen.
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.GameOver();
+        }
     }
 
     #endregion

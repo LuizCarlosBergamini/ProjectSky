@@ -10,10 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 4139816621239890569}
   - component: {fileID: 1802384821168252001}
-  - component: {fileID: 5169098247201286079}
   - component: {fileID: 206589674282787104}
   - component: {fileID: 8133799409112364491}
   - component: {fileID: 1962982509723309680}
+  - component: {fileID: 6646083394416341506}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -66,43 +66,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &5169098247201286079
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 471230429505692834}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a9332b97d40e00f41bd956274a3c1bc7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Data: {fileID: 11400000, guid: 19b1a47708663c34fa89ccb55ad47c54, type: 2}
-  moveSpeed: 18
-  isDead: 0
-  jump: 55
-  velocityResponsiveness: 20
-  groundCheck: {fileID: 6786972343273155794}
-  groundCheckRadius: 0.2
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 8
-  footstepSoundDelay: 0.3
-  footstepAudioClip: {fileID: 8300000, guid: 47a2b9717225b204ca4f46d6eb75ccdc, type: 3}
-  attackDamage: 10
-  attackPoint: {fileID: 5890962430133262475}
-  attackRange: 1.15
-  attackableLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  timeBetweenAttacks: 0.5
-  knockbackForce: 25
-  verticalKnockback: 0.5
-  health: 40
-  canWalk: 1
-  knockbackLandingGrace: 0.05
-  CameraFollowObject: {fileID: 0}
 --- !u!61 &206589674282787104
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -137,7 +100,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.009821355, y: 0.73591536}
+  m_Offset: {x: 0.05730918, y: 0.73591536}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0}
@@ -147,7 +110,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.77400553, y: 1.4754566}
+  m_Size: {x: 0.68633586, y: 1.4754566}
   m_EdgeRadius: 0
 --- !u!114 &8133799409112364491
 MonoBehaviour:
@@ -239,7 +202,7 @@ LineRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 471230429505692834}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -341,6 +304,50 @@ LineRenderer:
   m_UseWorldSpace: 1
   m_Loop: 0
   m_ApplyActiveColorSpace: 1
+--- !u!114 &6646083394416341506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 471230429505692834}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7a786dd3a09f8646ba03ea84d0e1cd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HierarchicalStateMachine.PlayerStateDriver
+  groundCheck: {fileID: 6786972343273155794}
+  groundCheckRadius: 0.2
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 8
+  drawGizmos: 1
+  animator: {fileID: 6841999922901329972}
+  Data: {fileID: 11400000, guid: 19b1a47708663c34fa89ccb55ad47c54, type: 2}
+  jumpCutVelocityMultiplier: 0.5
+  isFacingRightLocal: 0
+  bodyCollider: {fileID: 0}
+  groundCastDistance: 0.08
+  groundSnapDistance: 0.12
+  groundSkinWidth: 0.03
+  minGroundNormalY: 0.65
+  upperCornerCheckDistance: 0.08
+  upperCornerCorrectionMax: 0.18
+  upperCornerCorrectionSteps: 4
+  CameraFollowObject: {fileID: 0}
+  ropeRenderer: {fileID: 0}
+  grappleableLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  grapplingAudioClip: {fileID: 0}
+  springConstant: 150
+  dampingCoefficient: 5
+  maxGrappleDistance: 5
+  playerGrappleRadius: 5
+  minRopeLength: 0
+  reelSpeed: 10
+  swingForce: 100
+  releaseJumpForce: 30
 --- !u!1 &482227086916469963
 GameObject:
   m_ObjectHideFlags: 0
@@ -369,7 +376,7 @@ Transform:
   m_GameObject: {fileID: 482227086916469963}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.026779493, y: 0.020461878, z: 0}
+  m_LocalPosition: {x: 0.026779493, y: 0.65, z: 0}
   m_LocalScale: {x: 0.97433347, y: 0.97433347, z: 0.97433347}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -424,7 +431,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -9184952582076397725, guid: 308025f50dcc58f4987668e661155ebf, type: 3}
+  m_Sprite: {fileID: 4723107735738678597, guid: 0bd97e23f8b532a4f8969605a3b00a4e, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -468,7 +475,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70894b972e7c128429f2accd63293749, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  playerScript: {fileID: 0}
+  playerStateDriver: {fileID: 6646083394416341506}
 --- !u!1 &767762990132541168
 GameObject:
   m_ObjectHideFlags: 0
@@ -509,8 +516,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6786972343273155794}
-  m_Layer: 0
-  m_Name: GameObject
+  m_Layer: 3
+  m_Name: GroundCheck
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

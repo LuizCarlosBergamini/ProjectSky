@@ -24,13 +24,17 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
-        gameOverUI.SetActive(true);
+        if (gameOverUI != null) gameOverUI.SetActive(true);
     }
 
     public void RestartGame()
     {
-        gameOverUI.SetActive(false);
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); 
+        if (gameOverUI != null) gameOverUI.SetActive(false);
+
+        // Restarting always means losing whatever was gathered in the current attempt.
+        if (InventoryManager.instance != null) InventoryManager.instance.RollbackRun();
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void QuitGame()
