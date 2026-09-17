@@ -77,7 +77,7 @@ MonoBehaviour:
   - dialogId: alma-07
     dialogContent: Boa Sorte... Te encontro do outro lado.
     nextDialog: 
-    triggerEvent: 
+    triggerEvent: tutorial-iniciado
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}

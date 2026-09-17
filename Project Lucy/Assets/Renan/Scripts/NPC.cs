@@ -44,6 +44,9 @@ public class NPC : MonoBehaviour
 
     private bool _inCollider;
 
+    /// <summary>Raised when the player starts this NPC's dialog, so companions know which dialog is theirs.</summary>
+    public event Action<Dialog_SO> DialogStarted;
+
     public void SetDialog(Dialog_SO dialog)
     {
         _dialog = dialog;
@@ -115,9 +118,11 @@ public class NPC : MonoBehaviour
 
     private void Update()
     {
-        if (_inCollider && _dialog != null && _dialogAction != null && _dialogAction.action.WasPressedThisFrame())
+        if (_inCollider && _dialog != null && _dialogAction != null && _dialogAction.action.WasPressedThisFrame()
+            && DialogManager.instance != null)
         {
-            DialogManager.instance?.Init(_dialog);
+            DialogManager.instance.Init(_dialog);
+            DialogStarted?.Invoke(_dialog);
         }
 
         if (_player == null) _player = GameObject.FindWithTag("Player");

@@ -34,6 +34,8 @@ namespace HierarchicalStateMachine
         public float AttackHitTime;
         public float AttackCooldownDuration;
         public float AttackCooldown;
+        public float RangedAttackDuration;
+        public float RangedAttackFireTime;
         public float DeathDelay;
         public bool DeathRequested;
         public bool IsDead;
@@ -41,6 +43,7 @@ namespace HierarchicalStateMachine
         // --- Driver callbacks (states never touch the scene directly) ---
         public Action<string> PlayAnimation;
         public Action DealAttackDamage;
+        public Action SpawnProjectile;
         public Action OnDeathFinished;
 
         public bool HasTarget => Target != null;

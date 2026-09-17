@@ -15,4 +15,9 @@ public class LinkToFunctions : MonoBehaviour
         playerStateDriver.CloseComboWindow();
         playerStateDriver.FinishAttack();
     }
+
+    void DealDamage()
+    {
+        playerStateDriver.DealAttackDamage();
+    }
 }

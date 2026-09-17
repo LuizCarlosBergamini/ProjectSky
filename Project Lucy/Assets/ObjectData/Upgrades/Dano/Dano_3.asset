@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f90a38bdb09fe344bf3a875ab931a70, type: 3}
+  m_Name: Dano_3
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeNode_SO
+  nodeId: dano-3
+  nodeName: "F\xFAria C\xF3smica"
+  nodeDescription: "O \xE1pice do combate: todos os ataques atingem com for\xE7a
+    devastadora."
+  nodeIcon: {fileID: 21300000, guid: d93b95474f971c64591bc9510e031e3f, type: 3}
+  stat: 0
+  bonusValue: 25
+  cost:
+  - item: {fileID: 11400000, guid: 9b9390c52193a2d4eb20e28941c41448, type: 2}
+    quantity: 1
+  prerequisites:
+  - {fileID: 11400000, guid: fdbef7f0c25c19149b4e5ea493cedfe2, type: 2}
+  requireAllPrerequisites: 1

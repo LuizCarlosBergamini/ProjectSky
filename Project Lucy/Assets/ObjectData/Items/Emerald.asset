@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item_SO
   itemId: emerald
   itemName: Emerald
-  itemSprite: {fileID: 0}
+  itemSprite: {fileID: 3430798833872577300, guid: 7624e01922711d344a2503d5d77e2bff, type: 3}
   itemAnimationClip: {fileID: 7400000, guid: 2bbdc06afbc90854ea609dbf6f12fe90, type: 2}

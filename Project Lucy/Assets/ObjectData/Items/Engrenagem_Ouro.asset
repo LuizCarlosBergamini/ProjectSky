@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item_SO
   itemId: engrenagem_ouro
   itemName: Engrenagem de Ouro
-  itemSprite: {fileID: 0}
+  itemSprite: {fileID: -4307931353127801743, guid: 591a443b54642d5449ce202a6cf74f18, type: 3}
   itemAnimationClip: {fileID: 7400000, guid: 14a2959a3ea868c48871d6cfd7fa159d, type: 2}

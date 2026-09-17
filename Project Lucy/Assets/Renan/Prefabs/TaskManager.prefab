@@ -371,6 +371,17 @@ MonoBehaviour:
     objectiveId: daisy
     onStartEventTrigger: missao-02-iniciada
     onFinishEventTrigger: missao-02-finalizada
+  - taskId: missao-boss
+    taskTitle: Derrotar o Guardiao
+    taskDescription: Derrote o guardiao da arena do Level 1
+    requiredItems: []
+    consumeItems: []
+    rewardItems:
+    - item: {fileID: 11400000, guid: b14455b623474ce4b8bb1bd5e8e9b7b1, type: 2}
+      quantity: 1
+    objectiveId: boss-level1
+    onStartEventTrigger: 
+    onFinishEventTrigger: 
   startedTasks: []
   finishedTasks: []
   taskItemPrefab: {fileID: 6163826808770669789, guid: 13e00af672ffee440aad4f77c9f49192, type: 3}

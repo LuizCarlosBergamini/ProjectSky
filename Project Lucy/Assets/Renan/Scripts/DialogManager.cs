@@ -13,6 +13,9 @@ public class DialogManager : MonoBehaviour
 {
     public static DialogManager instance;
 
+    /// <summary>Raised when a dialog closes, with the dialog that just ended.</summary>
+    public static event Action<Dialog_SO> OnDialogFinished;
+
     private readonly float _DIALOG_ANIMATION_DURATION_IN_SECONDS = 0.25f;
     private readonly float _ENTITY_ANIMATION_DURATION_IN_SECONDS = 0.25f;
     private readonly float[] _DIALOG_AUDIO_PITCH_RANGE = { 0.8f, 1.2f };
@@ -116,11 +119,13 @@ public class DialogManager : MonoBehaviour
     public void End()
     {
         Debug.Log("Dialogo finalizado");
+        Dialog_SO finishedDialog = _dialogData;
         _actualDialog = null;
         _dialogData = null;
 
         _onFinishDialog?.Invoke();
         StartCoroutine(_dialogContainer.Move(_hiddenContainerPosition, _DIALOG_ANIMATION_DURATION_IN_SECONDS));
+        OnDialogFinished?.Invoke(finishedDialog);
     }
 
     #endregion

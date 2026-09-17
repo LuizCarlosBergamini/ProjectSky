@@ -335,6 +335,14 @@ MonoBehaviour:
   upperCornerCorrectionMax: 0.18
   upperCornerCorrectionSteps: 4
   CameraFollowObject: {fileID: 0}
+  attackTransform: {fileID: 5890962430133262475}
+  attackRadius: 1.2
+  attackableLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  attackDamage: 10
+  attackKnockbackForce: 12
+  attackVerticalKnockback: 0.5
   ropeRenderer: {fileID: 0}
   grappleableLayer:
     serializedVersion: 2

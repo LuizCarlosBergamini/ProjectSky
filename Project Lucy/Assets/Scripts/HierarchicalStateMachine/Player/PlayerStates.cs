@@ -24,7 +24,7 @@ namespace HierarchicalStateMachine
 
         protected override void OnUpdate(float deltaTime)
         {
-            Debug.Log("shoudExit" + shouldExit);
+                Debug.Log("shoudExit" + shouldExit);
             if (!ctx.AttackFinished) return;
             
             // int maxComboStep = Mathf.Max(1, ctx.MaxComboStep);
@@ -86,7 +86,7 @@ namespace HierarchicalStateMachine
 
         protected override void OnEnter()
         {
-            ctx.animator.Play("Player_Waking");
+            ctx.PlayAnimation?.Invoke("Player_Waking");
         }
 
         protected override State GetTransition()
@@ -107,7 +107,7 @@ namespace HierarchicalStateMachine
 
         protected override void OnEnter()
         {
-            ctx.animator.Play("Player_Idle");
+            ctx.PlayAnimation?.Invoke("Player_Idle");
         }
 
         protected override State GetTransition()
@@ -194,11 +194,11 @@ namespace HierarchicalStateMachine
             // frame we jump the velocity is still ~0. Trust the IsJumping flag first.
             if (ctx.IsJumping || ctx.rb.linearVelocityY > 0.01f)
             {
-                ctx.animator.Play("Player_Jump");
+                ctx.PlayAnimation?.Invoke("Player_Jump");
             }
             else
             {
-                ctx.animator.Play("Player_Fall");
+                ctx.PlayAnimation?.Invoke("Player_Fall");
             }
         }
 
@@ -229,7 +229,7 @@ namespace HierarchicalStateMachine
             {
                 ctx.isJumpFalling = true;
                 ctx.isJumpCut = false;
-                ctx.animator.Play("Player_Fall");
+                ctx.PlayAnimation?.Invoke("Player_Fall");
             }
         }
 

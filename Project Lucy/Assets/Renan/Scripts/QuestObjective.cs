@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /// <summary>
 /// Marks a place in the world a quest can point to (a level entrance, an NPC, a door).
@@ -14,6 +17,11 @@ public class QuestObjective : MonoBehaviour
     [SerializeField] private Transform _anchor;
 
     private static readonly Dictionary<string, QuestObjective> _registry = new();
+
+    public bool shouldEndMission = false;
+
+    [Tooltip("Evento chamado no EventManager quando o Player entra no trigger.")]
+    public string endMissionEventName;
 
     public string ObjectiveId => _objectiveId;
     public Transform Anchor => _anchor != null ? _anchor : transform;
@@ -31,6 +39,14 @@ public class QuestObjective : MonoBehaviour
         {
             _registry.Remove(_objectiveId);
         }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (!shouldEndMission || string.IsNullOrWhiteSpace(endMissionEventName)) return;
+        if (!collision.CompareTag("Player")) return;
+
+        EventManager.instance?.Call(endMissionEventName);
     }
 
     public static QuestObjective Get(string objectiveId)

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f90a38bdb09fe344bf3a875ab931a70, type: 3}
+  m_Name: Velocidade_3
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeNode_SO
+  nodeId: velocidade-3
+  nodeName: Corrida Cometa
+  nodeDescription: "Lucy corre como um cometa cruzando o c\xE9u."
+  nodeIcon: {fileID: 21300000, guid: d9e4aa0f76bfe7c45afadb9afa28848d, type: 3}
+  stat: 2
+  bonusValue: 1.25
+  cost:
+  - item: {fileID: 11400000, guid: 9b9390c52193a2d4eb20e28941c41448, type: 2}
+    quantity: 1
+  prerequisites:
+  - {fileID: 11400000, guid: b42ef8ed2dcb2be4da4592e4cf5f196a, type: 2}
+  requireAllPrerequisites: 1

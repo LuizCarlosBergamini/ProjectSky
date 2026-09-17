@@ -5,7 +5,7 @@ using UnityEngine.Serialization;
 
 namespace HierarchicalStateMachine
 {
-    public class PlayerStateDriver : MonoBehaviour
+    public class PlayerStateDriver : MonoBehaviour, IDamageable
     {
         PlayerContext ctx = new PlayerContext();
         public Transform groundCheck;
@@ -29,6 +29,19 @@ namespace HierarchicalStateMachine
         
         [SerializeField] CameraFollowObject CameraFollowObject;
 
+        [Header("Health")]
+        [SerializeField] private float maxHealth = 100f;
+        [SerializeField] private float invulnerabilityTime = 0.4f;
+        [SerializeField] private float hitAnimationTime = 0.25f;
+
+        [Header("Attack")]
+        [SerializeField] private Transform attackTransform;
+        [SerializeField] private float attackRadius = 1f;
+        [SerializeField] private LayerMask attackableLayer;
+        [SerializeField] private float attackDamage = 10f;
+        [SerializeField] private float attackKnockbackForce = 10f;
+        [SerializeField] private float attackVerticalKnockback = 0.5f;
+
         [Header("Grappling")]
         [SerializeField] private LineRenderer ropeRenderer;
         [SerializeField] private LayerMask grappleableLayer = 1 << 6;
@@ -43,6 +56,21 @@ namespace HierarchicalStateMachine
         [SerializeField] private float releaseJumpForce = 30f;
         
         private string lastPath;
+        private float invulnerabilityTimer;
+        private float hitAnimationTimer;
+
+        // Cached from UpgradeManager. The serialized fields and PlayerData stay the untouched base values:
+        // PlayerData is a shared asset, writing a bonus into it would leak into the project in the editor.
+        private float damageBonus;
+        private float maxHealthBonus;
+        private float moveSpeedBonus;
+
+        public float AttackDamage => attackDamage + damageBonus;
+        public float MaxHealth => maxHealth + maxHealthBonus;
+        public float RunMaxSpeed => ctx.Data.runMaxSpeed + moveSpeedBonus;
+        public float CurrentHealth => ctx.health;
+
+        public bool HasTakenDamage { get; set; }
         private readonly RaycastHit2D[] groundHits = new RaycastHit2D[8];
         
         Rigidbody2D rb;
@@ -60,6 +88,7 @@ namespace HierarchicalStateMachine
             ctx.Data = this.Data;
             ctx.Jump = Jump;
             ctx.JumpCut = JumpCut;
+            ctx.PlayAnimation = PlayStateAnimation;
             ctx.AttackInputBufferTime = ctx.Data.attackInputBufferTime;
             ctx.ComboGravityMultiplier = ctx.Data.comboGravityMultiplier;
             ctx.MaxComboStep = ctx.Data.maxComboStep;
@@ -77,6 +106,7 @@ namespace HierarchicalStateMachine
             ctx.SwingForce = swingForce;
             ctx.ReleaseJumpForce = releaseJumpForce;
             ctx.DefaultDrag = rb.linearDamping;
+            ctx.health = maxHealth;
 
             if (ctx.ropeRenderer != null)
             {
@@ -98,19 +128,66 @@ namespace HierarchicalStateMachine
         {
             // ctx.playerActions.Get().actionTriggered += OnAnyActionTriggered;
             ctx.playerActions.Enable();
+            UpgradeManager.OnUpgradesChanged += RefreshUpgradeBonuses;
+            RefreshUpgradeBonuses();
         }
 
         private void OnDisable()
         {
             // ctx.playerActions.Get().actionTriggered -= OnAnyActionTriggered;
             ctx.playerActions.Disable();
+            UpgradeManager.OnUpgradesChanged -= RefreshUpgradeBonuses;
+        }
+
+        private void Start()
+        {
+            // UpgradeManager can wake after this player in the same scene, so read the bonuses again
+            // once every Awake has run.
+            RefreshUpgradeBonuses();
+        }
+
+        /// <summary>
+        /// Blocks or restores gameplay input, e.g. while a menu is open. Time.timeScale = 0 alone is not
+        /// enough: Update still runs and would buffer a jump or an attack for the moment the menu closes.
+        /// </summary>
+        public void SetInputEnabled(bool inputEnabled)
+        {
+            if (inputEnabled)
+            {
+                if (isActiveAndEnabled) ctx.playerActions.Enable();
+                return;
+            }
+
+            ctx.playerActions.Disable();
+            ctx.MovementInput = Vector2.zero;
+            ctx.LastPressedJumpTime = 0f;
+            ctx.LastPressedAttackTime = 0f;
+        }
+
+        private void RefreshUpgradeBonuses()
+        {
+            float previousMaxHealth = MaxHealth;
+
+            UpgradeManager upgrades = UpgradeManager.instance;
+            damageBonus = upgrades != null ? upgrades.GetBonus(UpgradeStat.Damage) : 0f;
+            maxHealthBonus = upgrades != null ? upgrades.GetBonus(UpgradeStat.MaxHealth) : 0f;
+            moveSpeedBonus = upgrades != null ? upgrades.GetBonus(UpgradeStat.MoveSpeed) : 0f;
+
+            if (ctx.isDead) return;
+
+            // Extra max health arrives filled, so buying it is felt immediately. A lower max (reset)
+            // only clamps, it never heals.
+            float gained = MaxHealth - previousMaxHealth;
+            if (gained > 0f) ctx.health += gained;
+            ctx.health = Mathf.Min(ctx.health, MaxHealth);
         }
 
         private void Update()
         {
             ctx.MovementInput = ctx.playerActions.Movement.ReadValue<Vector2>();
             ctx.IsGrounded = CheckGrounded();
-            
+            UpdateDamageTimers(Time.deltaTime);
+
             if (ctx.playerActions.Jump.WasPressedThisFrame())
             {
                 ctx.LastPressedJumpTime = ctx.Data.jumpInputBufferTime;
@@ -204,7 +281,7 @@ namespace HierarchicalStateMachine
             if (ctx.rb.linearVelocityY < 0)
                 force -= ctx.rb.linearVelocityY;
         
-            ctx.animator.Play("Player_Jump");
+            PlayStateAnimation("Player_Jump");
             ctx.rb.AddForce(Vector2.up * force, ForceMode2D.Impulse);
         }
 
@@ -239,6 +316,139 @@ namespace HierarchicalStateMachine
         public void FinishAttack()
         {
             ctx.AttackFinished = true;
+        }
+
+        #region IDamageable
+
+        public void TakeDamage(float amount, Vector2 knockback)
+        {
+            if (HasTakenDamage || ctx.isDead || ctx.health <= 0f) return;
+
+            HasTakenDamage = true;
+            invulnerabilityTimer = invulnerabilityTime;
+            ctx.health -= amount;
+
+            Debug.Log("health " + ctx.health);
+
+            rb.AddForce(knockback, ForceMode2D.Impulse);
+            CancelAttack();
+            PlayHitAnimation();
+
+            if (ctx.health > 0f) return;
+            Die();
+        }
+
+        // The hit clip replaces the attack clip, so the attack animation never reaches its
+        // StopAttacking event and FinishAttack is never called. Attack.OnUpdate would then wait
+        // on AttackFinished forever and the state machine would be stuck in Attack. Ending the
+        // attack here is what makes a hit interrupt it cleanly.
+        private void CancelAttack()
+        {
+            if (!ctx.IsAttacking) return;
+
+            ctx.ComboQueued = false;       // otherwise Attack starts the next combo step instead
+            ctx.CanReceiveComboInput = false;
+            ctx.AttackFinished = true;     // lets Attack.OnUpdate reach shouldExit = true
+        }
+
+        public bool IsAlive() => ctx.health > 0f;
+
+        public void Heal(int amount)
+        {
+            ctx.health = Mathf.Min(ctx.health + amount, MaxHealth);
+        }
+
+        private void Die()
+        {
+            hitAnimationTimer = 0f;
+            ctx.isDead = true;
+            ctx.canWalk = false;
+
+            if (GameManager.instance != null) GameManager.instance.GameOver();
+        }
+
+        // Movement states route their clip through here. Knockback throws the player off the
+        // ground, so Grounded -> Airborne fires the frame after a hit and Airborne.OnEnter would
+        // otherwise replace Player_hitted with Player_Jump after a single frame.
+        // The attack clip deliberately does NOT go through this: its animation events drive
+        // FinishAttack, so suppressing it would leave the Attack state stuck forever.
+        private void PlayStateAnimation(string stateName)
+        {
+            if (animator == null || string.IsNullOrEmpty(stateName)) return;
+            if (hitAnimationTimer > 0f) return;
+
+            int hash = Animator.StringToHash(stateName);
+            if (!animator.HasState(0, hash)) return;
+            if (animator.GetCurrentAnimatorStateInfo(0).shortNameHash == hash) return;
+
+            animator.Play(hash, 0);
+        }
+
+        private void PlayHitAnimation()
+        {
+            if (ctx.animator == null) return;
+
+            int hash = Animator.StringToHash("Player_hitted");
+            if (!ctx.animator.HasState(0, hash)) return;
+
+            hitAnimationTimer = hitAnimationTime;
+            // Restarted from frame 0 so consecutive hits re-trigger the reaction.
+            ctx.animator.Play(hash, 0, 0f);
+        }
+
+        private void UpdateDamageTimers(float deltaTime)
+        {
+            if (invulnerabilityTimer > 0f)
+            {
+                invulnerabilityTimer -= deltaTime;
+                if (invulnerabilityTimer <= 0f) HasTakenDamage = false;
+            }
+
+            if (hitAnimationTimer <= 0f) return;
+
+            hitAnimationTimer -= deltaTime;
+            if (hitAnimationTimer <= 0f) RestoreStateAnimation();
+        }
+
+        // Player_hitted has no exit transition in the controller, and the movement states only
+        // set their clip in OnEnter, so without this the player would stay stuck in the hit pose
+        // until they happened to change state.
+        private void RestoreStateAnimation()
+        {
+            if (ctx.animator == null || ctx.isDead || ctx.IsAttacking) return;
+        
+            if (!ctx.IsGrounded)
+            {
+                ctx.animator.Play(rb.linearVelocityY > 0f ? "Player_Jump" : "Player_Fall");
+                return;
+            }
+        
+            ctx.animator.Play(Mathf.Abs(ctx.MovementInput.x) > 0.01f ? "Player_Waking" : "Player_Idle");
+        }
+
+        #endregion
+
+        // Driven by the DealDamage animation event on each Player_Attack clip, so the hit lands
+        // on the frame the swing connects rather than when the state starts.
+        public void DealAttackDamage()
+        {
+            Vector2 center = attackTransform != null ? (Vector2)attackTransform.position : rb.position;
+            Collider2D[] hits = Physics2D.OverlapCircleAll(center, attackRadius, attackableLayer);
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                IDamageable damageable = hits[i].GetComponentInParent<IDamageable>();
+                if (damageable == null) continue;
+                // HasTakenDamage is the victim's own invulnerability window, and it also stops a
+                // single swing hitting the same enemy once per overlapping collider.
+                if (!damageable.IsAlive() || damageable.HasTakenDamage) continue;
+
+                Vector2 direction = new Vector2(
+                    ctx.isFacingRight ? 1f : -1f,
+                    Mathf.Abs(attackVerticalKnockback)).normalized;
+
+                damageable.TakeDamage(AttackDamage, direction * attackKnockbackForce);
+            }
         }
 
         public void FixedUpdate()
@@ -344,7 +554,7 @@ namespace HierarchicalStateMachine
             }
 
             //Calculate the direction we want to move in and our desired velocity
-            float targetSpeed = ctx.MovementInput.x * ctx.Data.runMaxSpeed;
+            float targetSpeed = ctx.MovementInput.x * RunMaxSpeed;
             //We can reduce control using Lerp() this smooths changes to direction and speed
             targetSpeed = Mathf.Lerp(rb.linearVelocityX, targetSpeed, lerpAmount);
 
@@ -434,6 +644,12 @@ namespace HierarchicalStateMachine
 
             Gizmos.color = new Color(0.2f, 0.9f, 1f, 0.9f);
             Gizmos.DrawWireSphere(transform.position, playerGrappleRadius);
+
+            if (attackTransform != null)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(attackTransform.position, attackRadius);
+            }
             
             if (groundCheck != null)
             {
@@ -487,6 +703,7 @@ namespace HierarchicalStateMachine
         public bool isFacingRight = true;
         public Action Jump;
         public Action JumpCut;
+        public Action<string> PlayAnimation;
         public bool IsAttacking = false;
         public bool WantsComboGravity = false;
         public int ComboStep;

@@ -13,11 +13,14 @@ public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager instance;
 
-    private readonly Dictionary<string, InventorySlot> _inventory = new();
+    /// <summary>Raised after any item is added, removed or rolled back.</summary>
+    public static event Action OnInventoryChanged;
+
+    public readonly Dictionary<string, InventorySlot> _inventory = new();
 
     // Items picked up since the current level run started. Rolled back when the player dies,
     // discarded when the run is finished successfully.
-    private readonly Dictionary<string, int> _runPickups = new();
+    public readonly Dictionary<string, int> _runPickups = new();
 
     private void Awake()
     {
@@ -58,6 +61,8 @@ public class InventoryManager : MonoBehaviour
         {
             TaskManager.instance.ValidateIfTaskCompleted();
         }
+
+        RaiseChanged();
     }
 
     public void AddItem(Item_SO item, int quantity)
@@ -92,6 +97,8 @@ public class InventoryManager : MonoBehaviour
             if (left > 0) _runPickups[itemId] = left;
             else _runPickups.Remove(itemId);
         }
+
+        RaiseChanged();
     }
 
     public void RemoveItem(string itemId)
@@ -147,6 +154,8 @@ public class InventoryManager : MonoBehaviour
         {
             TaskManager.instance.RefreshTasksProgress();
         }
+
+        RaiseChanged();
     }
 
     /// <summary>Keeps everything collected during the current attempt.</summary>
@@ -156,4 +165,81 @@ public class InventoryManager : MonoBehaviour
     }
 
     #endregion
+
+    private void RaiseChanged()
+    {
+#if UNITY_EDITOR
+        RefreshDebugView();
+#endif
+        OnInventoryChanged?.Invoke();
+    }
+
+#if UNITY_EDITOR
+
+    #region Debug
+
+    // Unity cannot serialize a Dictionary, so _inventory never shows in the Inspector no matter its access
+    // modifier. These two lists are the editor-only window into it: one to hand items out, one to look.
+
+    [Header("Debug (somente no Editor)")]
+    [Tooltip("Itens dados/removidos pelos menus de contexto 'Debug/...' durante o Play Mode.")]
+    [SerializeField] private List<InventorySlot> _debugItems = new();
+
+    [Tooltip("Somente leitura: copia do inventario atual. Editar aqui nao muda nada.")]
+    [SerializeField] private List<InventorySlot> _debugInventoryView = new();
+
+    [ContextMenu("Debug/Dar itens da lista")]
+    private void DebugGrantItems()
+    {
+        if (!EnsurePlaying()) return;
+
+        foreach (InventorySlot slot in _debugItems)
+        {
+            if (slot == null || slot.item == null) continue;
+            // Not a run pickup: dying must not take debug items back.
+            AddItem(slot.item, Math.Max(1, slot.quantity), false);
+        }
+    }
+
+    [ContextMenu("Debug/Remover itens da lista")]
+    private void DebugRemoveItems()
+    {
+        if (!EnsurePlaying()) return;
+
+        foreach (InventorySlot slot in _debugItems)
+        {
+            if (slot == null || slot.item == null) continue;
+            RemoveItem(slot.item.itemId, Math.Max(1, slot.quantity));
+        }
+    }
+
+    [ContextMenu("Debug/Limpar inventario")]
+    private void DebugClearInventory()
+    {
+        if (!EnsurePlaying()) return;
+
+        _inventory.Clear();
+        _runPickups.Clear();
+        RaiseChanged();
+    }
+
+    private bool EnsurePlaying()
+    {
+        if (Application.isPlaying) return true;
+        Debug.LogWarning("Os menus de Debug do inventario so funcionam com o jogo rodando.", this);
+        return false;
+    }
+
+    private void RefreshDebugView()
+    {
+        _debugInventoryView.Clear();
+        foreach (InventorySlot slot in _inventory.Values)
+        {
+            _debugInventoryView.Add(new InventorySlot { item = slot.item, quantity = slot.quantity });
+        }
+    }
+
+    #endregion
+
+#endif
 }
