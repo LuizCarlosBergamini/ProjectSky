@@ -33,7 +33,8 @@ namespace HierarchicalStateMachine
         }
     }
 
-    // Waits for the player to walk into the room.
+    // Waits for the player to walk into the room. A boss also waits for its arena gate to close
+    // (ctx.Activated), so it never starts the fight while the player can still walk away.
     public class EnemyIdle : State
     {
         private readonly EnemyContext ctx;
@@ -50,13 +51,17 @@ namespace HierarchicalStateMachine
         }
 
         protected override State GetTransition() =>
-            ctx.TargetInDetectionRange ? ((EnemyRoot)Parent).Chase : null;
+            ctx.Activated && ctx.TargetInDetectionRange ? ((EnemyRoot)Parent).Chase : null;
     }
 
-    // Walks toward the player and holds at StopDistance.
+    // Between attacks: asks EnemyAttack for a valid attack every frame and, while there is none,
+    // repositions into the range band of the attack that comes off cooldown first - approaching
+    // (walking, or running when far), backing off, or holding still.
     public class EnemyChase : State
     {
         private readonly EnemyContext ctx;
+        private float retreatTime;
+        private string walkAnimation;
 
         public EnemyChase(StateMachine sm, State parent, EnemyContext ctx) : base(sm, parent)
         {
@@ -65,151 +70,147 @@ namespace HierarchicalStateMachine
 
         protected override void OnEnter()
         {
-            ctx.PlayAnimation?.Invoke("Enemy_Running");
+            retreatTime = 0f;
+            // Controllers made before Enemy_Walk existed only have the running clip.
+            walkAnimation = ctx.HasAnimation != null && ctx.HasAnimation("Enemy_Walk") ? "Enemy_Walk" : "Enemy_Running";
         }
 
         protected override void OnUpdate(float deltaTime)
         {
             if (!ctx.HasTarget)
             {
-                ctx.MoveDirection = 0f;
+                Hold();
                 return;
             }
 
-            // Stopping short of the player keeps the enemy from shoving them around while it
-            // waits for the attack cooldown.
+            EnemyAttackSet set = ctx.AttackSet;
             float dx = ctx.Target.position.x - ctx.self.position.x;
-            ctx.MoveDirection = Mathf.Abs(dx) > ctx.StopDistance ? Mathf.Sign(dx) : 0f;
+            float toward = Mathf.Sign(dx);
+            float distance = Mathf.Abs(dx);
 
-            ctx.PlayAnimation?.Invoke(
-                Mathf.Approximately(ctx.MoveDirection, 0f) ? "Enemy_Idle" : "Enemy_Running");
+            // Never closer than StopDistance, so the enemy does not shove the player around while it
+            // waits for a cooldown.
+            float desired = ((EnemyRoot)Parent).Attack.PreferredDistance(distance);
+            float tolerance = set != null ? set.holdTolerance : 0.1f;
+
+            if (distance > desired + tolerance)
+            {
+                bool run = set == null || distance > set.runDistance;
+                float speed = run && set != null ? set.runSpeedMultiplier : 1f;
+                Move(toward, speed, run ? "Enemy_Running" : walkAnimation);
+                ctx.FaceMoveDirection = false;
+                return;
+            }
+
+            bool canRetreat = set != null && set.allowRetreat && retreatTime < set.maxRetreatTime
+                              && (ctx.IsPathBlocked == null || !ctx.IsPathBlocked(-toward));
+            if (distance < desired - tolerance && canRetreat)
+            {
+                retreatTime += deltaTime;
+                ctx.FaceMoveDirection = true; // slithers away head first instead of moonwalking
+                Move(-toward, set.retreatSpeedMultiplier, walkAnimation);
+                return;
+            }
+
+            Hold();
+        }
+
+        private void Move(float direction, float speedMultiplier, string animation)
+        {
+            ctx.MoveDirection = direction;
+            ctx.MoveSpeedMultiplier = speedMultiplier;
+            ctx.PlayAnimation?.Invoke(animation);
+        }
+
+        private void Hold()
+        {
+            ctx.MoveDirection = 0f;
+            ctx.MoveSpeedMultiplier = 1f;
+            ctx.FaceMoveDirection = false;
+            ctx.PlayAnimation?.Invoke("Enemy_Idle");
         }
 
         protected override State GetTransition()
         {
             EnemyRoot root = (EnemyRoot)Parent;
             if (!ctx.TargetInDetectionRange) return root.Idle;
-            if (ctx.TargetInAttackRange && ctx.AttackCooldown <= 0f) return root.Attack;
+            if (ctx.AttackCooldown <= 0f && root.Attack.TrySelect()) return root.Attack;
             return null;
-        }
-
-        protected override void OnExit() => ctx.MoveDirection = 0f;
-    }
-
-    // Picks which kind of attack to run and owns everything the two share: standing still,
-    // committing the facing, and starting the cooldown on the way out. OnExit runs even when a
-    // child is interrupted, so neither child has to remember to undo those.
-    public class EnemyAttack : State
-    {
-        public readonly EnemyCloseAttack CloseAttack;
-        public readonly EnemyRangedAttack RangedAttack;
-        private readonly EnemyContext ctx;
-
-        // TESTING ONLY: alternates so both branches are easy to observe.
-        private bool useRangedNext;
-
-        public EnemyAttack(StateMachine sm, State parent, EnemyContext ctx) : base(sm, parent)
-        {
-            this.ctx = ctx;
-            CloseAttack = new EnemyCloseAttack(sm, this, ctx);
-            RangedAttack = new EnemyRangedAttack(sm, this, ctx);
-        }
-
-        protected override void OnEnter()
-        {
-            ctx.MoveDirection = 0f;
-            ctx.CanTurn = false; // the attack commits to the direction it started in
-        }
-
-        // Called once per entry by State.Enter, which is what makes the alternation advance
-        // exactly one step per attack.
-        protected override State GetInitialState()
-        {
-            // --- TESTING: strict alternation, close then ranged then close... ---
-            State chosen = useRangedNext ? (State)RangedAttack : CloseAttack;
-            useRangedNext = !useRangedNext;
-            return chosen;
-
-            // --- FINAL VERSION: pick at random. Swap this in and delete the block above. ---
-            // return Random.value < 0.5f ? (State)RangedAttack : CloseAttack;
         }
 
         protected override void OnExit()
         {
+            ctx.MoveDirection = 0f;
+            ctx.MoveSpeedMultiplier = 1f;
+            ctx.FaceMoveDirection = false;
+        }
+    }
+
+    // The AttackState: one child per attack in ctx.AttackSet, chosen by EnemyAttackSelector. It owns
+    // everything the attacks share - standing still, facing the player and locking that facing, and
+    // starting the pause before the next attack. OnExit runs even when a child is interrupted (death),
+    // so no child has to remember to undo those.
+    public class EnemyAttack : State
+    {
+        public readonly EnemyAttackMove[] Moves;
+        private readonly EnemyAttackSelector selector;
+        private readonly EnemyContext ctx;
+        private EnemyAttackMove chosen;
+
+        public EnemyAttack(StateMachine sm, State parent, EnemyContext ctx) : base(sm, parent)
+        {
+            this.ctx = ctx;
+
+            var moves = new System.Collections.Generic.List<EnemyAttackMove>();
+            if (ctx.AttackSet != null)
+            {
+                foreach (EnemyAttackDefinition definition in ctx.AttackSet.attacks)
+                {
+                    if (definition != null) moves.Add(definition.CreateState(sm, this, ctx));
+                }
+            }
+
+            Moves = moves.ToArray();
+            // The driver always provides a set (a runtime legacy one for enemies without an asset).
+            selector = new EnemyAttackSelector(ctx, ctx.AttackSet);
+        }
+
+        /// <summary>Scores the attacks and remembers the winner for the next entry. False = none is valid.</summary>
+        public bool TrySelect()
+        {
+            chosen = selector.Pick(Moves);
+            return chosen != null;
+        }
+
+        /// <summary>Where to stand while no attack is valid; see EnemyAttackSelector.PreferredDistance.</summary>
+        public float PreferredDistance(float currentDistance) => selector.PreferredDistance(Moves, currentDistance);
+
+        protected override void OnEnter()
+        {
+            ctx.MoveDirection = 0f;
+            ctx.FaceMoveDirection = false;
+            ctx.FaceTarget?.Invoke();  // the player may have jumped over during the last recovery
+            ctx.CanTurn = false;       // the attack commits to the direction it started in
+            ctx.InAttack = true;
+        }
+
+        // Called once per entry by State.Enter: runs the attack TrySelect picked.
+        protected override State GetInitialState() => chosen;
+
+        // Safety net: an attack set with no usable attack would otherwise leave the enemy stuck here.
+        protected override State GetTransition() =>
+            ActiveChild == null ? ((EnemyRoot)Parent).Chase : null;
+
+        protected override void OnExit()
+        {
             ctx.CanTurn = true;
-            ctx.AttackCooldown = ctx.AttackCooldownDuration;
+            ctx.InAttack = false;
+            selector.RecordUse(chosen);
+            chosen = null;
+
+            float pause = ctx.AttackSet != null ? ctx.AttackSet.globalCooldown : 0f;
+            ctx.AttackCooldown = pause * ctx.PhaseGlobalCooldownMultiplier;
         }
-    }
-
-    // The original melee swing: damage lands in a cone in front of the enemy partway through.
-    public class EnemyCloseAttack : State
-    {
-        private readonly EnemyContext ctx;
-        private float timer;
-        private bool hasHit;
-
-        public EnemyCloseAttack(StateMachine sm, State parent, EnemyContext ctx) : base(sm, parent)
-        {
-            this.ctx = ctx;
-        }
-
-        protected override void OnEnter()
-        {
-            timer = ctx.AttackDuration;
-            hasHit = false;
-            ctx.PlayAnimation?.Invoke("Enemy_Attack");
-        }
-
-        protected override void OnUpdate(float deltaTime)
-        {
-            timer -= deltaTime;
-
-            // Damage lands partway through the animation rather than on the frame the state
-            // begins, so the player has a moment to back out of the cone.
-            if (hasHit || timer > ctx.AttackDuration - ctx.AttackHitTime) return;
-
-            hasHit = true;
-            ctx.DealAttackDamage?.Invoke();
-        }
-
-        // Chase is a direct child of the root, so this exits both this state and EnemyAttack.
-        protected override State GetTransition() =>
-            timer <= 0f ? ((EnemyRoot)Parent.Parent).Chase : null;
-    }
-
-    // Fires a projectile forward partway through the animation. The projectile carries the
-    // damage from there on, so nothing here needs to know where the player ended up.
-    public class EnemyRangedAttack : State
-    {
-        private readonly EnemyContext ctx;
-        private float timer;
-        private bool hasFired;
-
-        public EnemyRangedAttack(StateMachine sm, State parent, EnemyContext ctx) : base(sm, parent)
-        {
-            this.ctx = ctx;
-        }
-
-        protected override void OnEnter()
-        {
-            timer = ctx.RangedAttackDuration;
-            hasFired = false;
-            // Falls back silently if the controller has no such state yet.
-            ctx.PlayAnimation?.Invoke("Enemy_RangedAttack");
-        }
-
-        protected override void OnUpdate(float deltaTime)
-        {
-            timer -= deltaTime;
-
-            if (hasFired || timer > ctx.RangedAttackDuration - ctx.RangedAttackFireTime) return;
-
-            hasFired = true;
-            ctx.SpawnProjectile?.Invoke();
-        }
-
-        protected override State GetTransition() =>
-            timer <= 0f ? ((EnemyRoot)Parent.Parent).Chase : null;
     }
 
     public class EnemyDead : State

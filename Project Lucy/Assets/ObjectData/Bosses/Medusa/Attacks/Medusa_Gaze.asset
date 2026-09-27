@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5812e729b8c5a44aa7a2188925953c3, type: 3}
+  m_Name: Medusa_Gaze
+  m_EditorClassIdentifier: Assembly-CSharp::HierarchicalStateMachine.GazeAttackDefinition
+  displayName: Petrifying Gaze
+  animationState: Medusa_Gaze
+  driveAnimation: 1
+  sourceFrameRate: 10
+  totalFrames: 5
+  segments:
+  - label: encara
+    kind: 0
+    firstFrame: 0
+    lastFrame: 1
+    duration: 1
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  - label: olhar
+    kind: 1
+    firstFrame: 2
+    lastFrame: 4
+    duration: 0.6
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  - label: recupera
+    kind: 2
+    firstFrame: 4
+    lastFrame: 4
+    duration: 0.4
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  minRange: 0
+  maxRange: 12
+  maxTargetHeight: 6
+  minTargetHeight: -3
+  requiresLineOfSight: 1
+  cooldown: 16
+  minPhase: 1
+  scoring:
+    weight: 1.3
+    enragedMultiplier: 1
+    targetAirborne: 1
+    targetAttacking: 1
+    targetRetreating: 1
+    targetGrappling: 1
+    targetPetrified: 0.2
+    targetFacing: 2
+    targetFacingAway: 0.3
+    lingerBonusPerSecond: 0
+    maxLingerMultiplier: 2
+  telegraphColor: {r: 0.75, g: 0.55, b: 1, a: 1}
+  exitForwardOffset: 0
+  gazeRange: 12
+  coneAngle: 70
+  requireTargetFacing: 1
+  petrifyDuration: 1.8
+  petrifyImmunity: 3
+  damage: 6

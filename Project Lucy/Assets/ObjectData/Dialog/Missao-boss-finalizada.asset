@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0229f9af6181a38469057567674f0751, type: 3}
+  m_Name: Missao-boss-finalizada
+  m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
+  dialogs:
+  - dialogId: daisy-bossfim-01
+    dialogContent: "Lucy! Voc\xEA derrotou o Guardi\xE3o? Eu sabia que voc\xEA conseguiria!"
+    nextDialog: lucy-bossfim-01
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: lucy-bossfim-01
+    dialogContent: "N\xE3o foi f\xE1cil, mas ele n\xE3o vai mais bloquear o caminho."
+    nextDialog: daisy-bossfim-02
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
+  - dialogId: daisy-bossfim-02
+    dialogContent: "Espero que a recompensa tenha valido a pena. Descansa um pouco,
+      voc\xEA mereceu!"
+    nextDialog: daisy-bossfim-03
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: daisy-bossfim-03
+    dialogContent: "Ah, tem um cara estranho que chegou a\xED e disse que pode te
+      ajudar a ficar mais forte. Eu n\xE3o recomendo falar com estranhos, mas se
+      ele realmente pode ajudar, talvez valha a pena dar uma olhada."
+    nextDialog: 
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}

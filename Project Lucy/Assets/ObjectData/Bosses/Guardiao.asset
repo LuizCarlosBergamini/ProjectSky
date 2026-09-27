@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad7a171dce6a2144a1e8ab920b4fb2b, type: 3}
+  m_Name: Guardiao
+  m_EditorClassIdentifier: Assembly-CSharp::BossData_SO
+  bossId: Guardiao
+  entity: {fileID: 11400000, guid: 47a45b8509522be4bb5ae25e536db195, type: 2}
+  rewardTaskId: missao-boss
+  previewImage: {fileID: -5042780062780246413, guid: eb82bbf543939bb4aa63c1023395f782, type: 3}
+  accentColor: {r: 0.86, g: 0.56, b: 0.3, a: 1}
+  infoIcons:
+  - icon: {fileID: 21300000, guid: 4ab9fc063346f334289164bb7bf9b799, type: 3}
+    label: 1
+    tooltip: Dificuldade 1
+  - icon: {fileID: 21300000, guid: 46b9123d32478db479526c4fda5dfe5a, type: 3}
+    label: 
+    tooltip: "Arena fechada: a sa\xEDda s\xF3 abre quando o chefe cair"
+  scene:
+    sceneAsset: {fileID: 102900000, guid: 0134cc7b48272404eaadbd84fea3b62e, type: 3}
+    scenePath: Assets/Scenes/Level1.unity
+  prerequisites: []
+  requireAllPrerequisites: 1
+  lockedHint: 

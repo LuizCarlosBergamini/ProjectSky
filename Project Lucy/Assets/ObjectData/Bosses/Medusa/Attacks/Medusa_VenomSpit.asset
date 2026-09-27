@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d971258493281744c9b6efbfa656cf01, type: 3}
+  m_Name: Medusa_VenomSpit
+  m_EditorClassIdentifier: Assembly-CSharp::HierarchicalStateMachine.ProjectileAttackDefinition
+  displayName: Venom Spit
+  animationState: Medusa_VenomSpit
+  driveAnimation: 1
+  sourceFrameRate: 10
+  totalFrames: 5
+  segments:
+  - label: sibila
+    kind: 0
+    firstFrame: 0
+    lastFrame: 1
+    duration: 0.5
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  - label: cospe
+    kind: 1
+    firstFrame: 2
+    lastFrame: 3
+    duration: 0.2
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  - label: volta
+    kind: 2
+    firstFrame: 4
+    lastFrame: 4
+    duration: 0.3
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  minRange: 4.5
+  maxRange: 18
+  maxTargetHeight: 6
+  minTargetHeight: -3
+  requiresLineOfSight: 1
+  cooldown: 2.2
+  minPhase: 0
+  scoring:
+    weight: 0.9
+    enragedMultiplier: 1
+    targetAirborne: 1.2
+    targetAttacking: 1
+    targetRetreating: 1
+    targetGrappling: 1.4
+    targetPetrified: 1
+    targetFacing: 1
+    targetFacingAway: 1
+    lingerBonusPerSecond: 0
+    maxLingerMultiplier: 2
+  telegraphColor: {r: 0.55, g: 1, b: 0.45, a: 1}
+  exitForwardOffset: 0
+  projectilePrefab: {fileID: 7342465339924326160, guid: 951767b61a27b574fa622db22c3101ed, type: 3}
+  speed: 11
+  damage: 10
+  knockback: 18
+  count: 1
+  extraProjectilesPerPhase: 2
+  spreadAngle: 16
+  aimAtTarget: 1
+  maxAimAngle: 35

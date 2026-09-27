@@ -1,0 +1,116 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 162aabd3bb3dc834da38d27502ff2ede, type: 3}
+  m_Name: Medusa_CoilCrush
+  m_EditorClassIdentifier: Assembly-CSharp::HierarchicalStateMachine.MeleeAttackDefinition
+  displayName: Coil Crush
+  animationState: Medusa_CoilCrush
+  driveAnimation: 1
+  sourceFrameRate: 12
+  totalFrames: 16
+  segments:
+  - label: enrola
+    kind: 0
+    firstFrame: 0
+    lastFrame: 5
+    duration: 0.8
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  - label: bote
+    kind: 1
+    firstFrame: 6
+    lastFrame: 7
+    duration: 0.2
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1.86, y: 1.48}
+      size: {x: 3.24, y: 2.8}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 16
+      knockback: 30
+      verticalKnockback: 0.4
+  - label: prepara o golpe alto
+    kind: 0
+    firstFrame: 8
+    lastFrame: 12
+    duration: 0.55
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  - label: golpe ascendente
+    kind: 1
+    firstFrame: 13
+    lastFrame: 14
+    duration: 0.2
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1.6, y: 1.52}
+      size: {x: 2.08, y: 2.88}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 20
+      knockback: 35
+      verticalKnockback: 1.2
+  - label: recupera
+    kind: 2
+    firstFrame: 15
+    lastFrame: 15
+    duration: 0.6
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  minRange: 0
+  maxRange: 3.2
+  maxTargetHeight: 4
+  minTargetHeight: -1
+  requiresLineOfSight: 0
+  cooldown: 7
+  minPhase: 0
+  scoring:
+    weight: 1.1
+    enragedMultiplier: 1.3
+    targetAirborne: 1.4
+    targetAttacking: 1
+    targetRetreating: 1
+    targetGrappling: 1
+    targetPetrified: 2
+    targetFacing: 1
+    targetFacingAway: 1
+    lingerBonusPerSecond: 0.35
+    maxLingerMultiplier: 2
+  telegraphColor: {r: 1, g: 0.35, b: 0.3, a: 1}
+  exitForwardOffset: 1.93

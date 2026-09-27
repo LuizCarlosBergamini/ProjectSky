@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0229f9af6181a38469057567674f0751, type: 3}
+  m_Name: Missao-boss
+  m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
+  dialogs:
+  - dialogId: daisy-boss-01
+    dialogContent: "Lucy! Que bom que voc\xEA chegou at\xE9 aqui. Logo \xE0 frente
+      fica a arena do Guardi\xE3o."
+    nextDialog: lucy-boss-01
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: lucy-boss-01
+    dialogContent: "Guardi\xE3o? Ningu\xE9m me falou nada sobre um guardi\xE3o..."
+    nextDialog: daisy-boss-02
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
+  - dialogId: daisy-boss-02
+    dialogContent: "Ele protege a sa\xEDda da caverna. Derrote ele e eu te dou uma
+      recompensa!"
+    nextDialog: daisy-boss-03
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: daisy-boss-03
+    dialogContent: "Eu n\xE3o sou muito boa de briga, ent\xE3o vou voltar e te esperar
+      no Hub. Boa sorte!"
+    nextDialog: 
+    triggerEvent: missao-boss-iniciada
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}

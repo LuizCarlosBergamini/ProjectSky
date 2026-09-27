@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b96e0906a1bffb43b66eb3d84307a93, type: 3}
+  m_Name: Medusa_AttackSet
+  m_EditorClassIdentifier: Assembly-CSharp::HierarchicalStateMachine.EnemyAttackSet
+  attacks:
+  - {fileID: 11400000, guid: abb4353c197f16147bdcd25ab6fbd0bb, type: 2}
+  - {fileID: 11400000, guid: 566631ba6222eaa49aa30591f12770cb, type: 2}
+  - {fileID: 11400000, guid: 51c7648a895e82749aa54f4f1804c4f2, type: 2}
+  - {fileID: 11400000, guid: 14cd4d3dceb3b7247a50a329cbd6df96, type: 2}
+  - {fileID: 11400000, guid: 4d721aae2f831d7448e26afd93ef7c34, type: 2}
+  globalCooldown: 0.7
+  repeatPenalty: 0.35
+  secondRepeatPenalty: 0.75
+  tiebreakWindow: 0.15
+  rangeEdgeScore: 0.6
+  closeRange: 2.6
+  phases:
+  - name: Fase 1
+    healthFraction: 1
+    cooldownMultiplier: 1
+    globalCooldownMultiplier: 1
+    openingAttack: {fileID: 0}
+  - name: Furia
+    healthFraction: 0.6
+    cooldownMultiplier: 0.8
+    globalCooldownMultiplier: 0.7
+    openingAttack: {fileID: 11400000, guid: 4d721aae2f831d7448e26afd93ef7c34, type: 2}
+  allowRetreat: 1
+  maxRetreatTime: 1.2
+  retreatSpeedMultiplier: 0.8
+  runDistance: 8
+  runSpeedMultiplier: 1.6
+  holdTolerance: 0.4
+  rangeMargin: 0.3

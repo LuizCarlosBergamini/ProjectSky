@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.UI;
 
 [Serializable]
 public class TasksItem
@@ -20,6 +21,9 @@ public class TasksItem
 
     [Tooltip("Itens entregues ao jogador quando a task e concluida (recompensa).")]
     public List<InventorySlot> rewardItems;
+
+    [Tooltip("Entrega os rewardItems de novo toda vez que a task for concluida outra vez (ex: chefe derrotado de novo).")]
+    public bool repeatableReward;
 
     [Tooltip("Id do QuestObjective para onde a seta deve apontar enquanto a task estiver ativa.")]
     public string objectiveId;
@@ -54,6 +58,10 @@ public class TaskManager : MonoBehaviour
 
     // Tasks whose completion routine is already running, so rewards are never granted twice.
     private readonly HashSet<string> completingTasks = new();
+
+    // Boss-fight layout: the task list moves below the boss bar and shows titles only.
+    private bool fightLayoutActive;
+    private int? baseTopPadding;
 
     private void Start()
     {
@@ -107,6 +115,7 @@ public class TaskManager : MonoBehaviour
             var clone = Instantiate(taskItemPrefab, taskItemContainer.transform);
             clone.Apply(taskData.taskTitle, taskData.taskDescription);
             clone.ApplyProgress(GetProgressText(taskData));
+            clone.SetTitleOnly(fightLayoutActive);
             taskItems.Add(taskId, clone);
             if (clone.TryGetComponent(out Animator animator))
             {
@@ -120,7 +129,13 @@ public class TaskManager : MonoBehaviour
 
     public void CompleteTask(string taskId)
     {
-        if (!startedTasks.Contains(taskId) || finishedTasks.Contains(taskId)) return;
+        if (finishedTasks.Contains(taskId))
+        {
+            GrantRepeatReward(taskId);
+            return;
+        }
+
+        if (!startedTasks.Contains(taskId)) return;
         if (!completingTasks.Add(taskId)) return;
         StartCoroutine(CompleteTaskAsync(taskId));
     }
@@ -209,6 +224,32 @@ public class TaskManager : MonoBehaviour
 
     #endregion
 
+    #region Layout
+
+    /// <summary>
+    /// Makes room for the boss health bar: pushes the task list down by extraTopPadding
+    /// (canvas units) and collapses every card to its title. Passing false restores both.
+    /// Cards started while active are created collapsed too.
+    /// </summary>
+    public void SetFightLayout(bool active, float extraTopPadding)
+    {
+        fightLayoutActive = active;
+
+        if (taskItemContainer != null && taskItemContainer.TryGetComponent(out VerticalLayoutGroup layout))
+        {
+            baseTopPadding ??= layout.padding.top;
+            layout.padding.top = baseTopPadding.Value + (active ? Mathf.RoundToInt(extraTopPadding) : 0);
+            LayoutRebuilder.MarkLayoutForRebuild((RectTransform)taskItemContainer.transform);
+        }
+
+        foreach (TaskItem card in taskItems.Values)
+        {
+            if (card != null) card.SetTitleOnly(active);
+        }
+    }
+
+    #endregion
+
     #region Queries
 
     public TasksItem GetTask(string taskId)
@@ -237,6 +278,17 @@ public class TaskManager : MonoBehaviour
         return taskData.requiredItems.All(required =>
             required.item != null &&
             InventoryManager.instance.GetQuantity(required.item.itemId) >= required.quantity);
+    }
+
+    /// <summary>
+    /// True when completing this task (again) would hand out its rewardItems: it has rewards and is either
+    /// not finished yet or marked repeatableReward. The one place this rule lives; UI previews ask here.
+    /// </summary>
+    public bool WillGrantRewards(string taskId)
+    {
+        TasksItem taskData = GetTask(taskId);
+        if (taskData == null || taskData.rewardItems == null || taskData.rewardItems.Count == 0) return false;
+        return GetStatus(taskId) != TaskStatus.Finished || taskData.repeatableReward;
     }
 
     /// <summary>Objective the arrow should point at: the first active task that declares one.</summary>
@@ -285,6 +337,19 @@ public class TaskManager : MonoBehaviour
             if (cost.item == null) continue;
             InventoryManager.instance.RemoveItem(cost.item.itemId, cost.quantity);
         }
+    }
+
+    /// <summary>
+    /// Completing an already finished task pays its reward again, but only when the task is marked
+    /// repeatableReward. The task stays finished: no card, no events, no progress change.
+    /// </summary>
+    private void GrantRepeatReward(string taskId)
+    {
+        TasksItem taskData = GetTask(taskId);
+        if (taskData == null || !taskData.repeatableReward) return;
+
+        GrantRewards(taskData);
+        RefreshTasksProgress();
     }
 
     private void GrantRewards(TasksItem taskData)

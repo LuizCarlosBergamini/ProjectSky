@@ -27,6 +27,10 @@ public class CameraManager : MonoBehaviour
 
     private Vector2 startingTrackedObjectOffset;
 
+    /// <summary>
+    /// Takes the enabled virtual camera as the current one and caches its composer defaults.
+    /// Empty slots are skipped, so one missing camera cannot leave the damping and panning uninitialized.
+    /// </summary>
     private void Awake()
     {
         if (instance == null)
@@ -36,11 +40,23 @@ public class CameraManager : MonoBehaviour
 
         for (int i = 0; i < allVirtualCameras.Length; i++)
         {
+            if (allVirtualCameras[i] == null)
+            {
+                Debug.LogWarning($"{name}: allVirtualCameras[{i}] esta vazio, slot ignorado.", this);
+                continue;
+            }
+
             if (allVirtualCameras[i].enabled)
             {
                 currentCamera = allVirtualCameras[i];
                 positionComposer = currentCamera.GetComponent<CinemachinePositionComposer>();
             }
+        }
+
+        if (positionComposer == null)
+        {
+            Debug.LogError($"{name}: nenhuma camera ativa com CinemachinePositionComposer; damping e pan da camera desativados.", this);
+            return;
         }
 
         normYPanAmount = positionComposer.Damping.y;
@@ -53,6 +69,8 @@ public class CameraManager : MonoBehaviour
 
     public void LerpYDamping(bool isPlayerFalling)
     {
+        if (positionComposer == null) return;
+
         if (lerpYPanCoroutine != null)
         {
             StopCoroutine(lerpYPanCoroutine);
@@ -96,6 +114,8 @@ public class CameraManager : MonoBehaviour
 
     public void PanCameraOnContact(float panDistance, float panTime, PanDirection panDirection, bool panToStartingPos)
     {
+        if (positionComposer == null) return;
+
         // Cancela qualquer tween ativo no TargetOffset
         LeanTween.cancel(gameObject);
 

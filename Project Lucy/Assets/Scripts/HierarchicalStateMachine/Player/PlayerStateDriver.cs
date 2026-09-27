@@ -33,6 +33,8 @@ namespace HierarchicalStateMachine
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float invulnerabilityTime = 0.4f;
         [SerializeField] private float hitAnimationTime = 0.25f;
+        [Tooltip("Espera apos a morte antes de reiniciar a fase (usado quando nao ha GameManager na cena).")]
+        [SerializeField] private float deathRestartDelay = 1.5f;
 
         [Header("Attack")]
         [SerializeField] private Transform attackTransform;
@@ -70,7 +72,17 @@ namespace HierarchicalStateMachine
         public float RunMaxSpeed => ctx.Data.runMaxSpeed + moveSpeedBonus;
         public float CurrentHealth => ctx.health;
 
+        /// <summary>Raised with (current, max) whenever either value changes: damage, healing or a max-health upgrade.</summary>
+        public event Action<float, float> HealthChanged;
+
         public bool HasTakenDamage { get; set; }
+
+        // Read-only view of the player for enemy AI (boss attack selection); nothing outside writes these.
+        public bool IsGrounded => ctx.IsGrounded;
+        public bool IsAttacking => ctx.IsAttacking;
+        public bool IsGrappling => ctx.IsGrappling;
+        public bool IsFacingRight => ctx.isFacingRight;
+
         private readonly RaycastHit2D[] groundHits = new RaycastHit2D[8];
         
         Rigidbody2D rb;
@@ -167,19 +179,31 @@ namespace HierarchicalStateMachine
         private void RefreshUpgradeBonuses()
         {
             float previousMaxHealth = MaxHealth;
+            float previousHealth = ctx.health;
 
             UpgradeManager upgrades = UpgradeManager.instance;
             damageBonus = upgrades != null ? upgrades.GetBonus(UpgradeStat.Damage) : 0f;
             maxHealthBonus = upgrades != null ? upgrades.GetBonus(UpgradeStat.MaxHealth) : 0f;
             moveSpeedBonus = upgrades != null ? upgrades.GetBonus(UpgradeStat.MoveSpeed) : 0f;
 
-            if (ctx.isDead) return;
+            if (!ctx.isDead)
+            {
+                // Extra max health arrives filled, so buying it is felt immediately. A lower max (reset)
+                // only clamps, it never heals.
+                float gained = MaxHealth - previousMaxHealth;
+                if (gained > 0f) ctx.health += gained;
+                ctx.health = Mathf.Min(ctx.health, MaxHealth);
+            }
 
-            // Extra max health arrives filled, so buying it is felt immediately. A lower max (reset)
-            // only clamps, it never heals.
-            float gained = MaxHealth - previousMaxHealth;
-            if (gained > 0f) ctx.health += gained;
-            ctx.health = Mathf.Min(ctx.health, MaxHealth);
+            if (!Mathf.Approximately(previousMaxHealth, MaxHealth) || !Mathf.Approximately(previousHealth, ctx.health))
+            {
+                RaiseHealthChanged();
+            }
+        }
+
+        private void RaiseHealthChanged()
+        {
+            HealthChanged?.Invoke(ctx.health, MaxHealth);
         }
 
         private void Update()
@@ -329,6 +353,7 @@ namespace HierarchicalStateMachine
             ctx.health -= amount;
 
             Debug.Log("health " + ctx.health);
+            RaiseHealthChanged();
 
             rb.AddForce(knockback, ForceMode2D.Impulse);
             CancelAttack();
@@ -356,6 +381,7 @@ namespace HierarchicalStateMachine
         public void Heal(int amount)
         {
             ctx.health = Mathf.Min(ctx.health + amount, MaxHealth);
+            RaiseHealthChanged();
         }
 
         private void Die()
@@ -364,7 +390,19 @@ namespace HierarchicalStateMachine
             ctx.isDead = true;
             ctx.canWalk = false;
 
-            if (GameManager.instance != null) GameManager.instance.GameOver();
+            if (GameManager.instance != null)
+            {
+                GameManager.instance.GameOver();
+                return;
+            }
+
+            // Levels entered from the Hub have no GameManager; LevelRunManager owns the retry there.
+            if (LevelRunManager.instance != null) Invoke(nameof(RestartLevel), deathRestartDelay);
+        }
+
+        private void RestartLevel()
+        {
+            if (LevelRunManager.instance != null) LevelRunManager.instance.HandlePlayerDeath();
         }
 
         // Movement states route their clip through here. Knockback throws the player off the

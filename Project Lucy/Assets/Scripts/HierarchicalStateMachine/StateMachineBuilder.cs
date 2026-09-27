@@ -31,15 +31,29 @@ namespace HierarchicalStateMachine
 
             foreach (var field in s.GetType().GetFields(flags))
             {
+                if (field.Name == "Parent" || field.Name == "ActiveChild") continue; // Skip back-edges
+
+                // Children built from data (e.g. one attack per asset) live in an array or list.
+                if (typeof(IEnumerable<State>).IsAssignableFrom(field.FieldType))
+                {
+                    if (field.GetValue(s) is IEnumerable<State> children)
+                    {
+                        foreach (State listed in children) WireChild(s, listed, sm, visited);
+                    }
+                    continue;
+                }
+
                 if (!typeof(State).IsAssignableFrom(field.FieldType)) continue; // Only consider fields that are States
-                if (field.Name == "Parent") continue; // Skip back-edge to parent
-                
-                var child = (State)field.GetValue(s);
-                if (child == null) continue;
-                if (!ReferenceEquals(child.Parent, s)) continue; // Ensure it's actually our direct child
-                
-                Wire(child, sm, visited); // Recurse into the child
+                WireChild(s, (State)field.GetValue(s), sm, visited);
             }
+        }
+
+        private void WireChild(State parent, State child, StateMachine sm, HashSet<State> visited)
+        {
+            if (child == null) return;
+            if (!ReferenceEquals(child.Parent, parent)) return; // Ensure it's actually our direct child
+
+            Wire(child, sm, visited); // Recurse into the child
         }
     }
 }

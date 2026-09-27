@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item_SO
   itemId: engrenagem_bronze
   itemName: Engrenagem de Bronze
+  itemDescription: "Engrenagem comum, usada pelo mec\xE2nico nas melhorias."
   itemSprite: {fileID: 1488294519841466382, guid: cae386dfe2de6bb4686fde7657ea8dda, type: 3}
   itemAnimationClip: {fileID: 7400000, guid: 6cb7c40fc747eaf458c90121d486219e, type: 2}

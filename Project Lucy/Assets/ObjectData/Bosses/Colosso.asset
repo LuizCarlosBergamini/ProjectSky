@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad7a171dce6a2144a1e8ab920b4fb2b, type: 3}
+  m_Name: Colosso
+  m_EditorClassIdentifier: Assembly-CSharp::BossData_SO
+  bossId: Colosso
+  entity: {fileID: 11400000, guid: 21ebbee3a2ca599409a1917c7324bb5f, type: 2}
+  rewardTaskId: missao-boss-3
+  previewImage: {fileID: 3975763283138365421, guid: ca4a90c919f12b142a591af16aa5a7ca, type: 3}
+  accentColor: {r: 0.3, g: 0.85, b: 0.5, a: 1}
+  infoIcons:
+  - icon: {fileID: 21300000, guid: 4ab9fc063346f334289164bb7bf9b799, type: 3}
+    label: 3
+    tooltip: Dificuldade 3
+  - icon: {fileID: 21300000, guid: 46b9123d32478db479526c4fda5dfe5a, type: 3}
+    label: 
+    tooltip: "Arena fechada: a sa\xEDda s\xF3 abre quando o chefe cair"
+  scene:
+    sceneAsset: {fileID: 102900000, guid: 5a2f29376296bb34eabe154e2d139512, type: 3}
+    scenePath: Assets/Scenes/Level3.unity
+  prerequisites:
+  - {fileID: 11400000, guid: e95b61ce3025f0441a9de87a8d9ad2ec, type: 2}
+  requireAllPrerequisites: 1
+  lockedHint: 

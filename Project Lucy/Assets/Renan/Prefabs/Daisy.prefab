@@ -157,22 +157,14 @@ MonoBehaviour:
   _entity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   _dialog: {fileID: 11400000, guid: 8b92816720fc56547b86f3c8f9214587, type: 2}
   _dialogRules:
-  - taskId: missao-02
-    status: 1
-    requiresItems: 0
-    dialog: {fileID: 11400000, guid: 9d16b0f0a12030f449796f2d8fd19391, type: 2}
-  - taskId: missao-02
+  - taskId: missao-boss
     status: 2
     requiresItems: 0
-    dialog: {fileID: 11400000, guid: 1de78fe56295bd446a8fb262453e690c, type: 2}
-  - taskId: missao-01
-    status: 1
-    requiresItems: 0
-    dialog: {fileID: 11400000, guid: 94d5eef96165fbe46980fed3027c4b95, type: 2}
-  - taskId: missao-01
+    dialog: {fileID: 11400000, guid: 3466fb6ca34974647b8cfe317aa0323d, type: 2}
+  - taskId: missao-tutorial
     status: 0
     requiresItems: 0
-    dialog: {fileID: 11400000, guid: 19d72b84f66f4a54a82a70be1a462135, type: 2}
+    dialog: {fileID: 11400000, guid: 8b92816720fc56547b86f3c8f9214587, type: 2}
   _dialogAction: {fileID: 8577910489477151222, guid: cf940d471362bea409b2de06fbc33bb2, type: 3}
   _displayActionContainer: {fileID: 7346756584926443905}
   _displayActionText: {fileID: 4784474269131706598}
@@ -212,6 +204,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::QuestObjective
   _objectiveId: daisy
   _anchor: {fileID: 0}
+  shouldEndMission: 0
+  endMissionEventName: 
 --- !u!1 &5622429239212326032
 GameObject:
   m_ObjectHideFlags: 0

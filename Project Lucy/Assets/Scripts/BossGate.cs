@@ -1,3 +1,4 @@
+using System;
 using HierarchicalStateMachine;
 using UnityEngine;
 using UnityEngine.Events;
@@ -26,8 +27,27 @@ public class BossGate : MonoBehaviour
     [SerializeField] private UnityEvent onFightStarted;
     [SerializeField] private UnityEvent onBossDefeated;
 
+    /// <summary>
+    /// Raised the frame the barrier closes behind the player. Code-side hook for UI that lives
+    /// outside the scene and cannot be wired into the UnityEvents above.
+    /// </summary>
+    public static event Action<EnemyStateDriver> OnBossFightStarted;
+
+    /// <summary>
+    /// Raised once after <see cref="OnBossFightStarted"/>: when the boss dies, or when the gate is
+    /// unloaded mid-fight (player death reload, leaving the level). Never raised without a start.
+    /// </summary>
+    public static event Action<EnemyStateDriver> OnBossFightEnded;
+
+    /// <summary>
+    /// Raised once when the boss actually dies (never on unload), before <see cref="onBossDefeated"/> hands
+    /// out the reward. The code-side "this boss was beaten" signal: boss progression records it.
+    /// </summary>
+    public static event Action<EnemyStateDriver> OnBossFightWon;
+
     private bool fightStarted;
     private bool bossDefeated;
+    private bool fightAnnounced;
 
     private void Awake()
     {
@@ -42,6 +62,7 @@ public class BossGate : MonoBehaviour
     private void OnDisable()
     {
         if (boss != null) boss.Died -= HandleBossDied;
+        AnnounceFightEnded();
     }
 
     /// <summary>Wire this to the arena entrance trigger. Safe to call repeatedly.</summary>
@@ -76,6 +97,9 @@ public class BossGate : MonoBehaviour
         // The boss can die inside the delay window; do not slam the gate shut afterwards.
         if (bossDefeated) return;
         SetBarrierClosed(true);
+
+        fightAnnounced = true;
+        OnBossFightStarted?.Invoke(boss);
     }
 
     private void HandleBossDied()
@@ -85,7 +109,16 @@ public class BossGate : MonoBehaviour
 
         CancelInvoke(nameof(ApplyClose));
         SetBarrierClosed(false);
+        AnnounceFightEnded();
+        OnBossFightWon?.Invoke(boss);
         onBossDefeated?.Invoke();
+    }
+
+    private void AnnounceFightEnded()
+    {
+        if (!fightAnnounced) return;
+        fightAnnounced = false;
+        OnBossFightEnded?.Invoke(boss);
     }
 
     private void SetBarrierClosed(bool closed)
