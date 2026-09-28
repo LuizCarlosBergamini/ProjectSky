@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
@@ -100,6 +101,12 @@ namespace HierarchicalStateMachine
         private float hitFlashTimer;
         private bool tinted;
 
+        // Adaptation to the player's upgrades (BossData_SO.upgradeScaling); 1 = base stats.
+        private float healthScale = 1f;
+        private float damageScale = 1f;
+        private float speedScale = 1f;
+        private readonly List<BossAdaptation> adaptations = new();
+
         public bool HasTakenDamage { get; set; }
 
         /// <summary>
@@ -116,7 +123,15 @@ namespace HierarchicalStateMachine
         public bool IsDead => ctx.IsDead;
 
         public float CurrentHealth => ctx.Health;
-        public float MaxHealth => data != null ? data.maxHealth : 0f;
+        public float MaxHealth => ctx.MaxHealth;
+
+        /// <summary>Multipliers from the player's upgrades (see BossUpgradeScaling_SO); 1 when not adapted.</summary>
+        public float HealthScale => healthScale;
+        public float DamageScale => damageScale;
+        public float SpeedScale => speedScale;
+
+        /// <summary>The adaptations in effect right now, one per stat, for the boss bar.</summary>
+        public IReadOnlyList<BossAdaptation> Adaptations => adaptations;
 
         /// <summary>Display data when this enemy is a boss; null for regular enemies.</summary>
         public BossData_SO BossData => bossData;
@@ -142,6 +157,7 @@ namespace HierarchicalStateMachine
             ctx.Health = data.maxHealth;
             ctx.MaxHealth = data.maxHealth;
             ctx.MoveSpeed = data.moveSpeed;
+            ApplyUpgradeScaling();
             ctx.StopDistance = stopDistance;
             ctx.DeathDelay = deathDelay;
             ctx.Activated = !waitForActivation;
@@ -175,11 +191,21 @@ namespace HierarchicalStateMachine
         private void OnEnable()
         {
             BossGate.OnBossFightStarted += HandleBossFightStarted;
+            UpgradeManager.OnUpgradesChanged += HandleUpgradesChanged;
         }
 
         private void OnDisable()
         {
             BossGate.OnBossFightStarted -= HandleBossFightStarted;
+            UpgradeManager.OnUpgradesChanged -= HandleUpgradesChanged;
+        }
+
+        private void Start()
+        {
+            // UpgradeManager can wake after this enemy in the same scene (a level played on its own), so read
+            // the purchases again once every Awake has run - same as PlayerStateDriver does.
+            ApplyUpgradeScaling();
+            LogAdaptations();
         }
 
         private void OnDestroy()
@@ -233,6 +259,49 @@ namespace HierarchicalStateMachine
         private void HandleBossFightStarted(EnemyStateDriver boss)
         {
             if (boss == this) Activate();
+        }
+
+        private void HandleUpgradesChanged()
+        {
+            if (!ctx.IsDead && ApplyUpgradeScaling()) LogAdaptations();
+        }
+
+        // A boss answers the player's upgrades (BossData_SO.upgradeScaling): more player damage -> more health,
+        // more player life -> more damage, more player speed -> faster. Health keeps its fraction, so an upgrade
+        // arriving mid-fight never heals or hurts the boss. True when a multiplier changed.
+        private bool ApplyUpgradeScaling()
+        {
+            BossUpgradeScaling_SO scaling = bossData != null ? bossData.upgradeScaling : null;
+            UpgradeManager upgrades = UpgradeManager.instance;
+
+            float newHealth = scaling != null ? scaling.GetMultiplier(BossScalingStat.MaxHealth, upgrades) : 1f;
+            float newDamage = scaling != null ? scaling.GetMultiplier(BossScalingStat.Damage, upgrades) : 1f;
+            float newSpeed = scaling != null ? scaling.GetMultiplier(BossScalingStat.Speed, upgrades) : 1f;
+            bool changed = !Mathf.Approximately(newHealth, healthScale)
+                           || !Mathf.Approximately(newDamage, damageScale)
+                           || !Mathf.Approximately(newSpeed, speedScale);
+
+            healthScale = newHealth;
+            damageScale = newDamage;
+            speedScale = newSpeed;
+            adaptations.Clear();
+            if (scaling != null) adaptations.AddRange(scaling.GetActive(upgrades));
+
+            float fraction = ctx.MaxHealth > 0f ? ctx.Health / ctx.MaxHealth : 1f;
+            ctx.MaxHealth = data.maxHealth * healthScale;
+            ctx.Health = ctx.MaxHealth * fraction;
+            ctx.MoveSpeed = data.moveSpeed * speedScale;
+
+            if (changed) HealthChanged?.Invoke(ctx.Health, ctx.MaxHealth);
+            return changed;
+        }
+
+        private void LogAdaptations()
+        {
+            if (adaptations.Count == 0) return;
+            Debug.Log(name + ": adaptada aos upgrades do jogador (" + string.Join(", ", adaptations) +
+                      ") - vida " + ctx.MaxHealth.ToString("0.#") + ", dano x" + damageScale.ToString("0.00") +
+                      ", velocidade x" + speedScale.ToString("0.00"), this);
         }
 
         // The visible sprite can live on a child (as it does on the Player), and a disabled
@@ -497,7 +566,7 @@ namespace HierarchicalStateMachine
                 ctx.FacingRight ? 1f : -1f,
                 Mathf.Abs(hitbox.verticalKnockback)).normalized;
 
-            targetDamageable.TakeDamage(hitbox.damage, direction * hitbox.knockback);
+            targetDamageable.TakeDamage(hitbox.damage * damageScale, direction * hitbox.knockback);
             return true;
         }
 
@@ -558,7 +627,7 @@ namespace HierarchicalStateMachine
             {
                 float offset = count == 1 ? 0f : Mathf.Lerp(-attack.spreadAngle * 0.5f, attack.spreadAngle * 0.5f, i / (count - 1f));
                 EnemyProjectile projectile = Instantiate(prefab, origin, Quaternion.identity);
-                projectile.Launch(Rotate(aim, offset), attack.speed, attack.damage, attack.knockback, gameObject);
+                projectile.Launch(Rotate(aim, offset), attack.speed * speedScale, attack.damage * damageScale, attack.knockback, gameObject);
             }
         }
 
@@ -587,7 +656,7 @@ namespace HierarchicalStateMachine
             bool damaged = false;
             if (gaze.damage > 0f && !targetDamageable.HasTakenDamage)
             {
-                targetDamageable.TakeDamage(gaze.damage, Vector2.zero);
+                targetDamageable.TakeDamage(gaze.damage * damageScale, Vector2.zero);
                 damaged = true;
             }
 
@@ -720,7 +789,7 @@ namespace HierarchicalStateMachine
 
         public void Heal(int amount)
         {
-            ctx.Health = Mathf.Min(ctx.Health + amount, data.maxHealth);
+            ctx.Health = Mathf.Min(ctx.Health + amount, ctx.MaxHealth);
             HealthChanged?.Invoke(ctx.Health, MaxHealth);
         }
 

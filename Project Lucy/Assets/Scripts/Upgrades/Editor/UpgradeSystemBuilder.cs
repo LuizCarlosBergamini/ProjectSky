@@ -458,7 +458,11 @@ public static class UpgradeSystemBuilder
         Image line = LoadOrBuild(LinePrefabPath, overwrite, BuildLine);
         UpgradeNodeUI node = LoadOrBuild(NodePrefabPath, overwrite, () => BuildNode(sprites, costEntry));
         UpgradeTreeUI tree = LoadOrBuild(TreePrefabPath, overwrite, () => BuildTreeColumn(sprites, node, line));
-        return LoadOrBuild(CanvasPrefabPath, overwrite, () => BuildCanvas(sprites, tree, costEntry));
+        UpgradeCanvas canvas = LoadOrBuild(CanvasPrefabPath, overwrite, () => BuildCanvas(sprites, tree, costEntry));
+
+        // The boss-adaptation warning belongs to BossAdaptationBuilder; re-added here so a rebuild keeps it.
+        if (!BossAdaptationBuilder.EnsureUpgradeAdaptationLabel()) return canvas;
+        return AssetDatabase.LoadAssetAtPath<GameObject>(CanvasPrefabPath).GetComponent<UpgradeCanvas>();
     }
 
     private static T LoadOrBuild<T>(string path, bool overwrite, Func<T> build) where T : Component

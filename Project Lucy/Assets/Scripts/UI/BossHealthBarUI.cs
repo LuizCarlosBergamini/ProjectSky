@@ -24,6 +24,12 @@ public class BossHealthBarUI : MonoBehaviour
     [SerializeField] private Transform rewardEntryContainer;
     [SerializeField] private RewardEntryUI rewardEntryPrefab;
 
+    [Header("Adaptacao")]
+    [Tooltip("Painel que lista como o chefe se adaptou aos upgrades do jogador; escondido quando nao ha adaptacao.")]
+    [SerializeField] private GameObject adaptationPanel;
+    [Tooltip("Uma linha por adaptacao (ex: '+25% vida').")]
+    [SerializeField] private TextMeshProUGUI adaptationText;
+
     [Header("Transicao")]
     [SerializeField] private float fadeInDuration = 0.2f;
     [Tooltip("Duracao do fade ao sumir, depois que a barra termina de esvaziar.")]
@@ -76,6 +82,7 @@ public class BossHealthBarUI : MonoBehaviour
         }
 
         BuildRewards(data);
+        BuildAdaptations(boss);
         bar.SetValues(boss.CurrentHealth, boss.MaxHealth, true);
     }
 
@@ -138,6 +145,25 @@ public class BossHealthBarUI : MonoBehaviour
         }
 
         if (rewardPanel != null) rewardPanel.SetActive(rewardEntries.Count > 0);
+    }
+
+    // Every way the boss adapted to the player's upgrades, one per line; the panel hides when there is none.
+    private void BuildAdaptations(EnemyStateDriver newBoss)
+    {
+        IReadOnlyList<BossAdaptation> active = newBoss != null ? newBoss.Adaptations : null;
+        bool any = active != null && active.Count > 0;
+
+        if (adaptationText != null)
+        {
+            List<string> lines = new();
+            if (any)
+            {
+                foreach (BossAdaptation adaptation in active) lines.Add(adaptation.ToString());
+            }
+            adaptationText.text = string.Join("\n", lines);
+        }
+
+        if (adaptationPanel != null) adaptationPanel.SetActive(any);
     }
 
     // The reward is the task's reward list, read live from TaskManager so it is never duplicated.

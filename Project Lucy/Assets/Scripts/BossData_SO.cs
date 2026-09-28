@@ -42,6 +42,10 @@ public class BossData_SO : ScriptableObject
     [Tooltip("Texto do painel bloqueado. Vazio = 'Derrote <requisitos> para desbloquear'.")]
     public string lockedHint;
 
+    [Header("Adaptacao")]
+    [Tooltip("Como o chefe fica mais forte conforme os upgrades do jogador. Vazio = nao se adapta.")]
+    public BossUpgradeScaling_SO upgradeScaling;
+
     /// <summary>Name shown in the UI: the entity's name, or the asset name when there is none.</summary>
     public string DisplayName => entity != null && !string.IsNullOrWhiteSpace(entity.entityName) ? entity.entityName : name;
 

@@ -25,6 +25,8 @@ public class UpgradeDetailPanel : MonoBehaviour
     [SerializeField] private Image _purchaseButtonImage;
     [SerializeField] private TextMeshProUGUI _purchaseLabel;
     [SerializeField] private TextMeshProUGUI _feedbackText;
+    [Tooltip("Aviso de como os chefes reagem a este upgrade (BossData_SO.upgradeScaling). Opcional.")]
+    [SerializeField] private TextMeshProUGUI _adaptationText;
 
     [Header("Cores")]
     [SerializeField] private Color _textColor = new(0.92f, 0.92f, 0.92f, 1f);
@@ -106,6 +108,7 @@ public class UpgradeDetailPanel : MonoBehaviour
 
         RefreshCost(manager, state);
         RefreshButton(state, treeColor);
+        RefreshAdaptation(state);
 
         if (_feedbackText != null && _feedbackNode != Node) _feedbackText.text = "";
     }
@@ -198,6 +201,35 @@ public class UpgradeDetailPanel : MonoBehaviour
         };
         Color labelColor = state == UpgradeNodeState.Available ? new Color(0.06f, 0.06f, 0.06f, 1f) : _lockedColor;
         SetText(_purchaseLabel, label, labelColor);
+    }
+
+    // Warns which bosses get stronger because of this upgrade, so buying it is an informed trade.
+    // Before the purchase it reads as a warning ("se adapta"), after it as a fact ("se adaptou").
+    private void RefreshAdaptation(UpgradeNodeState state)
+    {
+        if (_adaptationText == null) return;
+
+        List<string> lines = new();
+        BossProgressionManager bosses = BossProgressionManager.instance;
+        if (bosses != null)
+        {
+            string verb = state == UpgradeNodeState.Purchased ? "se adaptou" : "se adapta";
+            foreach (BossData_SO boss in bosses.Bosses)
+            {
+                if (boss == null || boss.upgradeScaling == null) continue;
+
+                List<string> effects = new();
+                foreach (BossUpgradeResponse response in boss.upgradeScaling.ResponsesTo(Node))
+                {
+                    effects.Add(BossUpgradeScaling_SO.Describe(response.bossStat, response.multiplier));
+                }
+
+                if (effects.Count > 0) lines.Add($"{boss.DisplayName} {verb}: {string.Join(", ", effects)}");
+            }
+        }
+
+        _adaptationText.gameObject.SetActive(lines.Count > 0);
+        SetText(_adaptationText, string.Join("\n", lines), _warningColor);
     }
 
     private string PrerequisiteNames()

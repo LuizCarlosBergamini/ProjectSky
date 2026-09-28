@@ -30,3 +30,4 @@ MonoBehaviour:
   prerequisites: []
   requireAllPrerequisites: 1
   lockedHint: 
+  upgradeScaling: {fileID: 11400000, guid: 21fe562d5f35c2d438439c231f28028c, type: 2}

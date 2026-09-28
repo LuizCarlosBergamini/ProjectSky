@@ -85,6 +85,8 @@ public static class HealthBarUIBuilder
 
             RewardEntryUI rewardEntry = BuildRewardEntryPrefab(sprites, overwritePrefabs);
             GameObject hud = BuildHudPrefab(sprites, rewardEntry, overwritePrefabs);
+            // The boss-adaptation panel belongs to BossAdaptationBuilder; re-added here so a rebuild keeps it.
+            if (BossAdaptationBuilder.EnsureHudAdaptationPanel()) hud = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             BossData_SO guardian = BuildGuardianData();
 
             AssetDatabase.SaveAssets();
