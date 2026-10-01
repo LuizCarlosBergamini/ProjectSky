@@ -69,6 +69,8 @@ namespace HierarchicalStateMachine
 
         public float AttackDamage => attackDamage + damageBonus;
         public float MaxHealth => maxHealth + maxHealthBonus;
+        /// <summary>Max health before upgrades; the HUD sizes Lucy's bar relative to it.</summary>
+        public float BaseMaxHealth => maxHealth;
         public float RunMaxSpeed => ctx.Data.runMaxSpeed + moveSpeedBonus;
         public float CurrentHealth => ctx.health;
 

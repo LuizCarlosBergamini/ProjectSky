@@ -85,7 +85,7 @@ public class UpgradeTreeUI : MonoBehaviour
             }
         }
 
-        Dictionary<UpgradeNode_SO, int> depths = ComputeDepths(treeNodes);
+        Dictionary<UpgradeNode_SO, int> depths = tree.GetNodeDepths();
         int maxDepth = 0;
         foreach (int depth in depths.Values) maxDepth = Mathf.Max(maxDepth, depth);
 
@@ -193,40 +193,6 @@ public class UpgradeTreeUI : MonoBehaviour
         rect.sizeDelta = new Vector2(delta.magnitude, _lineThickness);
         rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
         return line;
-    }
-
-    /// <summary>Row of each node = longest chain of in-tree prerequisites above it.</summary>
-    private static Dictionary<UpgradeNode_SO, int> ComputeDepths(List<UpgradeNode_SO> treeNodes)
-    {
-        Dictionary<UpgradeNode_SO, int> depths = new();
-        HashSet<UpgradeNode_SO> visiting = new();
-
-        int Depth(UpgradeNode_SO node)
-        {
-            if (depths.TryGetValue(node, out int known)) return known;
-            if (!visiting.Add(node))
-            {
-                Debug.LogWarning($"Ciclo de requisitos envolvendo o upgrade '{node.name}'.", node);
-                return 0;
-            }
-
-            int depth = 0;
-            if (node.prerequisites != null)
-            {
-                foreach (UpgradeNode_SO prerequisite in node.prerequisites)
-                {
-                    if (prerequisite == null || !treeNodes.Contains(prerequisite)) continue;
-                    depth = Mathf.Max(depth, Depth(prerequisite) + 1);
-                }
-            }
-
-            visiting.Remove(node);
-            depths[node] = depth;
-            return depth;
-        }
-
-        foreach (UpgradeNode_SO node in treeNodes) Depth(node);
-        return depths;
     }
 
     private static void ClearChildren(RectTransform container)
