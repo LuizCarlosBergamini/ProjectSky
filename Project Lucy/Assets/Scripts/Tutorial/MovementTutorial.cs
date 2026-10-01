@@ -19,6 +19,11 @@ public class MovementTutorial : MonoBehaviour
 
     [SerializeField] private string _playerTag = "Player";
 
+    [Header("Aparencia")]
+    [Tooltip("Opacidade maxima do tutorial quando totalmente visivel (1 = como foi gerado, 0 = invisivel).")]
+    [Range(0f, 1f)]
+    [SerializeField] private float _maxOpacity = 1f;
+
     [Header("Transicao")]
     [Tooltip("Duracao do fade ao aparecer (tempo real: funciona com o jogo pausado).")]
     [SerializeField] private float _fadeInDuration = 0.35f;
@@ -163,6 +168,7 @@ public class MovementTutorial : MonoBehaviour
 
     private void ApplyAlpha(float alpha)
     {
+        alpha *= _maxOpacity;
         for (int i = 0; i < _texts.Length; i++) _texts[i].color = WithAlpha(_textColors[i], alpha);
         for (int i = 0; i < _sprites.Length; i++) _sprites[i].color = WithAlpha(_spriteColors[i], alpha);
         for (int i = 0; i < _lines.Length; i++)
