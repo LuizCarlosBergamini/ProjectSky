@@ -12,6 +12,11 @@ public class SettingsManager : MonoBehaviour
 {
     public const string ResourcePath = "SettingsManager";
 
+    // Default names of the parameters exposed in Main.mixer.
+    public const string MasterParameter = "MasterVolume";
+    public const string MusicParameter = "MusicVolume";
+    public const string SfxParameter = "SFXVolume";
+
     public static SettingsManager instance;
 
     /// <summary>Fired after any setting changes (and after a load or reset), with the values already applied.</summary>
@@ -22,9 +27,9 @@ public class SettingsManager : MonoBehaviour
     [SerializeField] private AudioMixer _mixer;
 
     [Tooltip("Parametros expostos no mixer, um por slider.")]
-    [SerializeField] private string _masterParameter = "MasterVolume";
-    [SerializeField] private string _musicParameter = "MusicVolume";
-    [SerializeField] private string _sfxParameter = "SFXVolume";
+    [SerializeField] private string _masterParameter = MasterParameter;
+    [SerializeField] private string _musicParameter = MusicParameter;
+    [SerializeField] private string _sfxParameter = SfxParameter;
 
     private GameSettings _settings = new();
     private ISettingsStore _store;

@@ -66,6 +66,13 @@ public static class OptionsMenuBuilder
         Debug.Log($"[Opcoes] Prefab {PrefabPath} reconstruido.");
     }
 
+    /// <summary>The OptionsMenu prefab asset (and the SettingsManager prefab), created only when missing.</summary>
+    public static GameObject EnsurePrefab()
+    {
+        EnsureSettingsManagerPrefab();
+        return BuildPrefab(overwrite: false).gameObject;
+    }
+
     /// <summary>The OptionsMenu prefab asset, built first when missing (or always, with <paramref name="overwrite"/>).</summary>
     public static OptionsMenuController BuildPrefab(bool overwrite = false)
     {
