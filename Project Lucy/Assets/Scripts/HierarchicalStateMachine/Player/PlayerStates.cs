@@ -413,11 +413,29 @@ namespace HierarchicalStateMachine
             }
 
             float horizontalInput = ctx.playerActions.Swing.ReadValue<float>();
-            if (Mathf.Abs(horizontalInput) > 0.01f && vectorToAnchor.sqrMagnitude > 0.001f)
+            if (Mathf.Abs(horizontalInput) > 0.01f && currentDistance > 0.001f)
             {
-                Vector2 perpendicularDirection = new Vector2(-vectorToAnchor.y, vectorToAnchor.x).normalized;
-                Vector2 swingForceVector = perpendicularDirection * ctx.SwingForce * horizontalInput;
-                ctx.ForceTarget.AddForce(swingForceVector, ForceMode2D.Force);
+                Vector2 radial = vectorToAnchor / currentDistance;
+                Vector2 tangent = new Vector2(-radial.y, radial.x);
+                Vector2 pushDirection = tangent * Mathf.Sign(horizontalInput);
+
+                // Only pump the swing from below the pivot (zero at pivot height, none above it),
+                // so holding a direction can never push the player over the top of the arc.
+                float pump = Mathf.Clamp01(-radial.y);
+
+                // Pushing "outward" (away from the bottom of the arc) stops at the max angle.
+                float angleFromBottom = Mathf.Acos(Mathf.Clamp(-radial.y, -1f, 1f)) * Mathf.Rad2Deg;
+                bool pushingOutward = Mathf.Sign(horizontalInput) * radial.x > 0f;
+                if (pushingOutward && angleFromBottom >= ctx.MaxSwingAngle) pump = 0f;
+
+                // Cap the tangential speed the input is allowed to build.
+                float tangentialSpeed = Vector2.Dot(ctx.ForceTarget.linearVelocity, pushDirection);
+                if (tangentialSpeed >= ctx.MaxSwingSpeed) pump = 0f;
+
+                if (pump > 0f)
+                {
+                    ctx.ForceTarget.AddForce(pushDirection * (ctx.SwingForce * pump), ForceMode2D.Force);
+                }
             }
         }
 

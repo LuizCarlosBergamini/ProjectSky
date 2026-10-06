@@ -55,6 +55,10 @@ namespace HierarchicalStateMachine
         [SerializeField] private float minRopeLength;
         [SerializeField] private float reelSpeed = 10f;
         [SerializeField] private float swingForce = 100f;
+        [Tooltip("Max angle (degrees from straight down) that swing input can push the player to.")]
+        [SerializeField] private float maxSwingAngle = 75f;
+        [Tooltip("Tangential speed above which swing input stops adding force.")]
+        [SerializeField] private float maxSwingSpeed = 12f;
         [SerializeField] private float releaseJumpForce = 30f;
         
         private string lastPath;
@@ -116,6 +120,8 @@ namespace HierarchicalStateMachine
             ctx.MinRopeLength = minRopeLength;
             ctx.ReelSpeed = reelSpeed;
             ctx.SwingForce = swingForce;
+            ctx.MaxSwingAngle = maxSwingAngle;
+            ctx.MaxSwingSpeed = maxSwingSpeed;
             ctx.ReleaseJumpForce = releaseJumpForce;
             ctx.DefaultDrag = rb.linearDamping;
             ctx.health = maxHealth;
@@ -766,6 +772,8 @@ namespace HierarchicalStateMachine
         public float MinRopeLength;
         public float ReelSpeed;
         public float SwingForce;
+        public float MaxSwingAngle;
+        public float MaxSwingSpeed;
         public float ReleaseJumpForce;
         public float DefaultDrag;
         public bool IsGrappling;
