@@ -115,6 +115,8 @@ public class OptionsMenuTests
         yield return EnterEmptySceneWithOptions();
 
         var closedCount = 0;
+        var closedEventCount = 0;
+        Options().Closed += () => closedEventCount++;
         Options().Open(() => closedCount++);
         yield return null;
         Options().Close();
@@ -122,12 +124,14 @@ public class OptionsMenuTests
 
         Assert.That(Options().IsOpen, Is.False);
         Assert.That(closedCount, Is.EqualTo(1));
+        Assert.That(closedEventCount, Is.EqualTo(1), "The Closed event did not fire exactly once.");
         Assert.That(Options().GetComponentsInChildren<Slider>(false), Is.Empty, "The sliders are still visible after Close().");
 
         // Closing again is harmless and does not re-fire the callback.
         Options().Close();
         yield return null;
         Assert.That(closedCount, Is.EqualTo(1));
+        Assert.That(closedEventCount, Is.EqualTo(1));
 
         yield return new ExitPlayMode();
     }
