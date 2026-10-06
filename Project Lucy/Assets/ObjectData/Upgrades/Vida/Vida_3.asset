@@ -15,7 +15,7 @@ MonoBehaviour:
   nodeId: vida-3
   nodeName: "Cora\xE7\xE3o de A\xE7o"
   nodeDescription: "Resist\xEAncia lend\xE1ria. Grande aumento de vida m\xE1xima."
-  nodeIcon: {fileID: 21300000, guid: 4d119e050f4eec540a48c35518af5fde, type: 3}
+  nodeIcon: {fileID: 21300000, guid: 7f47622acaa7613428d21195c0a260d4, type: 3}
   stat: 1
   bonusValue: 40
   cost:

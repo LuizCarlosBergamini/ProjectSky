@@ -17,6 +17,21 @@ MonoBehaviour:
   driveAnimation: 1
   sourceFrameRate: 12
   totalFrames: 7
+  bodyFrames:
+  - center: {x: -0.04, y: 1.64}
+    size: {x: 2.26, y: 3.38}
+  - center: {x: 0, y: 1.66}
+    size: {x: 2.26, y: 3.42}
+  - center: {x: 0.1, y: 1.56}
+    size: {x: 2.06, y: 3.22}
+  - center: {x: 0.42, y: 1.58}
+    size: {x: 2.62, y: 3.26}
+  - center: {x: 0.68, y: 1.56}
+    size: {x: 3.3, y: 3.22}
+  - center: {x: 0.38, y: 1.6}
+    size: {x: 3.18, y: 3.3}
+  - center: {x: -0.34, y: 1.7}
+    size: {x: 1.98, y: 3.5}
   segments:
   - label: cauda sobe
     kind: 0

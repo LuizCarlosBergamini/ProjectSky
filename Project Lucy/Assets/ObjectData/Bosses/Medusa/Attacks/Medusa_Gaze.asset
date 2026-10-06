@@ -17,6 +17,17 @@ MonoBehaviour:
   driveAnimation: 1
   sourceFrameRate: 10
   totalFrames: 5
+  bodyFrames:
+  - center: {x: -0.52, y: 1.72}
+    size: {x: 2.42, y: 3.54}
+  - center: {x: -0.14, y: 1.82}
+    size: {x: 2.86, y: 3.74}
+  - center: {x: -0.08, y: 1.8}
+    size: {x: 2.74, y: 3.7}
+  - center: {x: 0.06, y: 1.82}
+    size: {x: 2.62, y: 3.74}
+  - center: {x: 0.02, y: 1.84}
+    size: {x: 2.62, y: 3.78}
   segments:
   - label: encara
     kind: 0

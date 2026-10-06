@@ -15,7 +15,7 @@ MonoBehaviour:
   nodeId: vida-2
   nodeName: "N\xFAcleo Vital"
   nodeDescription: "Um n\xFAcleo de energia mais est\xE1vel aguenta muito mais dano."
-  nodeIcon: {fileID: 21300000, guid: 4d119e050f4eec540a48c35518af5fde, type: 3}
+  nodeIcon: {fileID: 21300000, guid: 96919140c40875b428497a7745ef85a8, type: 3}
   stat: 1
   bonusValue: 25
   cost:

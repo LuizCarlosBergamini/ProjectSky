@@ -69,6 +69,8 @@ namespace HierarchicalStateMachine
 
         public float AttackDamage => attackDamage + damageBonus;
         public float MaxHealth => maxHealth + maxHealthBonus;
+        /// <summary>Max health before upgrades; the HUD sizes Lucy's bar relative to it.</summary>
+        public float BaseMaxHealth => maxHealth;
         public float RunMaxSpeed => ctx.Data.runMaxSpeed + moveSpeedBonus;
         public float CurrentHealth => ctx.health;
 
@@ -81,7 +83,11 @@ namespace HierarchicalStateMachine
         public bool IsGrounded => ctx.IsGrounded;
         public bool IsAttacking => ctx.IsAttacking;
         public bool IsGrappling => ctx.IsGrappling;
-        public bool IsFacingRight => ctx.isFacingRight;
+        // Read from the rotation, not from ctx.isFacingRight: Turn() flips that flag the opposite way to the
+        // rotation (after the first turn it is true while the player looks LEFT, rotation y = 180), so the flag
+        // cannot say where the player is actually looking. Rotation y = 0 is the art's right-facing pose, and
+        // the attack point sits in front of it.
+        public bool IsFacingRight => Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, 0f)) < 90f;
 
         private readonly RaycastHit2D[] groundHits = new RaycastHit2D[8];
         

@@ -18,6 +18,7 @@ namespace HierarchicalStateMachine
         private float segmentTime;
         private bool finished;
         private float readyAt;
+        private int hurtboxFrame;
 
         protected EnemyAttackMove(StateMachine machine, State parent, EnemyContext ctx, EnemyAttackDefinition definition)
             : base(machine, parent)
@@ -39,6 +40,7 @@ namespace HierarchicalStateMachine
         {
             finished = false;
             segmentIndex = -1;
+            hurtboxFrame = -1;
             OnMoveEnter();
 
             if (Definition.segments.Count == 0)
@@ -57,7 +59,9 @@ namespace HierarchicalStateMachine
 
             segmentTime += deltaTime;
             AttackSegment segment = CurrentSegment;
-            OnSegmentUpdate(segment, Mathf.Clamp01(segmentTime / segment.duration));
+            float progress = Mathf.Clamp01(segmentTime / segment.duration);
+            UpdateHurtbox(segment, progress);
+            OnSegmentUpdate(segment, progress);
 
             if (segmentTime < segment.duration) return;
 
@@ -91,6 +95,10 @@ namespace HierarchicalStateMachine
             if (finished && !Mathf.Approximately(Definition.exitForwardOffset, 0f))
                 ctx.CommitForwardOffset?.Invoke(Definition.exitForwardOffset);
 
+            // Back to the resting hurtbox, also when death interrupts the attack.
+            hurtboxFrame = -1;
+            ctx.SetHurtboxFrame?.Invoke(null, 0);
+
             OnMoveExit();
         }
 
@@ -119,7 +127,22 @@ namespace HierarchicalStateMachine
                 ? FacingSign * segment.advanceDistance / Mathf.Max(0.01f, segment.duration)
                 : 0f;
 
+            UpdateHurtbox(segment, 0f);
             OnSegmentStart(segment);
+        }
+
+        // The clip shows the segment's frames evenly across its duration, so the frame on screen is known
+        // here. The hurtbox follows the body drawn on that frame (see AttackFrameBody): the player can hit
+        // whatever is on screen, in wind-up, active and recovery alike.
+        private void UpdateHurtbox(AttackSegment segment, float progress)
+        {
+            if (!Definition.driveAnimation || Definition.bodyFrames == null || Definition.bodyFrames.Length == 0) return;
+
+            int frame = segment.firstFrame + Mathf.Min(segment.FrameCount - 1, Mathf.FloorToInt(progress * segment.FrameCount));
+            if (frame == hurtboxFrame) return;
+
+            hurtboxFrame = frame;
+            ctx.SetHurtboxFrame?.Invoke(Definition, frame);
         }
 
         private void OnSegmentEnd(AttackSegment segment)

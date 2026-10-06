@@ -72,6 +72,7 @@ namespace HierarchicalStateMachine
         public Func<GazeAttackDefinition, bool> ApplyGaze;         // true when the gaze landed
         public Action FaceTarget;
         public Action<float> CommitForwardOffset;
+        public Action<EnemyAttackDefinition, int> SetHurtboxFrame; // (null, 0) = back to the resting hurtbox
         public Func<float, bool> IsPathBlocked;                    // direction sign -> wall right there
         public Action OnDeathFinished;
 

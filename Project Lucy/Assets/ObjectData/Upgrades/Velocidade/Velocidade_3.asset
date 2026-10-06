@@ -15,7 +15,7 @@ MonoBehaviour:
   nodeId: velocidade-3
   nodeName: Corrida Cometa
   nodeDescription: "Lucy corre como um cometa cruzando o c\xE9u."
-  nodeIcon: {fileID: 21300000, guid: d9e4aa0f76bfe7c45afadb9afa28848d, type: 3}
+  nodeIcon: {fileID: 21300000, guid: 79f85d45f621d5c43a303cd2fb011fef, type: 3}
   stat: 2
   bonusValue: 1.25
   cost:
