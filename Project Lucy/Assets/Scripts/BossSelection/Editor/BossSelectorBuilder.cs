@@ -714,6 +714,7 @@ public static class BossSelectorBuilder
 
         AudioSource audio = canvasRect.gameObject.AddComponent<AudioSource>();
         audio.playOnAwake = false;
+        audio.outputAudioMixerGroup = OptionsMenuBuilder.FindMixerGroup("SFX");
 
         RectTransform root = CreateRect("Root", canvasRect);
         Stretch(root);
