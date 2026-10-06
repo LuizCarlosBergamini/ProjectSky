@@ -354,8 +354,11 @@ MonoBehaviour:
   playerGrappleRadius: 5
   minRopeLength: 0
   reelSpeed: 10
-  swingForce: 100
+  swingForce: 40
   releaseJumpForce: 30
+  maxSwingSpeed: 16
+  swingOverspeedBrake: 60
+  maxReleaseSpeed: 18
 --- !u!1 &482227086916469963
 GameObject:
   m_ObjectHideFlags: 0
