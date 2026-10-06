@@ -54,8 +54,14 @@ namespace HierarchicalStateMachine
         [SerializeField] private float playerGrappleRadius = 5f;
         [SerializeField] private float minRopeLength;
         [SerializeField] private float reelSpeed = 10f;
-        [SerializeField] private float swingForce = 100f;
+        [SerializeField] private float swingForce = 40f;
         [SerializeField] private float releaseJumpForce = 30f;
+        [Tooltip("Speed the swing settles at. Input stops pumping here and anything above is braked away.")]
+        [SerializeField] private float maxSwingSpeed = 16f;
+        [Tooltip("Deceleration (units/s²) applied while the swing is above maxSwingSpeed, e.g. after reeling in.")]
+        [SerializeField] private float swingOverspeedBrake = 60f;
+        [Tooltip("Velocity carried out of the swing on release, before the release jump impulse.")]
+        [SerializeField] private float maxReleaseSpeed = 18f;
         
         private string lastPath;
         private float invulnerabilityTimer;
@@ -117,6 +123,9 @@ namespace HierarchicalStateMachine
             ctx.ReelSpeed = reelSpeed;
             ctx.SwingForce = swingForce;
             ctx.ReleaseJumpForce = releaseJumpForce;
+            ctx.MaxSwingSpeed = maxSwingSpeed;
+            ctx.SwingOverspeedBrake = swingOverspeedBrake;
+            ctx.MaxReleaseSpeed = maxReleaseSpeed;
             ctx.DefaultDrag = rb.linearDamping;
             ctx.health = maxHealth;
 
@@ -767,6 +776,9 @@ namespace HierarchicalStateMachine
         public float ReelSpeed;
         public float SwingForce;
         public float ReleaseJumpForce;
+        public float MaxSwingSpeed;
+        public float SwingOverspeedBrake;
+        public float MaxReleaseSpeed;
         public float DefaultDrag;
         public bool IsGrappling;
         public Vector2 GrapplePoint;

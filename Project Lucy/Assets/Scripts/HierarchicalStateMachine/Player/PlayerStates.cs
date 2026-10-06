@@ -413,16 +413,48 @@ namespace HierarchicalStateMachine
             }
 
             float horizontalInput = ctx.playerActions.Swing.ReadValue<float>();
-            if (Mathf.Abs(horizontalInput) > 0.01f && vectorToAnchor.sqrMagnitude > 0.001f)
+            if (Mathf.Abs(horizontalInput) > 0.01f && currentDistance > 0.001f)
             {
-                Vector2 perpendicularDirection = new Vector2(-vectorToAnchor.y, vectorToAnchor.x).normalized;
-                Vector2 swingForceVector = perpendicularDirection * ctx.SwingForce * horizontalInput;
-                ctx.ForceTarget.AddForce(swingForceVector, ForceMode2D.Force);
+                Vector2 perpendicularDirection = new Vector2(-vectorToAnchor.y, vectorToAnchor.x) / currentDistance;
+
+                // Pumping only helps in the lower half of the arc and fades to nothing at the anchor's
+                // height, so holding a direction can never carry the player over the top into a loop.
+                float belowAnchor = Mathf.Clamp01(-vectorToAnchor.y / currentDistance);
+
+                // Stop pushing once the swing already moves at the cap in the pushed direction.
+                float speedAlongInput = Vector2.Dot(ctx.ForceTarget.linearVelocity, perpendicularDirection) * Mathf.Sign(horizontalInput);
+
+                if (belowAnchor > 0f && speedAlongInput < ctx.MaxSwingSpeed)
+                {
+                    Vector2 swingForceVector = perpendicularDirection * (ctx.SwingForce * horizontalInput * belowAnchor);
+                    ctx.ForceTarget.AddForce(swingForceVector, ForceMode2D.Force);
+                }
             }
+
+            LimitSwingSpeed(fixedDeltaTime);
+        }
+
+        // Soft cap: reeling in conserves angular momentum and gravity can still add a bit at the
+        // bottom of the arc, so bleed off the excess instead of snapping, which would feel like a wall.
+        private void LimitSwingSpeed(float fixedDeltaTime)
+        {
+            Vector2 velocity = ctx.ForceTarget.linearVelocity;
+            float speed = velocity.magnitude;
+            if (speed <= ctx.MaxSwingSpeed) return;
+
+            float cappedSpeed = Mathf.MoveTowards(speed, ctx.MaxSwingSpeed, ctx.SwingOverspeedBrake * fixedDeltaTime);
+            ctx.ForceTarget.linearVelocity = velocity * (cappedSpeed / speed);
         }
 
         protected override void OnExit()
         {
+            // Release keeps the swing's momentum, but only up to a cap. The release jump impulse
+            // queued in OnUpdate is applied on the next physics step, so it still lands on top of this.
+            if (ctx.ForceTarget != null && ctx.ForceTarget.bodyType == RigidbodyType2D.Dynamic)
+            {
+                ctx.ForceTarget.linearVelocity = Vector2.ClampMagnitude(ctx.ForceTarget.linearVelocity, ctx.MaxReleaseSpeed);
+            }
+
             if (dampingOverridden && ctx.ForceTarget != null)
             {
                 ctx.ForceTarget.linearDamping = originalTargetDamping;
