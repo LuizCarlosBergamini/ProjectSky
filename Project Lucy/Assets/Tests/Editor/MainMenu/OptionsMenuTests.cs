@@ -18,6 +18,7 @@ public class OptionsMenuTests
     [Test]
     public void Prefab_Exists_AndHasItsOwnCanvas()
     {
+        MenuTestPaths.RequireOptionsPrefab();
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MenuTestPaths.OptionsMenuPrefab);
         Assert.That(prefab, Is.Not.Null, $"No prefab at {MenuTestPaths.OptionsMenuPrefab}.");
         Assert.That(prefab.GetComponentInChildren<OptionsMenuController>(true), Is.Not.Null);
@@ -27,6 +28,7 @@ public class OptionsMenuTests
     [Test]
     public void Prefab_DoesNotReferenceAnySceneSpecificType()
     {
+        MenuTestPaths.RequireOptionsPrefab();
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MenuTestPaths.OptionsMenuPrefab);
         Assert.That(prefab.GetComponentsInChildren<MainMenuController>(true), Is.Empty);
 
@@ -42,6 +44,7 @@ public class OptionsMenuTests
     [Test]
     public void Prefab_RendersAboveOrdinaryCanvases()
     {
+        MenuTestPaths.RequireOptionsPrefab();
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MenuTestPaths.OptionsMenuPrefab);
         var canvas = prefab.GetComponentInChildren<Canvas>(true);
         Assert.That(canvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay).Or.EqualTo(RenderMode.ScreenSpaceCamera));
@@ -52,6 +55,7 @@ public class OptionsMenuTests
     [Test]
     public void Prefab_HasBackButtonAndVolumeSliders()
     {
+        MenuTestPaths.RequireOptionsPrefab();
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MenuTestPaths.OptionsMenuPrefab);
         Assert.That(prefab.GetComponentsInChildren<Slider>(true).Length, Is.GreaterThanOrEqualTo(1), "No volume slider.");
         Assert.That(prefab.GetComponentsInChildren<Button>(true), Is.Not.Empty, "No Back button.");
@@ -59,12 +63,14 @@ public class OptionsMenuTests
 
     private static IEnumerator EnterEmptySceneWithOptions()
     {
+        MenuTestPaths.RequireOptionsPrefab();
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         yield return new EnterPlayMode();
 
         var eventSystem = new GameObject("EventSystem", typeof(EventSystem),
             typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
         Assert.That(eventSystem, Is.Not.Null);
+        MenuTestPaths.RequireOptionsPrefab();
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MenuTestPaths.OptionsMenuPrefab);
         Object.Instantiate(prefab);
         yield return null;

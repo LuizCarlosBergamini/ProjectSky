@@ -16,6 +16,7 @@ public class MainMenuSceneTests
 {
     private static IEnumerator EnterMainMenu()
     {
+        MenuTestPaths.RequireMainMenuScene();
         EditorSceneManager.OpenScene(MenuTestPaths.MainMenuScene, OpenSceneMode.Single);
         yield return new EnterPlayMode();
         // Let Awake/Start run and the layout groups and EventSystem settle.

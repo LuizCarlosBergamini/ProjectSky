@@ -10,23 +10,26 @@ public class MainMenuBuildSettingsTests
     [Test]
     public void MainMenu_IsEnabledAtBuildIndexZero()
     {
+        MenuTestPaths.RequireMainMenuScene();
         var enabledScenes = EditorBuildSettings.scenes.Where(s => s.enabled).ToArray();
 
         Assert.That(enabledScenes, Is.Not.Empty, "No scenes are enabled in Build Settings.");
-        Assert.That(enabledScenes[0].path, Is.EqualTo(MenuTestPaths.MainMenuScene),
+        Assert.That(enabledScenes[0].path, Is.EqualTo(MainMenuBuilder.ScenePath),
             "Build index 0 is the first enabled scene, and it should be the main menu.");
     }
 
     [Test]
     public void MainMenu_SceneAssetExists()
     {
-        Assert.That(AssetDatabase.LoadAssetAtPath<SceneAsset>(MenuTestPaths.MainMenuScene), Is.Not.Null);
+        MenuTestPaths.RequireMainMenuScene();
+        Assert.That(AssetDatabase.LoadAssetAtPath<SceneAsset>(MainMenuBuilder.ScenePath), Is.Not.Null);
     }
 
     [Test]
     public void MainMenu_IsListedOnlyOnce()
     {
-        var count = EditorBuildSettings.scenes.Count(s => s.path == MenuTestPaths.MainMenuScene);
+        MenuTestPaths.RequireMainMenuScene();
+        var count = EditorBuildSettings.scenes.Count(s => s.path == MainMenuBuilder.ScenePath);
         Assert.That(count, Is.EqualTo(1));
     }
 
