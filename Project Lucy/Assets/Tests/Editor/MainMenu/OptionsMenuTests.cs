@@ -61,16 +61,19 @@ public class OptionsMenuTests
         Assert.That(prefab.GetComponentsInChildren<Button>(true), Is.Not.Empty, "No Back button.");
     }
 
-    private static IEnumerator EnterEmptySceneWithOptions()
+    private static void OpenEmptyScene()
     {
         MenuTestPaths.RequireOptionsPrefab();
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        yield return MenuTestUtils.EnterPlayMode();
+    }
+
+    private static IEnumerator SpawnOptions()
+    {
+        MenuTestUtils.AssertInPlayMode();
 
         var eventSystem = new GameObject("EventSystem", typeof(EventSystem),
             typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
         Assert.That(eventSystem, Is.Not.Null);
-        MenuTestPaths.RequireOptionsPrefab();
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MenuTestPaths.OptionsMenuPrefab);
         Object.Instantiate(prefab);
         yield return null;
@@ -82,20 +85,24 @@ public class OptionsMenuTests
     [UnityTest]
     public IEnumerator StartsClosed_InAnEmptyScene()
     {
-        yield return EnterEmptySceneWithOptions();
+        OpenEmptyScene();
+        yield return new EnterPlayMode();
+        yield return SpawnOptions();
 
         Assert.That(Object.FindAnyObjectByType<MainMenuController>(FindObjectsInactive.Include), Is.Null);
         Assert.That(Options(), Is.Not.Null);
         Assert.That(Options().IsOpen, Is.False);
         LogAssert.NoUnexpectedReceived();
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator Open_ShowsTheMenu_WithoutTheMainMenuLoaded()
     {
-        yield return EnterEmptySceneWithOptions();
+        OpenEmptyScene();
+        yield return new EnterPlayMode();
+        yield return SpawnOptions();
 
         Options().Open();
         yield return null;
@@ -106,13 +113,15 @@ public class OptionsMenuTests
             "Opening should select something so keyboard and gamepad can navigate.");
         LogAssert.NoUnexpectedReceived();
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator Close_HidesTheMenu_AndFiresTheCallbackOnce()
     {
-        yield return EnterEmptySceneWithOptions();
+        OpenEmptyScene();
+        yield return new EnterPlayMode();
+        yield return SpawnOptions();
 
         var closedCount = 0;
         var closedEventCount = 0;
@@ -133,13 +142,15 @@ public class OptionsMenuTests
         Assert.That(closedCount, Is.EqualTo(1));
         Assert.That(closedEventCount, Is.EqualTo(1));
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator BackButton_ClosesTheMenu()
     {
-        yield return EnterEmptySceneWithOptions();
+        OpenEmptyScene();
+        yield return new EnterPlayMode();
+        yield return SpawnOptions();
 
         var closed = false;
         Options().Open(() => closed = true);
@@ -154,13 +165,15 @@ public class OptionsMenuTests
         Assert.That(closed, Is.True);
         Assert.That(Options().IsOpen, Is.False);
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator CanBeReopened_AfterClosing()
     {
-        yield return EnterEmptySceneWithOptions();
+        OpenEmptyScene();
+        yield return new EnterPlayMode();
+        yield return SpawnOptions();
 
         Options().Open();
         yield return null;
@@ -175,13 +188,15 @@ public class OptionsMenuTests
         yield return null;
         Assert.That(closedAgain, Is.True, "The second caller's callback did not fire.");
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator CancelInput_ClosesTheMenu()
     {
-        yield return EnterEmptySceneWithOptions();
+        OpenEmptyScene();
+        yield return new EnterPlayMode();
+        yield return SpawnOptions();
 
         var closed = false;
         Options().Open(() => closed = true);
@@ -207,7 +222,7 @@ public class OptionsMenuTests
             InputSystem.RemoveDevice(keyboard);
         }
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     private static Button FindBackButton(OptionsMenuController options)

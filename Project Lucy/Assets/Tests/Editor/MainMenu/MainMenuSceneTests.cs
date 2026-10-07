@@ -10,15 +10,19 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Opens the MainMenu scene, enters Play Mode and checks the menu as the player would meet it.
-/// Each test opens the scene and enters Play Mode itself, so nothing carries over between tests.
+/// Each test opens the scene and yields EnterPlayMode itself (the Test Framework ignores it from a helper), so nothing carries over between tests.
 /// </summary>
 public class MainMenuSceneTests
 {
-    private static IEnumerator EnterMainMenu()
+    private static void OpenMainMenu()
     {
         MenuTestPaths.RequireMainMenuScene();
         EditorSceneManager.OpenScene(MenuTestPaths.MainMenuScene, OpenSceneMode.Single);
-        yield return MenuTestUtils.EnterPlayMode();
+    }
+
+    private static IEnumerator SettleMenu()
+    {
+        MenuTestUtils.AssertInPlayMode();
         // Let Awake/Start run and the layout groups and EventSystem settle.
         yield return null;
         yield return null;
@@ -37,18 +41,22 @@ public class MainMenuSceneTests
     [UnityTest]
     public IEnumerator Scene_HasMainMenuControllerAndEventSystem()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         Assert.That(Object.FindAnyObjectByType<MainMenuController>(), Is.Not.Null);
         Assert.That(EventSystem.current, Is.Not.Null);
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator Continue_IsVisibleButDisabled_WhenThereIsNoSave()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         Assert.That(SaveSystem.HasSave(), Is.False, "The placeholder save check should report no save yet.");
         var continueButton = FindButton(MenuTestPaths.ContinueButtonName);
@@ -56,13 +64,15 @@ public class MainMenuSceneTests
         Assert.That(continueButton.interactable, Is.False, "Continue should be non-interactable without a save.");
         Assert.That(continueButton.IsInteractable(), Is.False);
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator Continue_LooksGreyedOut_WhenDisabled()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         var continueButton = FindButton(MenuTestPaths.ContinueButtonName);
         Assert.That(continueButton.transition, Is.Not.EqualTo(Selectable.Transition.None),
@@ -70,13 +80,15 @@ public class MainMenuSceneTests
         if (continueButton.transition == Selectable.Transition.ColorTint)
             Assert.That(continueButton.colors.disabledColor, Is.Not.EqualTo(continueButton.colors.normalColor));
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator Buttons_AreStackedInOrderByAVerticalLayoutGroup()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         var newGame = FindButton(MenuTestPaths.NewGameButtonName).transform;
         var continueButton = FindButton(MenuTestPaths.ContinueButtonName).transform;
@@ -89,13 +101,15 @@ public class MainMenuSceneTests
         Assert.That(newGame.GetSiblingIndex(), Is.LessThan(continueButton.GetSiblingIndex()));
         Assert.That(continueButton.GetSiblingIndex(), Is.LessThan(options.GetSiblingIndex()));
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator Buttons_HaveHoverPressedAndSelectedStates()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         foreach (var name in new[] { MenuTestPaths.NewGameButtonName, MenuTestPaths.ContinueButtonName, MenuTestPaths.OptionsButtonName })
         {
@@ -111,13 +125,15 @@ public class MainMenuSceneTests
             }
         }
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator DefaultSelection_IsAnInteractableButton()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         var selected = EventSystem.current.currentSelectedGameObject;
         Assert.That(selected, Is.Not.Null, "Nothing is selected, so keyboard and gamepad navigation has no starting point.");
@@ -125,13 +141,15 @@ public class MainMenuSceneTests
         Assert.That(selectable, Is.Not.Null);
         Assert.That(selectable.IsInteractable(), Is.True, "The default selection should not be the disabled Continue button.");
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator Background_IsDecorativeAndAtTheBack()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         var background = MenuTestUtils.FindInScenes(MenuTestPaths.BackgroundImageName);
         Assert.That(background, Is.Not.Null);
@@ -146,13 +164,15 @@ public class MainMenuSceneTests
         for (var t = background.transform; t != canvas; t = t.parent)
             Assert.That(t.GetSiblingIndex(), Is.EqualTo(0), $"{t.name} is not the first child of {t.parent.name}.");
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator Background_DoesNotBlockRaycastsToButtons()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         foreach (var name in new[] { MenuTestPaths.NewGameButtonName, MenuTestPaths.OptionsButtonName })
         {
@@ -166,13 +186,15 @@ public class MainMenuSceneTests
                 $"A click on {name} lands on {hits[0].gameObject.name} instead.");
         }
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator Background_CoversTheScreenWithoutStretching()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         var background = MenuTestUtils.FindInScenes(MenuTestPaths.BackgroundImageName);
         var rect = MenuTestUtils.ScreenRect((RectTransform)background.transform);
@@ -197,13 +219,15 @@ public class MainMenuSceneTests
         Assert.That(rect.width / rect.height, Is.EqualTo(artAspect).Within(0.01f),
             "The background rect does not match the art's aspect ratio, so the art is stretched.");
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator VersionLabel_ShowsTheApplicationVersion()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         Assert.That(Application.version, Is.Not.Empty);
         var labels = Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Select(t => t.text)
@@ -211,13 +235,15 @@ public class MainMenuSceneTests
         Assert.That(labels.Any(text => text.Contains(Application.version)), Is.True,
             $"No label shows the version \"{Application.version}\".");
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator OptionsButton_OpensTheOptionsMenuOverTheMainMenu()
     {
-        yield return EnterMainMenu();
+        OpenMainMenu();
+        yield return new EnterPlayMode();
+        yield return SettleMenu();
 
         FindButton(MenuTestPaths.OptionsButtonName).onClick.Invoke();
         yield return null;
@@ -231,6 +257,6 @@ public class MainMenuSceneTests
         Assert.That(optionsCanvas.sortingOrder, Is.GreaterThan(menuCanvas.sortingOrder),
             "The Options menu should render above the main menu.");
 
-        yield return MenuTestUtils.ExitPlayMode();
+        yield return new ExitPlayMode();
     }
 }
