@@ -62,7 +62,7 @@ public class SettingsStartupTests
         WriteSaved(0.5f, 0f, 0.1f);
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-        yield return new EnterPlayMode();
+        yield return MenuTestUtils.EnterPlayMode();
         yield return null; // past SettingsManager.Start, which re-applies after the start snapshot
 
         Assert.That(SettingsManager.instance, Is.Not.Null, "No SettingsManager was created at startup.");
@@ -73,14 +73,14 @@ public class SettingsStartupTests
         Assert.That(MixerDecibels("MusicVolume"), Is.LessThanOrEqualTo(-80f + Tolerance), "Music at 0 should be silent.");
         Assert.That(MixerDecibels("SFXVolume"), Is.EqualTo(-20f).Within(Tolerance));
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
     public IEnumerator SettingsManager_SurvivesSceneLoads_AndThereIsOnlyOne()
     {
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        yield return new EnterPlayMode();
+        yield return MenuTestUtils.EnterPlayMode();
         yield return null;
 
         var first = SettingsManager.instance;
@@ -95,7 +95,7 @@ public class SettingsStartupTests
         Assert.That(SettingsManager.instance, Is.SameAs(first));
         Assert.That(Object.FindObjectsByType<SettingsManager>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -103,7 +103,7 @@ public class SettingsStartupTests
     {
         WriteSaved(1f, 1f, 1f);
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        yield return new EnterPlayMode();
+        yield return MenuTestUtils.EnterPlayMode();
         yield return null;
 
         SettingsManager.instance.SetVolume(VolumeChannel.Master, 0.1f);
@@ -113,7 +113,7 @@ public class SettingsStartupTests
 
         // Drop the unsaved change so leaving Play Mode (OnApplicationQuit saves) doesn't write it.
         SettingsManager.instance.Load();
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -122,7 +122,7 @@ public class SettingsStartupTests
         MenuTestPaths.RequireOptionsPrefab();
         WriteSaved(1f, 1f, 1f);
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        yield return new EnterPlayMode();
+        yield return MenuTestUtils.EnterPlayMode();
 
         new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem),
             typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
@@ -151,6 +151,6 @@ public class SettingsStartupTests
         Assert.That(new PlayerPrefsSettingsStore().TryLoad(out var saved), Is.True);
         Assert.That(saved.masterVolume, Is.EqualTo(0.1f).Within(0.01f), "Closing the menu did not save the new volume.");
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 }

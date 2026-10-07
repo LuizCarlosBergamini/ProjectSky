@@ -18,7 +18,7 @@ public class MainMenuSceneTests
     {
         MenuTestPaths.RequireMainMenuScene();
         EditorSceneManager.OpenScene(MenuTestPaths.MainMenuScene, OpenSceneMode.Single);
-        yield return new EnterPlayMode();
+        yield return MenuTestUtils.EnterPlayMode();
         // Let Awake/Start run and the layout groups and EventSystem settle.
         yield return null;
         yield return null;
@@ -42,7 +42,7 @@ public class MainMenuSceneTests
         Assert.That(Object.FindAnyObjectByType<MainMenuController>(), Is.Not.Null);
         Assert.That(EventSystem.current, Is.Not.Null);
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -56,7 +56,7 @@ public class MainMenuSceneTests
         Assert.That(continueButton.interactable, Is.False, "Continue should be non-interactable without a save.");
         Assert.That(continueButton.IsInteractable(), Is.False);
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -70,7 +70,7 @@ public class MainMenuSceneTests
         if (continueButton.transition == Selectable.Transition.ColorTint)
             Assert.That(continueButton.colors.disabledColor, Is.Not.EqualTo(continueButton.colors.normalColor));
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -89,7 +89,7 @@ public class MainMenuSceneTests
         Assert.That(newGame.GetSiblingIndex(), Is.LessThan(continueButton.GetSiblingIndex()));
         Assert.That(continueButton.GetSiblingIndex(), Is.LessThan(options.GetSiblingIndex()));
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -111,7 +111,7 @@ public class MainMenuSceneTests
             }
         }
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -125,7 +125,7 @@ public class MainMenuSceneTests
         Assert.That(selectable, Is.Not.Null);
         Assert.That(selectable.IsInteractable(), Is.True, "The default selection should not be the disabled Continue button.");
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -146,7 +146,7 @@ public class MainMenuSceneTests
         for (var t = background.transform; t != canvas; t = t.parent)
             Assert.That(t.GetSiblingIndex(), Is.EqualTo(0), $"{t.name} is not the first child of {t.parent.name}.");
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -166,7 +166,7 @@ public class MainMenuSceneTests
                 $"A click on {name} lands on {hits[0].gameObject.name} instead.");
         }
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -197,7 +197,7 @@ public class MainMenuSceneTests
         Assert.That(rect.width / rect.height, Is.EqualTo(artAspect).Within(0.01f),
             "The background rect does not match the art's aspect ratio, so the art is stretched.");
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -211,7 +211,7 @@ public class MainMenuSceneTests
         Assert.That(labels.Any(text => text.Contains(Application.version)), Is.True,
             $"No label shows the version \"{Application.version}\".");
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -231,6 +231,6 @@ public class MainMenuSceneTests
         Assert.That(optionsCanvas.sortingOrder, Is.GreaterThan(menuCanvas.sortingOrder),
             "The Options menu should render above the main menu.");
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 }

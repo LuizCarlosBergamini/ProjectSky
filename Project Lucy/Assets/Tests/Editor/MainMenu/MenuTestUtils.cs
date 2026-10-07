@@ -1,8 +1,12 @@
+using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
+using UnityEditor;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 
 /// <summary>
 /// Lookup and raycast helpers shared by the main menu PlayMode tests.
@@ -55,5 +59,19 @@ public static class MenuTestUtils
         var min = RectTransformUtility.WorldToScreenPoint(camera, corners[0]);
         var max = RectTransformUtility.WorldToScreenPoint(camera, corners[2]);
         return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+    }
+
+    /// <summary>Enters Play Mode and fails clearly if the Editor did not actually get there.</summary>
+    public static IEnumerator EnterPlayMode()
+    {
+        yield return new UnityEngine.TestTools.EnterPlayMode();
+        Assert.That(EditorApplication.isPlaying, Is.True,
+            "Play Mode did not start. Run these tests from the Test Runner window or with -runTests without -batchmode.");
+    }
+
+    /// <summary>Leaves Play Mode if the test is still in it.</summary>
+    public static IEnumerator ExitPlayMode()
+    {
+        if (EditorApplication.isPlaying) yield return new UnityEngine.TestTools.ExitPlayMode();
     }
 }

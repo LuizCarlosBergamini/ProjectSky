@@ -65,7 +65,7 @@ public class OptionsMenuTests
     {
         MenuTestPaths.RequireOptionsPrefab();
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        yield return new EnterPlayMode();
+        yield return MenuTestUtils.EnterPlayMode();
 
         var eventSystem = new GameObject("EventSystem", typeof(EventSystem),
             typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
@@ -89,7 +89,7 @@ public class OptionsMenuTests
         Assert.That(Options().IsOpen, Is.False);
         LogAssert.NoUnexpectedReceived();
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -106,7 +106,7 @@ public class OptionsMenuTests
             "Opening should select something so keyboard and gamepad can navigate.");
         LogAssert.NoUnexpectedReceived();
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -133,7 +133,7 @@ public class OptionsMenuTests
         Assert.That(closedCount, Is.EqualTo(1));
         Assert.That(closedEventCount, Is.EqualTo(1));
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -154,7 +154,7 @@ public class OptionsMenuTests
         Assert.That(closed, Is.True);
         Assert.That(Options().IsOpen, Is.False);
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -175,7 +175,7 @@ public class OptionsMenuTests
         yield return null;
         Assert.That(closedAgain, Is.True, "The second caller's callback did not fire.");
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     [UnityTest]
@@ -207,7 +207,7 @@ public class OptionsMenuTests
             InputSystem.RemoveDevice(keyboard);
         }
 
-        yield return new ExitPlayMode();
+        yield return MenuTestUtils.ExitPlayMode();
     }
 
     private static Button FindBackButton(OptionsMenuController options)
