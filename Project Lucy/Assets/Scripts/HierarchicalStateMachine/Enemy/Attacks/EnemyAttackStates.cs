@@ -5,8 +5,9 @@ namespace HierarchicalStateMachine
     /// <summary>
     /// The contract every child of EnemyAttack follows. The parent has already stopped the enemy and
     /// committed its facing; this walks the definition's segments (wind-up, active, recovery), keeps the clip
-    /// in step with them, and goes back to Chase when the last one ends. OnExit runs on interruption too
-    /// (death), so the per-attack cooldown, the telegraph and the animation speed are always cleaned up.
+    /// in step with them, eases the body back to rest during the final recovery, and goes back to Chase when
+    /// the last segment ends. OnExit runs on interruption too (death), so the per-attack cooldown, the
+    /// telegraph and the animation speed are always cleaned up.
     /// Subclasses only decide what an Active segment does.
     /// </summary>
     public abstract class EnemyAttackMove : State
@@ -19,6 +20,8 @@ namespace HierarchicalStateMachine
         private bool finished;
         private float readyAt;
         private int hurtboxFrame;
+        private bool settled;
+        private bool offsetCommitted;
 
         protected EnemyAttackMove(StateMachine machine, State parent, EnemyContext ctx, EnemyAttackDefinition definition)
             : base(machine, parent)
@@ -39,6 +42,8 @@ namespace HierarchicalStateMachine
         protected override void OnEnter()
         {
             finished = false;
+            settled = false;
+            offsetCommitted = false;
             segmentIndex = -1;
             hurtboxFrame = -1;
             OnMoveEnter();
@@ -62,6 +67,7 @@ namespace HierarchicalStateMachine
             float progress = Mathf.Clamp01(segmentTime / segment.duration);
             UpdateHurtbox(segment, progress);
             OnSegmentUpdate(segment, progress);
+            if (ShouldSettle(segment)) Settle(segment);
 
             if (segmentTime < segment.duration) return;
 
@@ -92,7 +98,7 @@ namespace HierarchicalStateMachine
             ctx.SetAnimationSpeed?.Invoke(1f);
 
             // Only a completed attack ends where its last frame shows the body; an interrupted one never got there.
-            if (finished && !Mathf.Approximately(Definition.exitForwardOffset, 0f))
+            if (finished && !offsetCommitted && !Mathf.Approximately(Definition.exitForwardOffset, 0f))
                 ctx.CommitForwardOffset?.Invoke(Definition.exitForwardOffset);
 
             // Back to the resting hurtbox, also when death interrupts the attack.
@@ -136,13 +142,40 @@ namespace HierarchicalStateMachine
         // whatever is on screen, in wind-up, active and recovery alike.
         private void UpdateHurtbox(AttackSegment segment, float progress)
         {
-            if (!Definition.driveAnimation || Definition.bodyFrames == null || Definition.bodyFrames.Length == 0) return;
+            if (settled || !Definition.driveAnimation || Definition.bodyFrames == null || Definition.bodyFrames.Length == 0) return;
 
             int frame = segment.firstFrame + Mathf.Min(segment.FrameCount - 1, Mathf.FloorToInt(progress * segment.FrameCount));
             if (frame == hurtboxFrame) return;
 
             hurtboxFrame = frame;
             ctx.SetHurtboxFrame?.Invoke(Definition, frame);
+        }
+
+        // Only the final recovery settles: a recovery in the middle of a combo leads into another strike,
+        // not back to rest. The first recoveryHoldTime still shows the last strike frame so the hit reads.
+        private bool ShouldSettle(AttackSegment segment)
+        {
+            if (settled || !Definition.driveAnimation || !Definition.settleIntoIdle) return false;
+            if (segment.kind != AttackSegmentKind.Recovery || segmentIndex != Definition.segments.Count - 1) return false;
+            return segmentTime >= Mathf.Min(Definition.recoveryHoldTime, segment.duration);
+        }
+
+        // The rest of the recovery is still a punish window and the enemy still does not move; only the
+        // drawing changes. The rest pose is drawn at the root, so the forward offset the last frame shows
+        // and the hurtbox both move there now instead of when the attack ends.
+        private void Settle(AttackSegment segment)
+        {
+            settled = true;
+
+            if (!Mathf.Approximately(Definition.exitForwardOffset, 0f))
+            {
+                ctx.CommitForwardOffset?.Invoke(Definition.exitForwardOffset);
+                offsetCommitted = true;
+            }
+
+            hurtboxFrame = -1;
+            ctx.SetHurtboxFrame?.Invoke(null, 0);
+            ctx.PlaySettleAnimation?.Invoke(Definition.SettleAnimationState, Mathf.Max(0f, segment.duration - segmentTime));
         }
 
         private void OnSegmentEnd(AttackSegment segment)

@@ -189,6 +189,7 @@ namespace HierarchicalStateMachine
             ctx.HasAnimation = HasAnimation;
             ctx.PlayAttackAnimation = PlayAttackAnimation;
             ctx.SetAnimationSpeed = SetAnimationSpeed;
+            ctx.PlaySettleAnimation = PlaySettleAnimation;
             ctx.SetTelegraph = SetTelegraph;
             ctx.ApplyHitbox = ApplyHitbox;
             ctx.FireProjectiles = FireProjectiles;
@@ -746,6 +747,29 @@ namespace HierarchicalStateMachine
         private void SetAnimationSpeed(float speed)
         {
             if (animator != null) animator.speed = speed;
+        }
+
+        // The end of an attack's recovery: instead of freezing on the last strike frame until Chase takes
+        // over, the body eases back to rest. A dedicated return clip is stretched over the time left; without
+        // one the looping idle starts right away, so Chase finds it already playing and nothing restarts.
+        private void PlaySettleAnimation(string stateName, float duration)
+        {
+            if (animator == null) return;
+
+            hitAnimationTimer = 0f;
+            if (HasAnimation(stateName))
+            {
+                animator.speed = 1f;
+                animator.Play(Animator.StringToHash(stateName), 0, 0f);
+                animator.Update(0f); // so the state info below already describes the new clip
+                float length = animator.GetCurrentAnimatorStateInfo(0).length;
+                animator.speed = length > 0f && duration > 0.01f ? length / duration : 1f;
+                return;
+            }
+
+            if (!HasAnimation("Enemy_Idle")) return;
+            animator.speed = 1f;
+            animator.Play(Animator.StringToHash("Enemy_Idle"), 0, 0f);
         }
 
         private void PlayHitAnimation()
