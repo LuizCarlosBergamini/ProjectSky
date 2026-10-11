@@ -1,3 +1,4 @@
+using System.Collections;
 using HierarchicalStateMachine;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,7 +6,8 @@ using UnityEngine.UI;
 /// <summary>
 /// Connects the boss-fight lifecycle to the HUD. Listens to BossGate's static fight events
 /// (the gate lives in the level, the HUD cannot be wired to it in the Inspector) and tells the
-/// boss bar to bind/show/hide. Also moves the task list below the boss bar while it is up.
+/// boss bar to bind/show/hide. Also moves the task list below the boss bar while it is up, and plays the
+/// boss's defeat dialog (BossData_SO.defeatDialog) once it dies.
 /// </summary>
 public class BossFightUIController : MonoBehaviour
 {
@@ -17,18 +19,23 @@ public class BossFightUIController : MonoBehaviour
     [Tooltip("Espaco extra entre a barra do chefe e a lista de tasks.")]
     [SerializeField] private float taskListMargin = 12f;
 
+    [Tooltip("Espera depois da morte do chefe antes do dialogo de fim de luta, para a animacao de morte aparecer.")]
+    [SerializeField] private float defeatDialogDelay = 1f;
+
     private bool taskListMoved;
 
     private void OnEnable()
     {
         BossGate.OnBossFightStarted += HandleFightStarted;
         BossGate.OnBossFightEnded += HandleFightEnded;
+        BossGate.OnBossFightWon += HandleFightWon;
     }
 
     private void OnDisable()
     {
         BossGate.OnBossFightStarted -= HandleFightStarted;
         BossGate.OnBossFightEnded -= HandleFightEnded;
+        BossGate.OnBossFightWon -= HandleFightWon;
 
         // TaskManager survives scene loads: never leave the Hub with a pushed-down task list.
         RestoreTaskList();
@@ -51,6 +58,29 @@ public class BossFightUIController : MonoBehaviour
     {
         if (bossBar != null) bossBar.Hide();
         RestoreTaskList();
+    }
+
+    private void HandleFightWon(EnemyStateDriver boss)
+    {
+        if (ReferenceEquals(boss, null)) return;
+        BossData_SO data = boss.BossData;
+        if (data == null || data.defeatDialog == null) return;
+
+        // OnBossFightWon fires before the gate's onBossDefeated completes the reward task, so a task that is
+        // not finished yet means this is the first win. Without a TaskManager (level played on its own) it plays.
+        if (data.defeatDialogOnlyOnFirstWin && TaskManager.instance != null
+            && TaskManager.instance.GetStatus(data.rewardTaskId) == TaskManager.TaskStatus.Finished)
+        {
+            return;
+        }
+
+        StartCoroutine(PlayDefeatDialog(data.defeatDialog));
+    }
+
+    private IEnumerator PlayDefeatDialog(Dialog_SO dialog)
+    {
+        if (defeatDialogDelay > 0f) yield return new WaitForSeconds(defeatDialogDelay);
+        if (DialogManager.instance != null) DialogManager.instance.Init(dialog);
     }
 
     private void MoveTaskListBelowBossBar()

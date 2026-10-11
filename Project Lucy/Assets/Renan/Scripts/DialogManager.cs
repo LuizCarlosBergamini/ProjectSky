@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using HierarchicalStateMachine;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -57,6 +58,9 @@ public class DialogManager : MonoBehaviour
     private readonly List<string> _typing = new ();
     private bool _skipRequested = false;
     private AudioSource _audioSource;
+
+    // Player whose input this dialog blocked; the one given back on End, even if another player spawned since.
+    private PlayerStateDriver _lockedPlayer;
 
     #region Unity Functions
 
@@ -123,6 +127,7 @@ public class DialogManager : MonoBehaviour
         _actualDialog = null;
         _dialogData = null;
 
+        SetPlayerInputLocked(false);
         _onFinishDialog?.Invoke();
         StartCoroutine(_dialogContainer.Move(_hiddenContainerPosition, _DIALOG_ANIMATION_DURATION_IN_SECONDS));
         OnDialogFinished?.Invoke(finishedDialog);
@@ -142,6 +147,7 @@ public class DialogManager : MonoBehaviour
         _dialogEntitySprite.canvasRenderer.SetAlpha(0f);
         _dialogEntitySprite.sprite = null;
 
+        SetPlayerInputLocked(true);
         _onStartDialog?.Invoke();
         StartCoroutine(_dialogContainer.Move(_showContainerPosition, _DIALOG_ANIMATION_DURATION_IN_SECONDS));
         yield return new WaitForSeconds(_DIALOG_ANIMATION_DURATION_IN_SECONDS / 2);
@@ -270,6 +276,24 @@ public class DialogManager : MonoBehaviour
             _audioSource.PlayOneShot(_audioEmit);
             yield return new WaitForSeconds(_audioPlayInterval / 1000f);
         } while (_typing.Count > 0);
+    }
+
+    /// <summary>
+    /// Keeps Lucy still while a dialog is open. The dialog advances on its own _jumpAction, which is a separate
+    /// action from the player's, so blocking the player does not block the dialog.
+    /// </summary>
+    private void SetPlayerInputLocked(bool locked)
+    {
+        if (locked)
+        {
+            GameObject playerObject = GameObject.FindWithTag("Player");
+            _lockedPlayer = playerObject != null ? playerObject.GetComponent<PlayerStateDriver>() : null;
+            if (_lockedPlayer != null) _lockedPlayer.SetInputEnabled(false);
+            return;
+        }
+
+        if (_lockedPlayer != null) _lockedPlayer.SetInputEnabled(true);
+        _lockedPlayer = null;
     }
 
     private DialogItem GetDialogItemByName(string dialogName)

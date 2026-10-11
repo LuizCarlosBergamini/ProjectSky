@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0229f9af6181a38469057567674f0751, type: 3}
+  m_Name: Boss-derrotado-kitsune
+  m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
+  dialogs:
+  - dialogId: daisy-kitsunederrota-01
+    dialogContent: "Lucy, a Kitsune caiu! Ainda t\xF4 vendo a fuma\xE7a daqui."
+    nextDialog: lucy-kitsunederrota-01
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: lucy-kitsunederrota-01
+    dialogContent: "Foi por pouco. O pr\xF3ximo vai ser ainda pior, n\xE9?"
+    nextDialog: daisy-kitsunederrota-02
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
+  - dialogId: daisy-kitsunederrota-02
+    dialogContent: "Provavelmente. Mas lembra: a Medusa e a Kitsune voltam pras arenas."
+    nextDialog: daisy-kitsunederrota-03
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: daisy-kitsunederrota-03
+    dialogContent: "Enfrenta elas de novo, junta Engrenagens de Ouro e deixa o Mec\xE2nico te preparar. S\xF3 segue quando se sentir pronta!"
+    nextDialog: 
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}

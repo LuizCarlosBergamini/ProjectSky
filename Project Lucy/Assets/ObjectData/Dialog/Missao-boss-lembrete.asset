@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
   dialogs:
   - dialogId: daisy-bosslembrete-01
-    dialogContent: "O Guardi\xE3o est\xE1 logo \xE0 frente. Vou te esperar no Hub!"
+    dialogContent: "A Medusa est\xE1 logo \xE0 frente. Vou te esperar no Hub!"
     nextDialog: 
     triggerEvent: 
     dialogDuration: 0

@@ -11,7 +11,7 @@ using Object = UnityEngine.Object;
 
 /// <summary>
 /// Generates the level HUD (player and boss health bars + boss reward panel) so nothing has to be
-/// wired by hand: placeholder sprites, the RewardEntry and HUD prefabs, the Guardiao boss data and
+/// wired by hand: placeholder sprites, the RewardEntry and HUD prefabs, the Medusa boss data and
 /// the Level1 and Hub scene setup. Safe to run again: sprites, data and prefabs are only created when missing,
 /// so swapped art and Inspector edits are kept. "Rebuild Health Bar UI Prefabs" overwrites the prefabs.
 /// </summary>
@@ -25,14 +25,14 @@ public static class HealthBarUIBuilder
     private const string HubScenePath = "Assets/Scenes/Hub.unity";
     private const string FontPath = "Assets/Renan/Fonts/Jersey10-Regular SDF 1.asset";
     private const string LucyEntityPath = "Assets/ObjectData/Entity/Lucy.asset";
-    private const string GuardianEntityPath = "Assets/ObjectData/Entity/Guardiao.asset";
-    private const string GuardianRewardTaskId = "missao-boss";
+    private const string MedusaEntityPath = "Assets/ObjectData/Entity/Medusa.asset";
+    private const string MedusaRewardTaskId = "missao-boss";
 
     private static readonly string HudPrefabPath = $"{PrefabFolder}/HUD.prefab";
     private static readonly string RewardEntryPrefabPath = $"{PrefabFolder}/RewardEntry.prefab";
     private static readonly string ItemCountEntryPrefabPath = $"{PrefabFolder}/ItemCountEntry.prefab";
     private static readonly string UpgradeIconSlotPrefabPath = $"{PrefabFolder}/UpgradeIconSlot.prefab";
-    private static readonly string GuardianBossDataPath = $"{BossDataFolder}/Guardiao.asset";
+    private static readonly string MedusaBossDataPath = $"{BossDataFolder}/Medusa.asset";
 
     // Same palette as the upgrade UI: life green for Lucy, damage red for the boss.
     private static readonly Color PlayerFillColor = new(0.36f, 0.82f, 0.3f, 1f);
@@ -99,10 +99,10 @@ public static class HealthBarUIBuilder
             GameObject hud = BuildHudPrefab(sprites, rewardEntry, itemCountEntry, upgradeIconSlot, overwritePrefabs);
             // The boss-adaptation panel belongs to BossAdaptationBuilder; re-added here so a rebuild keeps it.
             if (BossAdaptationBuilder.EnsureHudAdaptationPanel()) hud = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
-            BossData_SO guardian = BuildGuardianData();
+            BossData_SO medusa = BuildMedusaData();
 
             AssetDatabase.SaveAssets();
-            if (!SetupLevel1(hud, guardian, hadUnsavedChanges)) return;
+            if (!SetupLevel1(hud, medusa, hadUnsavedChanges)) return;
             SetupOtherHudScenes();
             SetupHub();
 
@@ -478,25 +478,25 @@ public static class HealthBarUIBuilder
 
     #region Data
 
-    private static BossData_SO BuildGuardianData()
+    private static BossData_SO BuildMedusaData()
     {
-        Entity_SO entity = AssetDatabase.LoadAssetAtPath<Entity_SO>(GuardianEntityPath);
+        Entity_SO entity = AssetDatabase.LoadAssetAtPath<Entity_SO>(MedusaEntityPath);
         if (entity == null)
         {
             entity = ScriptableObject.CreateInstance<Entity_SO>();
-            entity.entityName = "Guardião";
+            entity.entityName = "Medusa";
             // Placeholder portrait: the boss's own sprite, until real portrait art exists.
             entity.entitySprite = FindLevel1BossSprite();
-            AssetDatabase.CreateAsset(entity, GuardianEntityPath);
+            AssetDatabase.CreateAsset(entity, MedusaEntityPath);
         }
 
-        BossData_SO data = AssetDatabase.LoadAssetAtPath<BossData_SO>(GuardianBossDataPath);
+        BossData_SO data = AssetDatabase.LoadAssetAtPath<BossData_SO>(MedusaBossDataPath);
         if (data == null)
         {
             data = ScriptableObject.CreateInstance<BossData_SO>();
             data.entity = entity;
-            data.rewardTaskId = GuardianRewardTaskId;
-            AssetDatabase.CreateAsset(data, GuardianBossDataPath);
+            data.rewardTaskId = MedusaRewardTaskId;
+            AssetDatabase.CreateAsset(data, MedusaBossDataPath);
         }
 
         return data;
@@ -543,7 +543,7 @@ public static class HealthBarUIBuilder
     }
 
     /// <summary>Level1 setup. Returns false when the scene had unsaved edits, so the builder stops before switching scenes.</summary>
-    private static bool SetupLevel1(GameObject hudPrefab, BossData_SO guardian, bool hadUnsavedChanges)
+    private static bool SetupLevel1(GameObject hudPrefab, BossData_SO medusa, bool hadUnsavedChanges)
     {
         UnityEngine.SceneManagement.Scene scene = EditorSceneManager.GetActiveScene();
         PlaceHud(scene, hudPrefab);
@@ -556,7 +556,7 @@ public static class HealthBarUIBuilder
             SerializedObject so = new(boss);
             SerializedProperty bossData = so.FindProperty("bossData");
             if (bossData.objectReferenceValue != null) continue;
-            bossData.objectReferenceValue = guardian;
+            bossData.objectReferenceValue = medusa;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
