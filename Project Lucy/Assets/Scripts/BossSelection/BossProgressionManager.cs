@@ -85,6 +85,9 @@ public class BossProgressionManager : MonoBehaviour
         return boss != null && !string.IsNullOrWhiteSpace(boss.bossId) && _defeatedBossIds.Contains(boss.bossId);
     }
 
+    /// <summary>True once any boss was beaten, whichever it was. Follows the saved defeats, so it persists with them.</summary>
+    public bool HasDefeatedAnyBoss => _defeatedBossIds.Count > 0;
+
     /// <summary>Same rule as UpgradeManager.ArePrerequisitesMet: all or any, empty list = always met.</summary>
     public bool ArePrerequisitesMet(BossData_SO boss)
     {
