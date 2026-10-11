@@ -41,6 +41,10 @@ public class BossProgressionManager : MonoBehaviour
     [Tooltip("Somente leitura em Play Mode: bossIds derrotados nesta sessao.")]
     [SerializeField] private List<string> _defeatedBossIds = new();
 
+    // bossId -> fights started against that boss, won or lost. Kept here because a player death reloads the
+    // boss scene, so the boss itself cannot remember how many times it was faced.
+    private readonly Dictionary<string, int> _attempts = new();
+
     // Set while a boss scene is loading, cleared when any scene finishes loading.
     private bool _entering;
 
@@ -203,6 +207,24 @@ public class BossProgressionManager : MonoBehaviour
         RecordDefeat(data);
     }
 
+    /// <summary>
+    /// Counts a new fight against this boss and returns which one it is (1 = first). Called by the boss when
+    /// its arena closes; 0 when the boss has no bossId to count by.
+    /// </summary>
+    public int RegisterAttempt(BossData_SO boss)
+    {
+        if (boss == null || string.IsNullOrWhiteSpace(boss.bossId)) return 0;
+        _attempts.TryGetValue(boss.bossId, out int count);
+        _attempts[boss.bossId] = ++count;
+        return count;
+    }
+
+    public int GetAttempts(BossData_SO boss)
+    {
+        if (boss == null || string.IsNullOrWhiteSpace(boss.bossId)) return 0;
+        return _attempts.TryGetValue(boss.bossId, out int count) ? count : 0;
+    }
+
     #endregion
 
     #region Enter
@@ -278,10 +300,27 @@ public class BossProgressionManager : MonoBehaviour
         RaiseChanged();
     }
 
-    /// <summary>Forgets every defeat: only bosses without requirements stay unlocked.</summary>
+    public Dictionary<string, int> GetBossAttempts()
+    {
+        return new Dictionary<string, int>(_attempts);
+    }
+
+    public void LoadBossAttempts(IDictionary<string, int> attempts)
+    {
+        _attempts.Clear();
+        if (attempts == null) return;
+        foreach (KeyValuePair<string, int> entry in attempts)
+        {
+            if (FindById(entry.Key) == null || entry.Value <= 0) continue;
+            _attempts[entry.Key] = entry.Value;
+        }
+    }
+
+    /// <summary>Forgets every defeat and attempt: only bosses without requirements stay unlocked.</summary>
     public void ResetProgression()
     {
         _defeatedBossIds.Clear();
+        _attempts.Clear();
         RaiseChanged();
     }
 
