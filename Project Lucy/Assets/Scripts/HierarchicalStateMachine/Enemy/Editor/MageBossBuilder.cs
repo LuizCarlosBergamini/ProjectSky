@@ -14,8 +14,8 @@ using Object = UnityEngine.Object;
 /// <summary>
 /// Tools > Lucy > Build Mage Boss. Turns the sheets in Assets/Sprites/Enemy/Mage into the Level3 boss, the same way
 /// KitsuneBossBuilder made the Level2 one: sprite import (grid, pixels per unit, per-sheet pivots measured from the
-/// art), clips (plus a dash clip made from the run), the animator controller, the two animated projectiles (Charge_1
-/// for the sphere, Charge_2 for the arrow), the attack data, the evasive dash, the intro dialog, the adaptation to
+/// art), clips, the animator controller, the two animated projectiles (Charge_1 for the sphere, Charge_2 for the
+/// arrow), the attack data, the evasive teleport, the intro dialog, the adaptation to
 /// the emerald upgrades, the Mage prefab, and the swap into the Level3 arena (BossGate rewired). Level3's boss data
 /// (Colosso.asset) keeps its bossId and reward; only its face and its adaptation change.
 ///
@@ -60,11 +60,6 @@ public static class MageBossBuilder
     private const int ChargeFrameHeight = 128;
     // A little bigger than the body's scale so the shots read clearly at a distance.
     private const float ChargePixelsPerUnit = 20f;
-
-    // The dash has no sheet of its own: it is the run, played fast while he slides back facing the player.
-    private const string DashStateName = "Enemy_Dash";
-    private const string DashClipName = "Mage_Dash";
-    private const float DashFps = 18f;
 
     private class Sheet
     {
@@ -151,10 +146,8 @@ public static class MageBossBuilder
         foreach (Sheet sheet in Sheets) ImportSheet(sheet);
         foreach (ChargeSheet charge in ChargeSheets) ImportChargeSheet(charge);
         foreach (Sheet sheet in Sheets) sheet.clip = BuildClip(sheet.clipName, sheet.sprites, 0, sheet.frames, sheet.fps, sheet.loop);
-        Sheet run = GetSheet("Run");
-        AnimationClip dashClip = BuildClip(DashClipName, run.sprites, 0, run.frames, DashFps, true);
         foreach (ChargeSheet charge in ChargeSheets) BuildChargeAnimation(charge);
-        AnimatorController controller = BuildController(dashClip);
+        AnimatorController controller = BuildController();
 
         Sprite portrait = LoadSprite(GetSheet("Idle").AssetPath, PortraitSpriteName);
         EnemyScriptableObject stats = BuildStats();
@@ -469,7 +462,7 @@ public static class MageBossBuilder
 
     // Same pattern as Medusa.controller and Kitsune.controller: one state per clip and no transitions, because the
     // enemy states pick the clip in code (Animator.Play) through EnemyStateDriver.
-    private static AnimatorController BuildController(AnimationClip dashClip)
+    private static AnimatorController BuildController()
     {
         AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
         if (controller == null) controller = AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
@@ -482,7 +475,6 @@ public static class MageBossBuilder
             AnimatorState state = SetState(machine, sheet.stateName, sheet.clip, new Vector3(300f + (i % 2) * 260f, 40f + i * 50f, 0f));
             if (sheet.file == "Idle") idle = state;
         }
-        SetState(machine, DashStateName, dashClip, new Vector3(300f, 40f + Sheets.Length * 50f, 0f));
 
         if (idle != null) machine.defaultState = idle;
         EditorUtility.SetDirty(controller);
@@ -961,17 +953,21 @@ public static class MageBossBuilder
                 so.FindProperty("deathDelay").floatValue = GetSheet("Dead").frames / GetSheet("Dead").fps + 0.8f;
                 so.FindProperty("logStatePath").boolValue = false;
 
-                // After two hits (in a row or not) he dashes back to keep his distance.
+                // After two hits (in a row or not) he teleports back to keep his distance.
                 SerializedProperty dash = so.FindProperty("dash");
-                dash.FindPropertyRelative("enabled").boolValue = true;
                 dash.FindPropertyRelative("hitsToDash").intValue = 2;
                 dash.FindPropertyRelative("distance").floatValue = 5f;
-                dash.FindPropertyRelative("duration").floatValue = 0.35f;
+                dash.FindPropertyRelative("duration").floatValue = 0.3f; // hidden between the two bursts
+                dash.FindPropertyRelative("reappearTime").floatValue = 0.2f;
                 dash.FindPropertyRelative("cooldown").floatValue = 3f;
                 dash.FindPropertyRelative("invulnerable").boolValue = true;
-                dash.FindPropertyRelative("animationState").stringValue = DashStateName;
-                dash.FindPropertyRelative("animationSpeed").floatValue = 1f;
             }
+
+            // How he escapes is part of who he is, not tuning: always a teleport in a burst of blue lightning.
+            SerializedProperty escape = so.FindProperty("dash");
+            escape.FindPropertyRelative("enabled").boolValue = true;
+            escape.FindPropertyRelative("teleport").boolValue = true;
+            so.FindProperty("teleportSparks").FindPropertyRelative("enabled").boolValue = true;
 
             so.ApplyModifiedPropertiesWithoutUndo();
             PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);

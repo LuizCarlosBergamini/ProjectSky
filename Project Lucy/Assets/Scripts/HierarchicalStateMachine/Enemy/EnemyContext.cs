@@ -4,8 +4,9 @@ using UnityEngine;
 namespace HierarchicalStateMachine
 {
     /// <summary>
-    /// A ranged enemy that backs off: after taking <see cref="hitsToDash"/> hits (in a row or not) it dashes away
-    /// from the player, still facing them. Hits taken during an attack count too; the dash waits for the attack to end.
+    /// A ranged enemy that backs off: after taking <see cref="hitsToDash"/> hits (in a row or not) it gets away from
+    /// the player, still facing them - sliding back, or vanishing and reappearing further back (teleport). Hits taken
+    /// during an attack count too; the escape waits for the attack to end.
     /// </summary>
     [Serializable]
     public class EnemyDashSettings
@@ -13,14 +14,21 @@ namespace HierarchicalStateMachine
         [Tooltip("Liga o dash para tras depois de levar golpes.")]
         public bool enabled;
 
+        [Tooltip("Marcado: some e reaparece mais para tras (com os raios do Teleport Sparks do inimigo). " +
+                 "Desmarcado: desliza para tras tocando a animacao abaixo.")]
+        public bool teleport;
+
         [Tooltip("Golpes recebidos (seguidos ou nao) que disparam o dash. A contagem zera a cada dash.")]
         [Min(1)] public int hitsToDash = 2;
 
         [Tooltip("Distancia percorrida para tras, em unidades. Para antes se encontrar uma parede ou a barreira.")]
         [Min(0f)] public float distance = 5f;
 
-        [Tooltip("Duracao do dash, em segundos.")]
+        [Tooltip("Duracao do dash, em segundos. No teleporte: quanto tempo fica sumido antes de reaparecer.")]
         [Min(0.05f)] public float duration = 0.35f;
+
+        [Tooltip("Teleporte: segundos depois de reaparecer em que ainda nao age nem leva dano.")]
+        [Min(0f)] public float reappearTime = 0.2f;
 
         [Tooltip("Intervalo minimo entre dois dashes, em segundos, contado do fim do anterior.")]
         [Min(0f)] public float cooldown = 3f;
@@ -28,7 +36,7 @@ namespace HierarchicalStateMachine
         [Tooltip("Nao leva dano durante o dash.")]
         public bool invulnerable = true;
 
-        [Tooltip("Estado do Animator tocado durante o dash.")]
+        [Tooltip("Estado do Animator tocado durante o dash deslizado.")]
         public string animationState = "Enemy_Dash";
 
         [Tooltip("Velocidade da animacao do dash (1 = a do clipe).")]
@@ -113,6 +121,9 @@ namespace HierarchicalStateMachine
         public Action<float> CommitForwardOffset;
         public Action<EnemyAttackDefinition, int> SetHurtboxFrame; // (null, 0) = back to the resting hurtbox
         public Func<float, bool> IsPathBlocked;                    // direction sign -> wall right there
+        public Action<float, float> TeleportBy;                    // direction sign, distance (stops at walls)
+        public Action<bool> SetVisible;                            // teleport: hide the body, then show it again
+        public Action EmitTeleportSparks;                          // lightning where the body is right now
         public Action OnDeathFinished;
 
         public bool HasTarget => Target != null;

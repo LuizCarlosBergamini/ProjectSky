@@ -73,6 +73,8 @@ namespace HierarchicalStateMachine
         [Header("Evasive Dash")]
         [Tooltip("Inimigos de longe: depois de levar alguns golpes, dao um dash para tras sem deixar de olhar o jogador.")]
         [SerializeField] private EnemyDashSettings dash = new EnemyDashSettings();
+        [Tooltip("Raios azuis onde o inimigo some e onde reaparece, quando o dash e um teleporte.")]
+        [SerializeField] private EnemyTeleportSparks teleportSparks = new EnemyTeleportSparks();
 
         [Header("Feedback")]
         [Tooltip("Sprite que recebe o piscar de dano e o telegrafo. Vazio = o do Animator.")]
@@ -174,6 +176,7 @@ namespace HierarchicalStateMachine
             if (tintRenderer == null && animator != null) tintRenderer = animator.GetComponent<SpriteRenderer>();
             if (tintRenderer != null) baseTint = tintRenderer.color;
             hitBlood.Init(tintRenderer, groundLayer);
+            if (dash.enabled && dash.teleport) teleportSparks.Init(tintRenderer);
 
             ctx.rb = rb;
             ctx.animator = animator;
@@ -214,6 +217,9 @@ namespace HierarchicalStateMachine
             ctx.CommitForwardOffset = CommitForwardOffset;
             ctx.SetHurtboxFrame = SetHurtboxFrame;
             ctx.IsPathBlocked = IsPathBlocked;
+            ctx.TeleportBy = TeleportBy;
+            ctx.SetVisible = SetVisible;
+            ctx.EmitTeleportSparks = EmitTeleportSparks;
             ctx.OnDeathFinished = HandleDeathFinished;
 
             // Same bootstrap as PlayerStateDriver: the builder back-fills every State.Machine by
@@ -247,6 +253,7 @@ namespace HierarchicalStateMachine
         {
             EnemyAttackSet.DestroyRuntime(runtimeSet);
             hitBlood.Release();
+            teleportSparks.Release();
         }
 
         private void Update()
@@ -601,6 +608,35 @@ namespace HierarchicalStateMachine
             hurtbox.offset = frames[frame].center;
             hurtbox.size = Vector2.Max(frames[frame].size, hurtboxRestSize);
             hurtboxMoved = true;
+        }
+
+        // Moves the body up to distance along directionSign in one step, stopping short of walls and the arena barrier
+        // (the same cast as CommitForwardOffset, so it never ends up inside or past them).
+        private void TeleportBy(float directionSign, float distance)
+        {
+            if (ctx.IsDead || distance <= 0f) return;
+
+            Vector2 direction = new Vector2(Mathf.Sign(directionSign), 0f);
+            float allowed = Mathf.Min(distance, CastDistance(direction, distance));
+            if (allowed <= 0f) return;
+
+            Vector2 next = rb.position + direction * allowed;
+            rb.position = next;
+            transform.position = new Vector3(next.x, next.y, transform.position.z);
+            Physics2D.SyncTransforms(); // the reappearing sparks read the collider bounds right away
+        }
+
+        // Teleport: hides every sprite of the body (the hit flash and telegraph keep their renderer) and its hurtbox.
+        private void SetVisible(bool visible)
+        {
+            foreach (SpriteRenderer sprite in GetComponentsInChildren<SpriteRenderer>(true)) sprite.enabled = visible;
+            if (hurtbox != null) hurtbox.enabled = visible;
+        }
+
+        private void EmitTeleportSparks()
+        {
+            Bounds body = bodyCollider != null ? bodyCollider.bounds : new Bounds(transform.position + Vector3.up, Vector3.one * 2f);
+            teleportSparks.Emit(body);
         }
 
         private bool IsPathBlocked(float directionSign)
