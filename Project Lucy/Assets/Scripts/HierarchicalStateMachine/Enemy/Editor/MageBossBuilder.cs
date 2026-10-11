@@ -51,6 +51,16 @@ public static class MageBossBuilder
     private const float PixelsPerUnit = 25f;
     private const string PortraitSpriteName = "Mage_Portrait";
 
+    // What the Mage says instead of the full intro on a rematch after the player died: 2nd fight, 3rd, 4th, then
+    // the last line from the 5th on, with {N} = the fight number. After the Mage is beaten there is no line at all.
+    private static readonly string[] RetryIntroLines =
+    {
+        "Mais uma vez? Parece que você não aprende, né?",
+        "Você é persistente, hein, mocinha? Mas isso não vai mudar o final.",
+        "Quatro vezes já... Estou começando a sentir pena de você.",
+        "{N} e contando... Volte quantas vezes quiser, o resultado vai ser o mesmo."
+    };
+
     // Rows (from the bottom of a frame) of the legs. The bandaged shins and the shoes are the most stable anchor
     // between sheets: the robe and the cape swing, and the bow is held out in front.
     private const int LegRowMax = 14;
@@ -939,6 +949,17 @@ public static class MageBossBuilder
                 so.FindProperty("introDialog").objectReferenceValue = intro;
                 if (intro == null) Report.Add($"WARNING: {IntroDialogPath} not found, the fight starts without the intro");
             }
+
+            SerializedProperty retryLines = so.FindProperty("retryIntroLines");
+            if (retryLines.arraySize == 0)
+            {
+                retryLines.arraySize = RetryIntroLines.Length;
+                for (int i = 0; i < RetryIntroLines.Length; i++)
+                    retryLines.GetArrayElementAtIndex(i).stringValue = RetryIntroLines[i];
+                Report.Add($"{PrefabPath}: {RetryIntroLines.Length} rematch lines set");
+            }
+
+            so.FindProperty("skipIntroAfterVictory").boolValue = true;
 
             if (!exists)
             {

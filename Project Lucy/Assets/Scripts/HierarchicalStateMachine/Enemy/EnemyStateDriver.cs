@@ -33,6 +33,14 @@ namespace HierarchicalStateMachine
                  "e o chefe nao leva dano enquanto isso. Vazio = a luta comeca na hora.")]
         [SerializeField] private Dialog_SO introDialog;
 
+        [Tooltip("Chefes: uma fala por revanche, no lugar do dialogo completo. A 1a e a da 2a luta, a 2a e a da 3a, " +
+                 "e assim por diante; a ultima se repete dai em diante. {N} vira o numero da luta. Quem fala e o " +
+                 "primeiro personagem do Intro Dialog. Vazio = o dialogo completo toda vez.")]
+        [TextArea] [SerializeField] private List<string> retryIntroLines = new();
+
+        [Tooltip("Chefes: depois que o jogador vence este chefe, as revanches comecam sem nenhum dialogo.")]
+        [SerializeField] private bool skipIntroAfterVictory;
+
         [Header("Attack (sem Attack Set)")]
         [SerializeField] private float attackDuration = 0.8f;
         [SerializeField] private float attackHitTime = 0.45f; // when inside the attack damage lands
@@ -110,6 +118,8 @@ namespace HierarchicalStateMachine
         private float hitAnimationTimer;
         private int hitsSinceDash;
         private bool introRunning;
+        private Dialog_SO activeIntro; // introDialog, the one-line retry built for this fight, or none
+        private Dialog_SO retryIntro;
         private string lastPath;
 
         private Transform target;
@@ -255,6 +265,7 @@ namespace HierarchicalStateMachine
             EnemyAttackSet.DestroyRuntime(runtimeSet);
             hitBlood.Release();
             teleportSparks.Release();
+            DestroyRetryIntro();
         }
 
         private void Update()
@@ -304,25 +315,74 @@ namespace HierarchicalStateMachine
         {
             if (boss != this) return;
 
+            if (introRunning) return;
+
+            // Counted before any early return, so a fight without a dialog box still counts as a try.
+            BossProgressionManager progression = BossProgressionManager.instance;
+            bool beaten = progression != null && progression.IsDefeated(bossData);
+            int attempt = progression != null ? progression.RegisterAttempt(bossData) : 1;
+
+            if (skipIntroAfterVictory && beaten) activeIntro = null;
+            else activeIntro = PickIntro(attempt);
+
             // Without a dialog box in the scene (a level played on its own) the fight simply starts.
-            if (introDialog == null || DialogManager.instance == null || introRunning)
+            if (activeIntro == null || DialogManager.instance == null)
             {
-                if (!introRunning) Activate();
+                Activate();
                 return;
             }
 
             introRunning = true;
             DialogManager.OnDialogFinished += HandleIntroDialogFinished;
-            DialogManager.instance.Init(introDialog);
+            DialogManager.instance.Init(activeIntro);
+        }
+
+        // First fight: the full intro. Later fights: one line said by the intro's first speaker.
+        private Dialog_SO PickIntro(int attempt)
+        {
+            if (introDialog == null || attempt <= 1 || retryIntroLines == null || retryIntroLines.Count == 0)
+                return introDialog;
+
+            Entity_SO speaker = introDialog.dialogs != null && introDialog.dialogs.Count > 0
+                ? introDialog.dialogs[0].dialogEntity
+                : null;
+            if (speaker == null) return introDialog;
+
+            string line = retryIntroLines[Mathf.Min(attempt - 2, retryIntroLines.Count - 1)];
+            if (string.IsNullOrWhiteSpace(line)) return introDialog;
+
+            DestroyRetryIntro();
+            retryIntro = ScriptableObject.CreateInstance<Dialog_SO>();
+            retryIntro.name = introDialog.name + "-retry-" + attempt;
+            retryIntro.dialogs = new List<DialogItem>
+            {
+                new DialogItem
+                {
+                    dialogId = retryIntro.name,
+                    dialogContent = line.Replace("{N}", attempt.ToString()),
+                    nextDialog = "",
+                    triggerEvent = "",
+                    dialogOptions = new List<DialogOption>(),
+                    dialogEntity = speaker
+                }
+            };
+            return retryIntro;
+        }
+
+        private void DestroyRetryIntro()
+        {
+            if (retryIntro == null) return;
+            Destroy(retryIntro);
+            retryIntro = null;
         }
 
         // The fight starts when the intro closes. If another dialog was still open, Init ignored the intro: it is
         // shown again once that one closes.
         private void HandleIntroDialogFinished(Dialog_SO finished)
         {
-            if (finished != introDialog)
+            if (finished != activeIntro)
             {
-                if (DialogManager.instance != null) DialogManager.instance.Init(introDialog);
+                if (DialogManager.instance != null) DialogManager.instance.Init(activeIntro);
                 return;
             }
 
