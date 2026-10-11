@@ -17,6 +17,17 @@ MonoBehaviour:
   driveAnimation: 1
   sourceFrameRate: 10
   totalFrames: 5
+  bodyFrames:
+  - center: {x: -0.26, y: 1.58}
+    size: {x: 2.62, y: 3.26}
+  - center: {x: -0.24, y: 1.58}
+    size: {x: 2.66, y: 3.26}
+  - center: {x: -0.22, y: 1.58}
+    size: {x: 2.7, y: 3.26}
+  - center: {x: -0.24, y: 1.58}
+    size: {x: 2.66, y: 3.26}
+  - center: {x: -0.26, y: 1.58}
+    size: {x: 2.62, y: 3.26}
   segments:
   - label: sibila
     kind: 0

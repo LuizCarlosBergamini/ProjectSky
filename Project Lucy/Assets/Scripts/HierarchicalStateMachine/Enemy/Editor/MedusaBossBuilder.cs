@@ -189,6 +189,31 @@ public static class MedusaBossBuilder
             return xMax < 0 ? new RectInt() : new RectInt(xMin, rowMin, xMax - xMin + 1, rowMax - rowMin + 1);
         }
 
+        /// <summary>
+        /// Bounds of the body drawn on one frame: only saturated pixels (green scales, skin, cloth), so the black
+        /// outlines and thin swoosh lines of attack effects are left out. Empty RectInt when the frame has none.
+        /// </summary>
+        public RectInt BodyBounds(int frame)
+        {
+            int xMin = int.MaxValue, xMax = -1, rowMin = int.MaxValue, rowMax = -1;
+            for (int row = 0; row < FrameSize; row++)
+            {
+                for (int x = 0; x < FrameSize; x++)
+                {
+                    Color32 c = Get(frame, x, row);
+                    if (c.a <= 20) continue;
+                    int chroma = Mathf.Max(c.r, Mathf.Max(c.g, c.b)) - Mathf.Min(c.r, Mathf.Min(c.g, c.b));
+                    if (chroma < 24) continue;
+
+                    xMin = Mathf.Min(xMin, x);
+                    xMax = Mathf.Max(xMax, x);
+                    rowMin = Mathf.Min(rowMin, row);
+                    rowMax = Mathf.Max(rowMax, row);
+                }
+            }
+            return xMax < 0 ? new RectInt() : new RectInt(xMin, rowMin, xMax - xMin + 1, rowMax - rowMin + 1);
+        }
+
         /// <summary>Right-most skin pixel of the head (the mouth / tongue tip when facing right).</summary>
         public Vector2Int MouthTip(int frame, int rowMin, int rowMax)
         {
@@ -484,8 +509,34 @@ public static class MedusaBossBuilder
         attack.driveAnimation = true;
         attack.sourceFrameRate = sheet.fps;
         attack.totalFrames = sheet.frames;
+        attack.bodyFrames = ComputeBodyFrames(sheet);
         EditorUtility.SetDirty(attack);
         return attack;
+    }
+
+    // Where the body is drawn on every frame, relative to the root pivot (x forward, y up from the feet). Derived
+    // from the art like the clip data, so it is rewritten on every run; it is not tuning.
+    private static AttackFrameBody[] ComputeBodyFrames(Sheet sheet)
+    {
+        const float pad = 0.05f;
+        var frames = new AttackFrameBody[sheet.frames];
+        for (int i = 0; i < sheet.frames; i++)
+        {
+            RectInt r = sheet.pixels.BodyBounds(i);
+            if (r.width <= 0)
+            {
+                // No drawn body on this frame: keep the resting box (size 0 is raised to it by the driver).
+                frames[i] = new AttackFrameBody { center = Vector2.zero, size = Vector2.zero };
+                continue;
+            }
+
+            frames[i] = new AttackFrameBody
+            {
+                center = new Vector2(Round2((r.x + r.width * 0.5f - sheet.pivotPx) / PixelsPerUnit), Round2((r.y + r.height * 0.5f) / PixelsPerUnit)),
+                size = new Vector2(Round2(r.width / PixelsPerUnit + pad * 2f), Round2(r.height / PixelsPerUnit + pad * 2f))
+            };
+        }
+        return frames;
     }
 
     private static AttackSegment Segment(string label, AttackSegmentKind kind, int first, int last, float duration)
@@ -702,6 +753,8 @@ public static class MedusaBossBuilder
 
             Transform groundCheck = GetOrCreateChild(root.transform, "GroundCheck", new Vector3(0f, 0.05f, 0f));
 
+            BoxCollider2D hurtbox = GetOrCreateHurtbox(root, collider);
+
             // Mouth: the tongue tip of the hiss frame. Projectiles leave from here and the gaze looks from here.
             Sheet hiss = GetSheet("Idle_2");
             Vector2Int mouth = hiss.pixels.MouthTip(2, 52, 70);
@@ -721,6 +774,7 @@ public static class MedusaBossBuilder
             so.FindProperty("groundCheck").objectReferenceValue = groundCheck;
             so.FindProperty("groundLayer").intValue = LayerMask.GetMask("Ground");
             so.FindProperty("tintRenderer").objectReferenceValue = renderer;
+            so.FindProperty("hurtbox").objectReferenceValue = hurtbox;
 
             BossData_SO bossData = AssetDatabase.LoadAssetAtPath<BossData_SO>(BossDataPath);
             if (so.FindProperty("bossData").objectReferenceValue == null) so.FindProperty("bossData").objectReferenceValue = bossData;
@@ -750,10 +804,104 @@ public static class MedusaBossBuilder
         }
     }
 
+    // The box the player's swings test. A trigger child on the attackable layer, sized like the body collider; the
+    // driver moves it with the drawn body during attacks (the physical body collider stays on the root, so the
+    // fight's physics do not change). Created once; an existing one keeps its size so it can be tuned by hand.
+    private static BoxCollider2D GetOrCreateHurtbox(GameObject root, BoxCollider2D body)
+    {
+        Transform child = GetOrCreateChild(root.transform, "Hurtbox", Vector3.zero);
+        child.gameObject.layer = root.layer;
+        if (child.TryGetComponent(out BoxCollider2D existing)) return existing;
+
+        BoxCollider2D hurtbox = child.gameObject.AddComponent<BoxCollider2D>();
+        hurtbox.isTrigger = true;
+        hurtbox.size = body.size;
+        hurtbox.offset = body.offset;
+        return hurtbox;
+    }
+
     private static T GetOrAdd<T>(GameObject go) where T : Component
     {
         return go.TryGetComponent(out T component) ? component : go.AddComponent<T>();
     }
+
+    #region Hurtbox update
+
+    // Attack asset -> the sheet its clip comes from (same pairs BuildAttackSet uses).
+    private static readonly (string asset, string sheet)[] AttackSheets =
+    {
+        ("Medusa_TailWhip", "Attack_2"), ("Medusa_CoilCrush", "Attack_1"), ("Medusa_Lunge", "Attack_3"),
+        ("Medusa_VenomSpit", "Idle_2"), ("Medusa_Gaze", "Special")
+    };
+
+    /// <summary>
+    /// Adds only what the hurtbox needs to an already built Medusa: the per-frame body boxes on the attack assets
+    /// and the Hurtbox child on the prefab. No sprite reimport, no scene change.
+    /// </summary>
+    [MenuItem("Tools/Lucy/Update Medusa Hurtbox")]
+    public static void UpdateHurtbox()
+    {
+        Report.Clear();
+
+        foreach (Sheet sheet in Sheets)
+        {
+            sheet.pixels = new Pixels(sheet.AssetPath);
+            sheet.frames = sheet.pixels.Frames;
+            sheet.pivotPx = ComputePivot(sheet);
+        }
+
+        foreach ((string asset, string sheetFile) in AttackSheets)
+        {
+            var attack = AssetDatabase.LoadAssetAtPath<EnemyAttackDefinition>($"{AttackFolder}/{asset}.asset");
+            if (attack == null)
+            {
+                Report.Add($"WARNING: {asset} not found, run Build Medusa Boss first");
+                continue;
+            }
+
+            attack.bodyFrames = ComputeBodyFrames(GetSheet(sheetFile));
+            EditorUtility.SetDirty(attack);
+            Report.Add($"{asset}: {attack.bodyFrames.Length} body frames from {sheetFile}");
+        }
+
+        PatchPrefabHurtbox();
+        AssetDatabase.SaveAssets();
+        Debug.Log("Medusa hurtbox:\n- " + string.Join("\n- ", Report));
+    }
+
+    private static void PatchPrefabHurtbox()
+    {
+        GameObject root = PrefabUtility.LoadPrefabContents(PrefabPath);
+        try
+        {
+            var driver = root.GetComponent<EnemyStateDriver>();
+            var body = root.GetComponent<BoxCollider2D>();
+            if (driver == null || body == null)
+            {
+                Report.Add($"WARNING: {PrefabPath} has no EnemyStateDriver / body collider");
+                return;
+            }
+
+            var so = new SerializedObject(driver);
+            SerializedProperty property = so.FindProperty("hurtbox");
+            if (property.objectReferenceValue != null)
+            {
+                Report.Add($"{PrefabPath}: hurtbox already wired");
+                return;
+            }
+
+            property.objectReferenceValue = GetOrCreateHurtbox(root, body);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+            Report.Add($"{PrefabPath}: Hurtbox child added and wired");
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+    }
+
+    #endregion
 
     private static Transform GetOrCreateChild(Transform parent, string childName, Vector3 localPosition)
     {

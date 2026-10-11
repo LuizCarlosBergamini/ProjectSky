@@ -67,6 +67,18 @@ namespace HierarchicalStateMachine
     }
 
     /// <summary>
+    /// Where the body is drawn on one frame of an attack clip, in world units from the enemy's root (x forward,
+    /// y up from the feet). Attack sheets draw lunges inside the frame while the collider stays at the root, so
+    /// without this the player would swing at the drawn body and miss.
+    /// </summary>
+    [Serializable]
+    public struct AttackFrameBody
+    {
+        public Vector2 center;
+        public Vector2 size;
+    }
+
+    /// <summary>
     /// How much the selector likes this attack in a given situation. Every value multiplies the score;
     /// 1 means "does not care".
     /// </summary>
@@ -129,6 +141,11 @@ namespace HierarchicalStateMachine
 
         [Tooltip("Total de quadros do clipe (preenchido pelo builder).")]
         [Min(1)] public int totalFrames = 1;
+
+        [Tooltip("Corpo desenhado em cada quadro do clipe (preenchido pelo builder a partir da arte). Durante o " +
+                 "ataque, a hurtbox do inimigo segue estas caixas para o jogador poder acertar o que ve. " +
+                 "Vazio = a hurtbox fica parada na raiz.")]
+        public AttackFrameBody[] bodyFrames = System.Array.Empty<AttackFrameBody>();
 
         [Header("Linha do tempo (wind-up / active / recovery)")]
         public List<AttackSegment> segments = new();

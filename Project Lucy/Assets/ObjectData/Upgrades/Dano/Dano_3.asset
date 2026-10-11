@@ -16,7 +16,7 @@ MonoBehaviour:
   nodeName: "F\xFAria C\xF3smica"
   nodeDescription: "O \xE1pice do combate: todos os ataques atingem com for\xE7a
     devastadora."
-  nodeIcon: {fileID: 21300000, guid: d93b95474f971c64591bc9510e031e3f, type: 3}
+  nodeIcon: {fileID: 21300000, guid: a5628cd098c8ad845a5ea1880a54b0b9, type: 3}
   stat: 0
   bonusValue: 25
   cost:

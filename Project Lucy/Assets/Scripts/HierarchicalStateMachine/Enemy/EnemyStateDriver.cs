@@ -46,6 +46,12 @@ namespace HierarchicalStateMachine
         [SerializeField] private float rangedAttackDuration = 0.9f;
         [SerializeField] private float rangedAttackFireTime = 0.45f; // when the projectile leaves
 
+        [Header("Hurtbox")]
+        [Tooltip("Caixa (trigger) que recebe os golpes do jogador. Durante os ataques ela segue o corpo desenhado " +
+                 "em cada quadro (AttackFrameBody), porque as folhas de sprite desenham o bote dentro do quadro " +
+                 "enquanto o collider fica na raiz. Vazio = so o collider da raiz recebe golpes.")]
+        [SerializeField] private BoxCollider2D hurtbox;
+
         [Header("Ground Check")]
         [SerializeField] private Transform groundCheck;
         [SerializeField] private float groundCheckRadius = 0.25f;
@@ -94,6 +100,10 @@ namespace HierarchicalStateMachine
         private Rigidbody2D targetBody;
         private IDamageable targetDamageable;
         private PlayerStateDriver targetPlayer;
+
+        private Vector2 hurtboxRestOffset;
+        private Vector2 hurtboxRestSize;
+        private bool hurtboxMoved;
 
         private Color baseTint = Color.white;
         private Color? telegraphColor;
@@ -153,6 +163,12 @@ namespace HierarchicalStateMachine
             ctx.rb = rb;
             ctx.animator = animator;
             ctx.self = transform;
+            if (hurtbox != null)
+            {
+                hurtboxRestOffset = hurtbox.offset;
+                hurtboxRestSize = hurtbox.size;
+            }
+
             ctx.Data = data;
             ctx.Health = data.maxHealth;
             ctx.MaxHealth = data.maxHealth;
@@ -179,6 +195,7 @@ namespace HierarchicalStateMachine
             ctx.ApplyGaze = ApplyGaze;
             ctx.FaceTarget = FaceTarget;
             ctx.CommitForwardOffset = CommitForwardOffset;
+            ctx.SetHurtboxFrame = SetHurtboxFrame;
             ctx.IsPathBlocked = IsPathBlocked;
             ctx.OnDeathFinished = HandleDeathFinished;
 
@@ -519,6 +536,28 @@ namespace HierarchicalStateMachine
             transform.position = new Vector3(next.x, next.y, transform.position.z);
         }
 
+        // Puts the hurtbox where the body is drawn on this attack frame; (null, _) puts it back at rest. The
+        // hurtbox is a child of the (rotated) root, so its local x is "forward" and mirrors with the facing.
+        // It is never smaller than the resting box, so a coiled frame cannot make her harder to hit.
+        private void SetHurtboxFrame(EnemyAttackDefinition attack, int frame)
+        {
+            if (hurtbox == null) return;
+
+            AttackFrameBody[] frames = attack != null ? attack.bodyFrames : null;
+            if (frames == null || frame < 0 || frame >= frames.Length)
+            {
+                if (!hurtboxMoved) return;
+                hurtbox.offset = hurtboxRestOffset;
+                hurtbox.size = hurtboxRestSize;
+                hurtboxMoved = false;
+                return;
+            }
+
+            hurtbox.offset = frames[frame].center;
+            hurtbox.size = Vector2.Max(frames[frame].size, hurtboxRestSize);
+            hurtboxMoved = true;
+        }
+
         private bool IsPathBlocked(float directionSign)
         {
             const float probe = 0.5f;
@@ -825,6 +864,16 @@ namespace HierarchicalStateMachine
 
             if (attackSet != null) DrawAttackSetGizmos(facingRight);
             else DrawLegacyConeGizmo(forward);
+
+            if (hurtbox != null)
+            {
+                // The box the player's swings test; it moves with the drawn body during attacks.
+                Gizmos.color = new Color(0f, 1f, 1f, 0.9f);
+                Matrix4x4 previous = Gizmos.matrix;
+                Gizmos.matrix = hurtbox.transform.localToWorldMatrix;
+                Gizmos.DrawWireCube(hurtbox.offset, hurtbox.size);
+                Gizmos.matrix = previous;
+            }
 
             if (projectileSpawnPoint != null)
             {

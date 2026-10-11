@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using HierarchicalStateMachine;
 using TMPro;
@@ -11,7 +12,7 @@ using Object = UnityEngine.Object;
 /// <summary>
 /// Generates the level HUD (player and boss health bars + boss reward panel) so nothing has to be
 /// wired by hand: placeholder sprites, the RewardEntry and HUD prefabs, the Guardiao boss data and
-/// the Level1 scene setup. Safe to run again: sprites, data and prefabs are only created when missing,
+/// the Level1 and Hub scene setup. Safe to run again: sprites, data and prefabs are only created when missing,
 /// so swapped art and Inspector edits are kept. "Rebuild Health Bar UI Prefabs" overwrites the prefabs.
 /// </summary>
 public static class HealthBarUIBuilder
@@ -21,6 +22,7 @@ public static class HealthBarUIBuilder
     private const string BossDataFolder = "Assets/ObjectData/Bosses";
 
     private const string Level1ScenePath = "Assets/Scenes/Level1.unity";
+    private const string HubScenePath = "Assets/Scenes/Hub.unity";
     private const string FontPath = "Assets/Renan/Fonts/Jersey10-Regular SDF 1.asset";
     private const string LucyEntityPath = "Assets/ObjectData/Entity/Lucy.asset";
     private const string GuardianEntityPath = "Assets/ObjectData/Entity/Guardiao.asset";
@@ -28,6 +30,8 @@ public static class HealthBarUIBuilder
 
     private static readonly string HudPrefabPath = $"{PrefabFolder}/HUD.prefab";
     private static readonly string RewardEntryPrefabPath = $"{PrefabFolder}/RewardEntry.prefab";
+    private static readonly string ItemCountEntryPrefabPath = $"{PrefabFolder}/ItemCountEntry.prefab";
+    private static readonly string UpgradeIconSlotPrefabPath = $"{PrefabFolder}/UpgradeIconSlot.prefab";
     private static readonly string GuardianBossDataPath = $"{BossDataFolder}/Guardiao.asset";
 
     // Same palette as the upgrade UI: life green for Lucy, damage red for the boss.
@@ -46,6 +50,12 @@ public static class HealthBarUIBuilder
     private const float BlockWidth = 340f;
     private const float PortraitSize = 64f;
     private const float PortraitGap = 8f;
+
+    // Rows under Lucy's bar (the bar ends 56 below the block's top).
+    private const float ItemsRowTop = 62f;
+    private const float ItemIconSize = 22f;
+    private const float UpgradesRowTop = 90f;
+    private const float UpgradeSlotSize = 28f;
 
     private const int UILayer = 5;
 
@@ -84,13 +94,17 @@ public static class HealthBarUIBuilder
             Sprites sprites = BuildSprites();
 
             RewardEntryUI rewardEntry = BuildRewardEntryPrefab(sprites, overwritePrefabs);
-            GameObject hud = BuildHudPrefab(sprites, rewardEntry, overwritePrefabs);
+            ItemCountEntryUI itemCountEntry = BuildItemCountEntryPrefab(sprites, overwritePrefabs);
+            UpgradeIconSlotUI upgradeIconSlot = BuildUpgradeIconSlotPrefab(sprites, overwritePrefabs);
+            GameObject hud = BuildHudPrefab(sprites, rewardEntry, itemCountEntry, upgradeIconSlot, overwritePrefabs);
             // The boss-adaptation panel belongs to BossAdaptationBuilder; re-added here so a rebuild keeps it.
             if (BossAdaptationBuilder.EnsureHudAdaptationPanel()) hud = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             BossData_SO guardian = BuildGuardianData();
 
             AssetDatabase.SaveAssets();
-            SetupLevel1(hud, guardian, hadUnsavedChanges);
+            if (!SetupLevel1(hud, guardian, hadUnsavedChanges)) return;
+            SetupOtherHudScenes();
+            SetupHub();
 
             Debug.Log("[HUD] Barras de vida geradas. Veja Tools > Lucy para reconstruir os prefabs.");
         }
@@ -196,7 +210,88 @@ public static class HealthBarUIBuilder
         return SavePrefab(root, RewardEntryPrefabPath).GetComponent<RewardEntryUI>();
     }
 
-    private static GameObject BuildHudPrefab(Sprites sprites, RewardEntryUI rewardEntryPrefab, bool overwrite)
+    private static ItemCountEntryUI BuildItemCountEntryPrefab(Sprites sprites, bool overwrite)
+    {
+        ItemCountEntryUI existing = AssetDatabase.LoadAssetAtPath<ItemCountEntryUI>(ItemCountEntryPrefabPath);
+        if (existing != null && !overwrite) return existing;
+
+        GameObject root = CreateUI("ItemCountEntry", null);
+        HorizontalLayoutGroup row = root.AddComponent<HorizontalLayoutGroup>();
+        row.childAlignment = TextAnchor.MiddleLeft;
+        row.spacing = 4f;
+        row.childControlWidth = true;
+        row.childControlHeight = true;
+        row.childForceExpandWidth = false;
+        row.childForceExpandHeight = false;
+
+        GameObject iconObject = CreateUI("Icon", root.transform);
+        Image icon = AddImage(iconObject, sprites.square, Color.white);
+        icon.preserveAspect = true;
+        LayoutElement iconLayout = iconObject.AddComponent<LayoutElement>();
+        iconLayout.preferredWidth = ItemIconSize;
+        iconLayout.preferredHeight = ItemIconSize;
+
+        TextMeshProUGUI count = AddText(CreateUI("Count", root.transform), "0", 22f, TextAlignmentOptions.MidlineLeft, TextColor);
+
+        ItemCountEntryUI entry = root.AddComponent<ItemCountEntryUI>();
+        SetRefs(entry, ("icon", icon), ("count", count));
+
+        return SavePrefab(root, ItemCountEntryPrefabPath).GetComponent<ItemCountEntryUI>();
+    }
+
+    private static UpgradeIconSlotUI BuildUpgradeIconSlotPrefab(Sprites sprites, bool overwrite)
+    {
+        UpgradeIconSlotUI existing = AssetDatabase.LoadAssetAtPath<UpgradeIconSlotUI>(UpgradeIconSlotPrefabPath);
+        if (existing != null && !overwrite) return existing;
+
+        GameObject root = CreateUI("UpgradeIconSlot", null);
+        LayoutElement layout = root.AddComponent<LayoutElement>();
+        layout.preferredWidth = UpgradeSlotSize;
+        layout.preferredHeight = UpgradeSlotSize;
+
+        Image back = AddImage(Stretched(CreateUI("Back", root.transform)), sprites.panel, PortraitBackColor);
+        back.type = Image.Type.Sliced;
+
+        GameObject iconObject = CreateUI("Icon", root.transform);
+        Stretch(iconObject, 4f);
+        Image icon = AddImage(iconObject, null, Color.white);
+        icon.preserveAspect = true;
+
+        Image frame = AddImage(Stretched(CreateUI("Frame", root.transform)), sprites.frame, FrameColor);
+        frame.type = Image.Type.Sliced;
+
+        UpgradeIconSlotUI slot = root.AddComponent<UpgradeIconSlotUI>();
+        SetRefs(slot, ("icon", icon), ("frame", frame));
+
+        return SavePrefab(root, UpgradeIconSlotPrefabPath).GetComponent<UpgradeIconSlotUI>();
+    }
+
+    /// <summary>
+    /// A row under Lucy's bar, starting where the bar starts. Its width follows its content, so it never
+    /// depends on how long the bar has grown.
+    /// </summary>
+    private static GameObject CreateBarRow(string name, Transform parent, float top, float height, float spacing)
+    {
+        GameObject row = CreateUI(name, parent);
+        RectTransform rect = (RectTransform)row.transform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = new Vector2(PortraitSize + PortraitGap, -top);
+        rect.sizeDelta = new Vector2(0f, height);
+
+        HorizontalLayoutGroup layout = row.AddComponent<HorizontalLayoutGroup>();
+        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.spacing = spacing;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+        row.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        return row;
+    }
+
+    private static GameObject BuildHudPrefab(Sprites sprites, RewardEntryUI rewardEntryPrefab,
+        ItemCountEntryUI itemCountEntryPrefab, UpgradeIconSlotUI upgradeIconSlotPrefab, bool overwrite)
     {
         GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
         if (existing != null && !overwrite) return existing;
@@ -232,12 +327,23 @@ public static class HealthBarUIBuilder
             playerParts.name.text = lucy.entityName;
         }
 
+        // Upgrade materials directly under the bar, then one slot per upgrade tree.
+        GameObject items = CreateBarRow("Items", player.transform, ItemsRowTop, ItemIconSize, 12f);
+        ItemCounterUI itemCounter = items.AddComponent<ItemCounterUI>();
+        SetRefs(itemCounter, ("entryPrefab", itemCountEntryPrefab), ("entryContainer", items.transform));
+
+        GameObject upgrades = CreateBarRow("Upgrades", player.transform, UpgradesRowTop, UpgradeSlotSize, 6f);
+        UpgradeIconsUI upgradeIcons = upgrades.AddComponent<UpgradeIconsUI>();
+        SetRefs(upgradeIcons, ("slotPrefab", upgradeIconSlotPrefab), ("slotContainer", upgrades.transform));
+
+        // baseBarWidth / leadingWidth keep their defaults (268 / 72), which match BlockWidth and the portrait.
         PlayerHealthBarUI playerUi = player.AddComponent<PlayerHealthBarUI>();
         SetRefs(playerUi,
             ("bar", playerParts.view),
             ("portrait", playerParts.portrait),
             ("nameText", playerParts.name),
-            ("portraitSource", lucy));
+            ("portraitSource", lucy),
+            ("resizeTarget", playerRect));
 
         // --- Boss: mirrored, portrait on the far right, bar emptying towards the right ---
         GameObject bossBlock = CreateUI("BossHealthBar", root.transform);
@@ -436,20 +542,11 @@ public static class HealthBarUIBuilder
         return true;
     }
 
-    private static void SetupLevel1(GameObject hudPrefab, BossData_SO guardian, bool hadUnsavedChanges)
+    /// <summary>Level1 setup. Returns false when the scene had unsaved edits, so the builder stops before switching scenes.</summary>
+    private static bool SetupLevel1(GameObject hudPrefab, BossData_SO guardian, bool hadUnsavedChanges)
     {
         UnityEngine.SceneManagement.Scene scene = EditorSceneManager.GetActiveScene();
-
-        PlayerHealthBarUI playerBar = Object.FindFirstObjectByType<PlayerHealthBarUI>(FindObjectsInactive.Include);
-        if (playerBar == null && hudPrefab != null)
-        {
-            GameObject hud = (GameObject)PrefabUtility.InstantiatePrefab(hudPrefab, scene);
-            Undo.RegisterCreatedObjectUndo(hud, "Add HUD");
-            playerBar = hud.GetComponentInChildren<PlayerHealthBarUI>(true);
-        }
-
-        PlayerStateDriver player = Object.FindFirstObjectByType<PlayerStateDriver>(FindObjectsInactive.Include);
-        if (playerBar != null && player != null) SetRefs(playerBar, ("player", player));
+        PlaceHud(scene, hudPrefab);
 
         foreach (BossGate gate in Object.FindObjectsByType<BossGate>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
@@ -466,11 +563,94 @@ public static class HealthBarUIBuilder
         EditorSceneManager.MarkSceneDirty(scene);
         if (hadUnsavedChanges)
         {
-            Debug.LogWarning("[HUD] Level1 ja tinha alteracoes nao salvas; salve a cena manualmente.");
-            return;
+            Debug.LogWarning("[HUD] Level1 ja tinha alteracoes nao salvas; salve a cena e rode de novo para colocar o HUD no Hub.");
+            return false;
         }
 
         EditorSceneManager.SaveScene(scene);
+        return true;
+    }
+
+    /// <summary>The bar is always visible, so the Hub gets the HUD too. Level1 was just saved before this switch.</summary>
+    private static void SetupHub()
+    {
+        UnityEngine.SceneManagement.Scene scene = EditorSceneManager.OpenScene(HubScenePath, OpenSceneMode.Single);
+
+        // OpenScene unloads assets only this code still held, so the prefab is loaded again by path.
+        PlaceHud(scene, AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath));
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+    }
+
+    /// <summary>
+    /// Every other scene in the Build Settings that already holds a HUD (Level2, Level3...): cleans its instance
+    /// and wires its player. Only scenes saved on disk are touched; the one open before this was just saved.
+    /// </summary>
+    private static void SetupOtherHudScenes()
+    {
+        string hudGuid = AssetDatabase.AssetPathToGUID(HudPrefabPath);
+        foreach (EditorBuildSettingsScene buildScene in EditorBuildSettings.scenes)
+        {
+            string path = buildScene.path;
+            if (path == Level1ScenePath || path == HubScenePath || !File.Exists(ToFullPath(path))) continue;
+            if (!File.ReadAllText(ToFullPath(path)).Contains(hudGuid)) continue;
+
+            UnityEngine.SceneManagement.Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+            PlaceHud(scene, AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath));
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+    }
+
+    /// <summary>
+    /// Adds the HUD to <paramref name="scene"/> when it has none, clears stale overrides from an existing one,
+    /// and points Lucy's bar at the scene's player.
+    /// </summary>
+    private static void PlaceHud(UnityEngine.SceneManagement.Scene scene, GameObject hudPrefab)
+    {
+        PlayerHealthBarUI playerBar = Object.FindFirstObjectByType<PlayerHealthBarUI>(FindObjectsInactive.Include);
+        if (playerBar == null && hudPrefab != null)
+        {
+            GameObject hud = (GameObject)PrefabUtility.InstantiatePrefab(hudPrefab, scene);
+            Undo.RegisterCreatedObjectUndo(hud, "Add HUD");
+            playerBar = hud.GetComponentInChildren<PlayerHealthBarUI>(true);
+        }
+        else if (playerBar != null)
+        {
+            GameObject instanceRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(playerBar.gameObject);
+            if (instanceRoot != null) RevertStaleOverrides(instanceRoot);
+        }
+
+        PlayerStateDriver player = Object.FindFirstObjectByType<PlayerStateDriver>(FindObjectsInactive.Include);
+        if (playerBar != null && player != null) SetRefs(playerBar, ("player", player));
+    }
+
+    /// <summary>
+    /// Drops every override on a HUD instance except the root's own (name, canvas rect) and the wired player.
+    /// Unity stores placeholder overrides (anchors and size of 0) for rects a layout group drives. Rebuilding the
+    /// prefab reassigns its internal ids by object name, and both Lucy's and the boss's blocks have a child named
+    /// "Bar", so a leftover meant for the boss's layout-driven Bar collapsed Lucy's bar to zero size in the levels.
+    /// </summary>
+    private static void RevertStaleOverrides(GameObject instanceRoot)
+    {
+        GameObject sourceRoot = PrefabUtility.GetCorrespondingObjectFromSource(instanceRoot);
+        PropertyModification[] modifications = PrefabUtility.GetPropertyModifications(instanceRoot);
+        if (sourceRoot == null || modifications == null) return;
+
+        List<PropertyModification> kept = new();
+        foreach (PropertyModification modification in modifications)
+        {
+            Object target = modification.target;
+            GameObject owner = target is GameObject go ? go : target is Component component ? component.gameObject : null;
+            bool onRoot = owner != null && owner == sourceRoot;
+            bool wiredPlayer = target is PlayerHealthBarUI && modification.propertyPath == "player";
+            if (onRoot || wiredPlayer) kept.Add(modification);
+        }
+
+        if (kept.Count == modifications.Length) return;
+        PrefabUtility.SetPropertyModifications(instanceRoot, kept.ToArray());
+        Debug.Log($"[HUD] {instanceRoot.scene.name}: {modifications.Length - kept.Count} override(s) antigos removidos do HUD.");
     }
 
     private static EnemyStateDriver GetGateBoss(BossGate gate)

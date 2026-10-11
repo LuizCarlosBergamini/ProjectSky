@@ -104,6 +104,49 @@ public class UpgradeManager : MonoBehaviour
     }
 
     /// <summary>
+    /// The purchased node of <paramref name="tree"/> at the highest level (prerequisite depth); among nodes of the
+    /// same level, the later one in the tree's list. Null when nothing in the tree was bought.
+    /// </summary>
+    public UpgradeNode_SO GetHighestPurchased(UpgradeTree_SO tree)
+    {
+        if (tree == null || tree.nodes == null) return null;
+
+        Dictionary<UpgradeNode_SO, int> depths = tree.GetNodeDepths();
+        UpgradeNode_SO highest = null;
+        int highestDepth = -1;
+        foreach (UpgradeNode_SO node in tree.nodes)
+        {
+            if (node == null || !IsPurchased(node)) continue;
+            int depth = depths.TryGetValue(node, out int value) ? value : 0;
+            if (depth < highestDepth) continue;
+
+            highest = node;
+            highestDepth = depth;
+        }
+
+        return highest;
+    }
+
+    /// <summary>Every item any node costs, without repeats, in tree and node order (the upgrade materials).</summary>
+    public List<Item_SO> GetCostItems()
+    {
+        List<Item_SO> items = new();
+        foreach (UpgradeTree_SO tree in _trees)
+        {
+            if (tree == null || tree.nodes == null) continue;
+            foreach (UpgradeNode_SO node in tree.nodes)
+            {
+                foreach (Item_SO item in GetBaseCost(node).Keys)
+                {
+                    if (!items.Contains(item)) items.Add(item);
+                }
+            }
+        }
+
+        return items;
+    }
+
+    /// <summary>
     /// Price written in the asset, with repeated items merged and empty slots skipped. InventoryManager.RemoveItem
     /// treats any quantity below 1 as 1, so zero-cost entries must never reach it.
     /// </summary>
@@ -302,14 +345,8 @@ public class UpgradeManager : MonoBehaviour
     {
         if (!Application.isPlaying || InventoryManager.instance == null) return;
 
-        HashSet<Item_SO> items = new();
-        foreach (UpgradeNode_SO node in _knownNodes)
-        {
-            foreach (Item_SO item in GetTotalCost(node).Keys) items.Add(item);
-        }
-
         // Not a run pickup: dying must not take debug materials back.
-        foreach (Item_SO item in items) InventoryManager.instance.AddItem(item, 10, false);
+        foreach (Item_SO item in GetCostItems()) InventoryManager.instance.AddItem(item, 10, false);
     }
 
     [ContextMenu("Debug/Resetar upgrades")]
