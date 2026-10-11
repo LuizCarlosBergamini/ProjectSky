@@ -66,6 +66,7 @@ namespace HierarchicalStateMachine
         public Func<string, bool> HasAnimation;
         public Action<string, float, float> PlayAttackAnimation; // state, normalized start, speed
         public Action<float> SetAnimationSpeed;
+        public Action<string, float> PlaySettleAnimation;         // return-to-rest clip (missing = Enemy_Idle), seconds to fill
         public Action<Color?> SetTelegraph;                        // null = off
         public Func<AttackHitbox, bool> ApplyHitbox;               // true when damage landed
         public Action<ProjectileAttackDefinition> FireProjectiles;

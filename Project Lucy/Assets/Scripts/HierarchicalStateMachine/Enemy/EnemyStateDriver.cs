@@ -71,6 +71,10 @@ namespace HierarchicalStateMachine
         [SerializeField] private SpriteRenderer tintRenderer;
         [SerializeField] private Color hitFlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         [SerializeField] private float hitFlashTime = 0.1f;
+        [Tooltip("Pisca o sprite em todo golpe, nao so durante ataques com super armor.")]
+        [SerializeField] private bool flashOnEveryHit = true;
+        [Tooltip("Jato de sangue em particulas ao levar dano.")]
+        [SerializeField] private EnemyHitBlood hitBlood = new EnemyHitBlood();
         [Tooltip("Pulsos por segundo da cor de telegrafo.")]
         [SerializeField] private float telegraphPulseRate = 6f;
 
@@ -159,6 +163,7 @@ namespace HierarchicalStateMachine
             animator = ResolveAnimator();
             if (tintRenderer == null && animator != null) tintRenderer = animator.GetComponent<SpriteRenderer>();
             if (tintRenderer != null) baseTint = tintRenderer.color;
+            hitBlood.Init(tintRenderer, groundLayer);
 
             ctx.rb = rb;
             ctx.animator = animator;
@@ -189,6 +194,7 @@ namespace HierarchicalStateMachine
             ctx.HasAnimation = HasAnimation;
             ctx.PlayAttackAnimation = PlayAttackAnimation;
             ctx.SetAnimationSpeed = SetAnimationSpeed;
+            ctx.PlaySettleAnimation = PlaySettleAnimation;
             ctx.SetTelegraph = SetTelegraph;
             ctx.ApplyHitbox = ApplyHitbox;
             ctx.FireProjectiles = FireProjectiles;
@@ -228,6 +234,7 @@ namespace HierarchicalStateMachine
         private void OnDestroy()
         {
             EnemyAttackSet.DestroyRuntime(runtimeSet);
+            hitBlood.Release();
         }
 
         private void Update()
@@ -748,6 +755,29 @@ namespace HierarchicalStateMachine
             if (animator != null) animator.speed = speed;
         }
 
+        // The end of an attack's recovery: instead of freezing on the last strike frame until Chase takes
+        // over, the body eases back to rest. A dedicated return clip is stretched over the time left; without
+        // one the looping idle starts right away, so Chase finds it already playing and nothing restarts.
+        private void PlaySettleAnimation(string stateName, float duration)
+        {
+            if (animator == null) return;
+
+            hitAnimationTimer = 0f;
+            if (HasAnimation(stateName))
+            {
+                animator.speed = 1f;
+                animator.Play(Animator.StringToHash(stateName), 0, 0f);
+                animator.Update(0f); // so the state info below already describes the new clip
+                float length = animator.GetCurrentAnimatorStateInfo(0).length;
+                animator.speed = length > 0f && duration > 0.01f ? length / duration : 1f;
+                return;
+            }
+
+            if (!HasAnimation("Enemy_Idle")) return;
+            animator.speed = 1f;
+            animator.Play(Animator.StringToHash("Enemy_Idle"), 0, 0f);
+        }
+
         private void PlayHitAnimation()
         {
             if (animator == null) return;
@@ -817,6 +847,9 @@ namespace HierarchicalStateMachine
             // only the sprite flashes; otherwise the hit reaction borrows the animator for a moment.
             if (superArmorWhileAttacking && ctx.InAttack) hitFlashTimer = hitFlashTime;
             else PlayHitAnimation();
+            if (flashOnEveryHit) hitFlashTimer = hitFlashTime;
+
+            hitBlood.Emit(HitPoint(knockback), BloodDirection(knockback), ctx.Health <= 0f);
 
             if (ctx.Health > 0f) return;
 
@@ -825,6 +858,27 @@ namespace HierarchicalStateMachine
         }
 
         public bool IsAlive() => ctx.Health > 0f;
+
+        // Blood flies the way the hit pushes. Knockback is zero for some damage sources, so then it
+        // flies away from the player, or out of the enemy's back when there is no player.
+        private float BloodDirection(Vector2 knockback)
+        {
+            if (Mathf.Abs(knockback.x) > 0.01f) return Mathf.Sign(knockback.x);
+            if (target != null) return transform.position.x >= target.position.x ? 1f : -1f;
+            return ctx.FacingRight ? -1f : 1f;
+        }
+
+        // Upper body, on the side facing the attacker, so the spray starts where the blade landed.
+        private Vector2 HitPoint(Vector2 knockback)
+        {
+            if (bodyCollider == null) return transform.position;
+
+            Bounds b = bodyCollider.bounds;
+            float towardAttacker = -BloodDirection(knockback);
+            return new Vector2(
+                b.center.x + towardAttacker * b.extents.x * 0.4f,
+                b.center.y + b.extents.y * UnityEngine.Random.Range(-0.1f, 0.35f));
+        }
 
         public void Heal(int amount)
         {

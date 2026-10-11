@@ -185,6 +185,22 @@ namespace HierarchicalStateMachine
                  "troca de volta ao Idle nao puxar o chefe para tras.")]
         public float exitForwardOffset;
 
+        [Header("Volta ao Idle")]
+        [Tooltip("Marcado: no ultimo trecho de recuperacao o corpo volta ao repouso (clipe de retorno ou Idle) " +
+                 "em vez de ficar congelado no ultimo quadro do golpe. A duracao do ataque nao muda.")]
+        public bool settleIntoIdle = true;
+
+        [Tooltip("Segundos que o ultimo quadro do golpe fica na tela antes de voltar ao repouso.")]
+        [Min(0f)] public float recoveryHoldTime = 0.1f;
+
+        [Tooltip("Estado do Animator com a animacao de retorno ao Idle, esticada para caber no resto da " +
+                 "recuperacao. Vazio = usa '<animationState>_Recover' se existir, senao o Enemy_Idle.")]
+        public string recoveryAnimationState;
+
+        /// <summary>The return-to-rest clip to try first; the driver falls back to Enemy_Idle when it is missing.</summary>
+        public string SettleAnimationState =>
+            string.IsNullOrEmpty(recoveryAnimationState) ? animationState + "_Recover" : recoveryAnimationState;
+
         public abstract EnemyAttackMove CreateState(StateMachine machine, State parent, EnemyContext ctx);
 
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;

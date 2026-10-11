@@ -47,11 +47,18 @@ public class EnemyProjectile : MonoBehaviour
         if (!launched) return;
         // Never hit the enemy that fired it.
         if (owner != null && (other.gameObject == owner || other.transform.IsChildOf(owner.transform))) return;
+        // A volley spawns every projectile on the same point, all on the Default layer like the player:
+        // without this they hit each other on the first physics step and the whole volley vanished.
+        if (other.GetComponentInParent<EnemyProjectile>() != null) return;
 
         if (IsInLayer(other.gameObject.layer, damageableLayer))
         {
+            // The damageable mask is the Default layer, which also holds props and trigger volumes;
+            // only something that can actually take the hit stops the projectile.
             IDamageable damageable = other.GetComponentInParent<IDamageable>();
-            if (damageable != null && damageable.IsAlive() && !damageable.HasTakenDamage)
+            if (damageable == null) return;
+
+            if (damageable.IsAlive() && !damageable.HasTakenDamage)
             {
                 Vector2 knockDirection = new Vector2(direction.x, Mathf.Abs(verticalKnockback)).normalized;
                 damageable.TakeDamage(damage, knockDirection * knockbackForce);
