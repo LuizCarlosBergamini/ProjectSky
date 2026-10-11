@@ -31,3 +31,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 86c660a7caf112a40a8df91fdf60ec02, type: 2}
   requireAllPrerequisites: 1
   lockedHint: 
+  defeatDialog: {fileID: 11400000, guid: 2a923a747fc049ceb80c0b61481592ee, type: 2}
+  defeatDialogOnlyOnFirstWin: 1

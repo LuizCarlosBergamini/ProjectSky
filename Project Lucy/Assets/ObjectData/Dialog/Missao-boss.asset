@@ -15,21 +15,21 @@ MonoBehaviour:
   dialogs:
   - dialogId: daisy-boss-01
     dialogContent: "Lucy! Que bom que voc\xEA chegou at\xE9 aqui. Logo \xE0 frente
-      fica a arena do Guardi\xE3o."
+      fica a arena da Medusa."
     nextDialog: lucy-boss-01
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: lucy-boss-01
-    dialogContent: "Guardi\xE3o? Ningu\xE9m me falou nada sobre um guardi\xE3o..."
+    dialogContent: "Medusa? Ningu\xE9m me falou nada sobre uma Medusa..."
     nextDialog: daisy-boss-02
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
   - dialogId: daisy-boss-02
-    dialogContent: "Ele protege a sa\xEDda da caverna. Derrote ele e eu te dou uma
+    dialogContent: "Ela protege a sa\xEDda da caverna. Derrote ela e eu te dou uma
       recompensa!"
     nextDialog: daisy-boss-03
     triggerEvent: 

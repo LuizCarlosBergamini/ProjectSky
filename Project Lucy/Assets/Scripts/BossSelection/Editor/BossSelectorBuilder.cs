@@ -15,7 +15,7 @@ using Scene = UnityEngine.SceneManagement.Scene;
 
 /// <summary>
 /// Generates everything the boss selector needs so nothing has to be wired by hand: placeholder sprites, the
-/// grayscale material, the boss data (extending the existing Guardiao asset), the UI prefabs, the Level2 and
+/// grayscale material, the boss data (extending the existing Medusa asset), the UI prefabs, the Level2 and
 /// Level3 scenes (copies of Level1), their Build Settings entries and the Hub setup (manager, canvas, the
 /// portal trigger and the two new reward tasks).
 /// Safe to run again: data, sprites, scenes and scene objects are only created when missing, so art swaps and
@@ -89,7 +89,8 @@ public static class BossSelectorBuilder
     {
         new()
         {
-            assetName = "Guardiao", displayName = "Guardião", taskId = Level1BossTaskId,
+            // The Level1 boss is the Medusa; its bossId stays "Guardiao" so existing saves keep the defeat.
+            assetName = "Medusa", displayName = "Medusa", taskId = Level1BossTaskId,
             scenePath = Level1ScenePath, backgroundVariant = "Normal BG", previewFile = "Background Castle .png",
             accent = new Color(0.86f, 0.56f, 0.3f, 1f), difficulty = 1
         },
@@ -362,8 +363,8 @@ public static class BossSelectorBuilder
 
     private static void BuildBossData(Sprites sprites)
     {
-        Entity_SO guardian = AssetDatabase.LoadAssetAtPath<Entity_SO>($"{EntityFolder}/Guardiao.asset");
-        Sprite placeholderPortrait = guardian != null ? guardian.entitySprite : null;
+        Entity_SO medusa = AssetDatabase.LoadAssetAtPath<Entity_SO>($"{EntityFolder}/Medusa.asset");
+        Sprite placeholderPortrait = medusa != null ? medusa.entitySprite : null;
 
         foreach (BossSpec spec in Specs)
         {
@@ -373,7 +374,7 @@ public static class BossSelectorBuilder
             {
                 entity = ScriptableObject.CreateInstance<Entity_SO>();
                 entity.entityName = spec.displayName;
-                // Placeholder portrait: the Guardiao's sprite, until the boss has art of its own.
+                // Placeholder portrait: the Medusa's sprite, until the boss has art of its own.
                 entity.entitySprite = placeholderPortrait;
                 AssetDatabase.CreateAsset(entity, entityPath);
             }

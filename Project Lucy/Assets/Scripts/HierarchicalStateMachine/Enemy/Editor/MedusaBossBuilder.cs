@@ -31,7 +31,7 @@ public static class MedusaBossBuilder
     private const string StatsPath = DataFolder + "/Medusa_Stats.asset";
     private const string AttackSetPath = DataFolder + "/Medusa_AttackSet.asset";
     private const string EntityPath = "Assets/ObjectData/Entity/Medusa.asset";
-    private const string BossDataPath = "Assets/ObjectData/Bosses/Guardiao.asset";
+    private const string BossDataPath = "Assets/ObjectData/Bosses/Medusa.asset";
     private const string PrefabPath = "Assets/Renan/Prefabs/Medusa.prefab";
     private const string VenomPrefabPath = "Assets/Renan/Prefabs/MedusaVenom.prefab";
     private const string BaseProjectilePath = "Assets/Renan/Prefabs/EnemyProjectile.prefab";
