@@ -12814,7 +12814,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
       propertyPath: _events.Array.size
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
       propertyPath: _events.Array.data[0].eventName
@@ -12871,6 +12871,42 @@ PrefabInstance:
     - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
       propertyPath: _events.Array.data[2].onCall.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_StringArgument
       value: missao-boss
+      objectReference: {fileID: 0}
+    - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
+      propertyPath: _events.Array.data[3].eventName
+      value: missao-boss-2-iniciada
+      objectReference: {fileID: 0}
+    - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
+      propertyPath: _events.Array.data[3].onCall.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
+      propertyPath: _events.Array.data[3].onCall.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1505345589}
+    - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
+      propertyPath: _events.Array.data[3].onCall.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: TaskManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
+      propertyPath: _events.Array.data[3].onCall.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: StartTask
+      objectReference: {fileID: 0}
+    - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
+      propertyPath: _events.Array.data[3].onCall.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
+      propertyPath: _events.Array.data[3].onCall.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
+      propertyPath: _events.Array.data[3].onCall.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_StringArgument
+      value: missao-boss-2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2733736814695769906, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
+      propertyPath: _events.Array.data[3].onCall.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8090524138806414815, guid: 4c8ee5c3d3090a34fa90b5e946679313, type: 3}
       propertyPath: m_Name
@@ -13453,7 +13489,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
       propertyPath: tasks.Array.data[3].taskTitle
-      value: Derrotar a Sentinela
+      value: Derrotar a Kitsune
       objectReference: {fileID: 0}
     - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
       propertyPath: tasks.Array.data[4].taskTitle
@@ -13486,7 +13522,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
       propertyPath: tasks.Array.data[3].taskDescription
-      value: Derrote a Sentinela da arena do Level 2
+      value: Derrote a Kitsune da arena do Level 2
       objectReference: {fileID: 0}
     - target: {fileID: 7198040460547819932, guid: 6b1274c1127d11f43ac3adbf9b33a41c, type: 3}
       propertyPath: tasks.Array.data[4].taskDescription
@@ -15010,6 +15046,58 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 563343003}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[0].taskId
+      value: missao-boss-2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[0].status
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[0].requiresItems
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[0].dialog
+      value: 
+      objectReference: {fileID: 11400000, guid: 4040935213914eccb5bcbfcc2e9079eb, type: 2}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[1].taskId
+      value: missao-boss
+      objectReference: {fileID: 0}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[1].status
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[1].requiresItems
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[1].dialog
+      value: 
+      objectReference: {fileID: 11400000, guid: 3466fb6ca34974647b8cfe317aa0323d, type: 2}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[2].taskId
+      value: missao-tutorial
+      objectReference: {fileID: 0}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[2].status
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[2].requiresItems
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7704999965166568101, guid: 436835a0221d31c449de056a491b5b34, type: 3}
+      propertyPath: _dialogRules.Array.data[2].dialog
+      value: 
+      objectReference: {fileID: 11400000, guid: 8b92816720fc56547b86f3c8f9214587, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
