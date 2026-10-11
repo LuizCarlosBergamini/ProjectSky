@@ -20,7 +20,7 @@ using Object = UnityEngine.Object;
 /// adaptation change.
 ///
 /// Safe to run again. Generated assets (clips, controllers, sprite import, prefab structure) are updated in place
-/// so their GUIDs and file IDs survive. Tuning assets (stats, the four attacks, the attack set, the adaptation,
+/// so their GUIDs and file IDs survive. Tuning assets (stats, the three attacks, the attack set, the adaptation,
 /// the entity) are only created when missing, so balancing done in the Inspector is never overwritten: delete an
 /// asset to get its defaults back. The scene swap is skipped once the gate already points at a Kitsune.
 /// </summary>
@@ -91,9 +91,12 @@ public static class KitsuneBossBuilder
         new() { file = "Dead", clipName = "Kitsune_Dead", stateName = "Enemy_Death", fps = 8f },
         new() { file = "Attack_1", clipName = "Kitsune_FoxfireWave", stateName = "Kitsune_FoxfireWave", fps = 12f },
         new() { file = "Attack_3", clipName = "Kitsune_Fireball", stateName = "Kitsune_Fireball", fps = 12f },
-        new() { file = "Attack_2", clipName = "Kitsune_FoxfireBarrage", stateName = "Kitsune_FoxfireBarrage", fps = 10f },
-        new() { file = "Idle_2", clipName = "Kitsune_CharmGaze", stateName = "Kitsune_CharmGaze", fps = 8f }
+        new() { file = "Attack_2", clipName = "Kitsune_FoxfireBarrage", stateName = "Kitsune_FoxfireBarrage", fps = 10f }
     };
+
+    // An earlier version gave her Medusa's petrifying gaze (on the Idle_2 sheet). The Kitsune has no such attack:
+    // a rebuild removes it from the attack set and deletes what it generated.
+    private const string RetiredGazeName = "Kitsune_CharmGaze";
 
     private static Sheet GetSheet(string file) => Sheets.First(s => s.file == file);
 
@@ -470,6 +473,11 @@ public static class KitsuneBossBuilder
         if (controller == null) controller = AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
 
         AnimatorStateMachine machine = controller.layers[0].stateMachine;
+        foreach (ChildAnimatorState child in machine.states)
+        {
+            if (child.state.name == RetiredGazeName) machine.RemoveState(child.state);
+        }
+
         AnimatorState idle = null;
         for (int i = 0; i < Sheets.Length; i++)
         {
@@ -696,11 +704,10 @@ public static class KitsuneBossBuilder
             (d, s) => InitFireball(d, fireball));
         ProjectileAttackDefinition barrage = BuildAttack<ProjectileAttackDefinition>("Kitsune_FoxfireBarrage", "Attack_2",
             (d, s) => InitFoxfireBarrage(d, foxfire));
-        GazeAttackDefinition gaze = BuildAttack<GazeAttackDefinition>("Kitsune_CharmGaze", "Idle_2", InitCharmGaze);
 
-        return LoadOrCreate<EnemyAttackSet>(AttackSetPath, set =>
+        EnemyAttackSet attackSet = LoadOrCreate<EnemyAttackSet>(AttackSetPath, set =>
         {
-            set.attacks = new List<EnemyAttackDefinition> { wave, shot, barrage, gaze };
+            set.attacks = new List<EnemyAttackDefinition> { wave, shot, barrage };
             set.globalCooldown = 0.6f;
             set.repeatPenalty = 0.35f;
             set.secondRepeatPenalty = 0.75f;
@@ -708,7 +715,7 @@ public static class KitsuneBossBuilder
             set.rangeEdgeScore = 0.6f;
             set.closeRange = 2.4f;
             // Phase 1: the fox fire wave up close and the fireball at range. Phase 2 opens with the barrage and
-            // adds it and the charming gaze (the petrification Medusa uses in her second phase).
+            // keeps it in the rotation.
             set.phases = new List<BossPhase>
             {
                 new() { name = "Fase 1", healthFraction = 1f },
@@ -726,6 +733,35 @@ public static class KitsuneBossBuilder
             set.holdTolerance = 0.4f;
             set.rangeMargin = 0.3f;
         });
+
+        RetireGaze(attackSet);
+        return attackSet;
+    }
+
+    // Takes the retired gaze out of an attack set built by the earlier version (also as a phase opener) and
+    // deletes its attack asset and clip. Nothing to do on a fresh build.
+    private static void RetireGaze(EnemyAttackSet set)
+    {
+        int removed = set.attacks.RemoveAll(attack => attack == null || attack.name == RetiredGazeName);
+        if (set.phases != null)
+        {
+            foreach (BossPhase phase in set.phases)
+            {
+                if (phase.openingAttack != null && phase.openingAttack.name == RetiredGazeName) phase.openingAttack = null;
+            }
+        }
+
+        if (removed > 0)
+        {
+            EditorUtility.SetDirty(set);
+            Report.Add($"{AttackSetPath}: petrifying gaze removed");
+        }
+
+        foreach (string path in new[] { $"{AttackFolder}/{RetiredGazeName}.asset", $"{AnimationFolder}/{RetiredGazeName}.anim" })
+        {
+            if (AssetDatabase.LoadAssetAtPath<Object>(path) != null && AssetDatabase.DeleteAsset(path))
+                Report.Add($"{path} deleted");
+        }
     }
 
     // The clip link (state name, frame rate, frame count) always follows the generated clip; everything
@@ -826,7 +862,7 @@ public static class KitsuneBossBuilder
         d.cooldown = 3.5f;
         d.scoring = new AttackScoring
         {
-            weight = 1.1f, targetAttacking = 1.3f, targetPetrified = 2f, lingerBonusPerSecond = 0.3f, maxLingerMultiplier = 2f
+            weight = 1.1f, targetAttacking = 1.3f, lingerBonusPerSecond = 0.3f, maxLingerMultiplier = 2f
         };
         d.telegraphColor = new Color(0.45f, 0.85f, 1f, 1f);
     }
@@ -860,7 +896,7 @@ public static class KitsuneBossBuilder
         d.cooldown = 2.6f;
         d.scoring = new AttackScoring
         {
-            weight = 1f, targetRetreating = 1.3f, targetGrappling = 1.4f, targetAirborne = 1.1f, targetPetrified = 2.5f
+            weight = 1f, targetRetreating = 1.3f, targetGrappling = 1.4f, targetAirborne = 1.1f
         };
         d.telegraphColor = new Color(0.4f, 0.8f, 1f, 1f);
     }
@@ -900,34 +936,6 @@ public static class KitsuneBossBuilder
             weight = 1f, enragedMultiplier = 1.2f, targetGrappling = 1.5f, targetAirborne = 1.3f, targetRetreating = 1.2f
         };
         d.telegraphColor = new Color(0.55f, 0.95f, 1f, 1f);
-    }
-
-    // Idle_2, second phase only: she turns her head toward the player (f0-1, held as a long telegraph), the tails
-    // flare and the charm lands (f2-4), then she settles (f5). Same rules as Medusa's gaze: turning away escapes.
-    private static void InitCharmGaze(GazeAttackDefinition d, Sheet s)
-    {
-        d.displayName = "Olhar Encantado";
-        d.segments = new List<AttackSegment>
-        {
-            Segment("encara", AttackSegmentKind.WindUp, 0, 1, 1f),
-            Segment("olhar", AttackSegmentKind.Active, 2, 4, 0.6f),
-            Segment("recupera", AttackSegmentKind.Recovery, 5, 5, 0.4f)
-        };
-        d.gazeRange = 11f;
-        d.coneAngle = 70f;
-        d.requireTargetFacing = true;
-        d.petrifyDuration = 1.6f; // long enough for the fireball's wind-up to start while the player is stone
-        d.petrifyImmunity = 3.5f;
-        d.damage = 5f;
-        d.minRange = 0f;
-        d.maxRange = 11f;
-        d.minTargetHeight = -3f;
-        d.maxTargetHeight = 6f;
-        d.requiresLineOfSight = true;
-        d.cooldown = 15f;
-        d.minPhase = 1;
-        d.scoring = new AttackScoring { weight = 1.3f, targetFacing = 2f, targetFacingAway = 0.3f, targetPetrified = 0.2f };
-        d.telegraphColor = new Color(1f, 0.55f, 0.85f, 1f);
     }
 
     #endregion
@@ -981,8 +989,7 @@ public static class KitsuneBossBuilder
 
             BoxCollider2D hurtbox = GetOrCreateHurtbox(root, collider);
 
-            // Hand: where the flame gathers on the fireball sheet. Both projectiles leave from here and the
-            // charming gaze looks from here.
+            // Hand: where the flame gathers on the fireball sheet. Both projectiles leave from here.
             Sheet cast = GetSheet("Attack_3");
             RectInt flame = cast.pixels.FireBounds(3, 3);
             Vector3 handLocal = flame.width > 0

@@ -21,7 +21,7 @@ MonoBehaviour:
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: lucy-boss2fim-01
-    dialogContent: "Ela quase me transformou em est\xE1tua, mas consegui a Engrenagem de Ouro."
+    dialogContent: "Aquele fogo-f\xE1tuo n\xE3o foi brincadeira, mas consegui a Engrenagem de Ouro."
     nextDialog: daisy-boss2fim-02
     triggerEvent: 
     dialogDuration: 0

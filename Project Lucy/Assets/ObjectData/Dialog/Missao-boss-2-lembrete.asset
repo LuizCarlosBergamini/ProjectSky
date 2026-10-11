@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
   dialogs:
   - dialogId: daisy-boss2lembrete-01
-    dialogContent: "A Kitsune est\xE1 logo \xE0 frente. Se ela parar e te encarar, vire de costas! Te espero no Hub."
+    dialogContent: "A Kitsune est\xE1 logo \xE0 frente. Cuidado com o fogo-f\xE1tuo e n\xE3o fique parada! Te espero no Hub."
     nextDialog: 
     triggerEvent: 
     dialogDuration: 0

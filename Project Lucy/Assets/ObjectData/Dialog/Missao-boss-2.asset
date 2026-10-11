@@ -35,7 +35,7 @@ MonoBehaviour:
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: daisy-boss2-03
-    dialogContent: "E cuidado com o olhar dela: se ela te encarar, voc\xEA vira pedra igual na luta com a Medusa. Vire de costas para escapar!"
+    dialogContent: "E se chegar perto, cuidado com as caudas: elas incendeiam o ch\xE3o em volta dela. Pule as chamas!"
     nextDialog: daisy-boss2-04
     triggerEvent: 
     dialogDuration: 0
