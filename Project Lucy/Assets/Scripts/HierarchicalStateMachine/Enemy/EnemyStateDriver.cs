@@ -29,6 +29,10 @@ namespace HierarchicalStateMachine
         [Tooltip("Chefes: fica parado ate o BossGate fechar a arena (BossGate.OnBossFightStarted).")]
         [SerializeField] private bool waitForActivation;
 
+        [Tooltip("Chefes: fala mostrada quando o BossGate fecha a arena. A luta so comeca quando o dialogo termina, " +
+                 "e o chefe nao leva dano enquanto isso. Vazio = a luta comeca na hora.")]
+        [SerializeField] private Dialog_SO introDialog;
+
         [Header("Attack (sem Attack Set)")]
         [SerializeField] private float attackDuration = 0.8f;
         [SerializeField] private float attackHitTime = 0.45f; // when inside the attack damage lands
@@ -66,6 +70,10 @@ namespace HierarchicalStateMachine
                  "animacao do golpe. O ataque nunca e interrompido, com ou sem esta opcao.")]
         [SerializeField] private bool superArmorWhileAttacking;
 
+        [Header("Evasive Dash")]
+        [Tooltip("Inimigos de longe: depois de levar alguns golpes, dao um dash para tras sem deixar de olhar o jogador.")]
+        [SerializeField] private EnemyDashSettings dash = new EnemyDashSettings();
+
         [Header("Feedback")]
         [Tooltip("Sprite que recebe o piscar de dano e o telegrafo. Vazio = o do Animator.")]
         [SerializeField] private SpriteRenderer tintRenderer;
@@ -97,6 +105,8 @@ namespace HierarchicalStateMachine
         private EnemyAttackSet runtimeSet; // legacy set built in Awake, destroyed with this enemy
         private float invulnerabilityTimer;
         private float hitAnimationTimer;
+        private int hitsSinceDash;
+        private bool introRunning;
         private string lastPath;
 
         private Transform target;
@@ -183,6 +193,7 @@ namespace HierarchicalStateMachine
             ctx.DeathDelay = deathDelay;
             ctx.Activated = !waitForActivation;
             ctx.LogDecisions = logAttackDecisions;
+            ctx.Dash = dash;
             if (attackSet == null) runtimeSet = EnemyAttackSet.CreateLegacy(LegacySettings());
             ctx.AttackSet = attackSet != null ? attackSet : runtimeSet;
             ApplyPhase(0, announce: false);
@@ -221,6 +232,7 @@ namespace HierarchicalStateMachine
         {
             BossGate.OnBossFightStarted -= HandleBossFightStarted;
             UpgradeManager.OnUpgradesChanged -= HandleUpgradesChanged;
+            DialogManager.OnDialogFinished -= HandleIntroDialogFinished;
         }
 
         private void Start()
@@ -282,7 +294,33 @@ namespace HierarchicalStateMachine
 
         private void HandleBossFightStarted(EnemyStateDriver boss)
         {
-            if (boss == this) Activate();
+            if (boss != this) return;
+
+            // Without a dialog box in the scene (a level played on its own) the fight simply starts.
+            if (introDialog == null || DialogManager.instance == null || introRunning)
+            {
+                if (!introRunning) Activate();
+                return;
+            }
+
+            introRunning = true;
+            DialogManager.OnDialogFinished += HandleIntroDialogFinished;
+            DialogManager.instance.Init(introDialog);
+        }
+
+        // The fight starts when the intro closes. If another dialog was still open, Init ignored the intro: it is
+        // shown again once that one closes.
+        private void HandleIntroDialogFinished(Dialog_SO finished)
+        {
+            if (finished != introDialog)
+            {
+                if (DialogManager.instance != null) DialogManager.instance.Init(introDialog);
+                return;
+            }
+
+            DialogManager.OnDialogFinished -= HandleIntroDialogFinished;
+            introRunning = false;
+            Activate();
         }
 
         private void HandleUpgradesChanged()
@@ -655,6 +693,8 @@ namespace HierarchicalStateMachine
             }
 
             Vector2 origin = projectileSpawnPoint != null ? (Vector2)projectileSpawnPoint.position : rb.position;
+            if (attack.useSpawnOffset)
+                origin = new Vector2(transform.position.x + attack.spawnOffset.x * (ctx.FacingRight ? 1f : -1f), SelfFeetY() + attack.spawnOffset.y);
             Vector2 forward = ctx.FacingRight ? Vector2.right : Vector2.left;
             Vector2 aim = forward;
 
@@ -836,6 +876,8 @@ namespace HierarchicalStateMachine
         public void TakeDamage(float amount, Vector2 knockback)
         {
             if (HasTakenDamage || ctx.IsDead || ctx.Health <= 0f) return;
+            if (introRunning) return; // still talking: the fight has not started
+            if (ctx.Dashing && dash.invulnerable) return;
 
             HasTakenDamage = true;
             invulnerabilityTimer = invulnerabilityTime;
@@ -851,13 +893,30 @@ namespace HierarchicalStateMachine
 
             hitBlood.Emit(HitPoint(knockback), BloodDirection(knockback), ctx.Health <= 0f);
 
-            if (ctx.Health > 0f) return;
+            if (ctx.Health > 0f)
+            {
+                CountHitForDash();
+                return;
+            }
 
             hitAnimationTimer = 0f; // do not let the hit flash block the death clip
             ctx.DeathRequested = true;
         }
 
         public bool IsAlive() => ctx.Health > 0f;
+
+        // Every hit counts, during an attack too; once there are enough and the last dash has cooled down, the next
+        // Chase frame starts a dash (an attack in progress finishes first).
+        private void CountHitForDash()
+        {
+            if (!dash.enabled || ctx.Dashing || ctx.DashRequested) return;
+
+            hitsSinceDash++;
+            if (hitsSinceDash < dash.hitsToDash || ctx.Clock < ctx.DashReadyTime) return;
+
+            hitsSinceDash = 0;
+            ctx.DashRequested = true;
+        }
 
         // Blood flies the way the hit pushes. Knockback is zero for some damage sources, so then it
         // flies away from the player, or out of the enemy's back when there is no player.

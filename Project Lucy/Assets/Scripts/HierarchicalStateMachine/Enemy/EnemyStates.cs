@@ -2,12 +2,13 @@ using UnityEngine;
 
 namespace HierarchicalStateMachine
 {
-    // Flat machine: Idle -> Chase -> Attack, plus Dead as an interrupt.
+    // Flat machine: Idle -> Chase -> Attack (or Dash, after enough hits), plus Dead as an interrupt.
     public class EnemyRoot : State
     {
         public readonly EnemyIdle Idle;
         public readonly EnemyChase Chase;
         public readonly EnemyAttack Attack;
+        public readonly EnemyDash Dash;
         public readonly EnemyDead Dead;
         private readonly EnemyContext ctx;
 
@@ -17,6 +18,7 @@ namespace HierarchicalStateMachine
             Idle = new EnemyIdle(sm, this, ctx);
             Chase = new EnemyChase(sm, this, ctx);
             Attack = new EnemyAttack(sm, this, ctx);
+            Dash = new EnemyDash(sm, this, ctx);
             Dead = new EnemyDead(sm, this, ctx);
         }
 
@@ -134,6 +136,8 @@ namespace HierarchicalStateMachine
         {
             EnemyRoot root = (EnemyRoot)Parent;
             if (!ctx.TargetInDetectionRange) return root.Idle;
+            // A dash asked for during an attack waits for it to end, and goes before the next one.
+            if (ctx.DashRequested) return root.Dash;
             if (ctx.AttackCooldown <= 0f && root.Attack.TrySelect()) return root.Attack;
             return null;
         }
@@ -210,6 +214,56 @@ namespace HierarchicalStateMachine
 
             float pause = ctx.AttackSet != null ? ctx.AttackSet.globalCooldown : 0f;
             ctx.AttackCooldown = pause * ctx.PhaseGlobalCooldownMultiplier;
+        }
+    }
+
+    // Backs away from the player after enough hits (EnemyDashSettings): faces them and slides away at a fixed speed
+    // for the dash's duration, stopping early at a wall or the arena barrier. Then back to Chase.
+    public class EnemyDash : State
+    {
+        private readonly EnemyContext ctx;
+        private float timer;
+        private float direction;
+
+        public EnemyDash(StateMachine sm, State parent, EnemyContext ctx) : base(sm, parent)
+        {
+            this.ctx = ctx;
+        }
+
+        protected override void OnEnter()
+        {
+            EnemyDashSettings dash = ctx.Dash;
+            ctx.DashRequested = false;
+            ctx.Dashing = true;
+            ctx.MoveDirection = 0f;
+            ctx.FaceMoveDirection = false;
+            ctx.FaceTarget?.Invoke();
+            ctx.CanTurn = false; // keeps looking at the player while it backs off
+
+            direction = ctx.FacingRight ? -1f : 1f;
+            timer = dash.duration;
+            ctx.HasForcedVelocity = true;
+            ctx.ForcedVelocityX = direction * dash.distance / dash.duration;
+            ctx.PlayAttackAnimation?.Invoke(dash.animationState, 0f, dash.animationSpeed);
+        }
+
+        protected override void OnUpdate(float deltaTime)
+        {
+            timer -= deltaTime;
+            if (ctx.IsPathBlocked != null && ctx.IsPathBlocked(direction)) timer = 0f;
+        }
+
+        protected override State GetTransition() => timer <= 0f ? ((EnemyRoot)Parent).Chase : null;
+
+        protected override void OnExit()
+        {
+            ctx.HasForcedVelocity = false;
+            ctx.ForcedVelocityX = 0f;
+            ctx.CanTurn = true;
+            ctx.Dashing = false;
+            ctx.SetAnimationSpeed?.Invoke(1f);
+            ctx.DashReadyTime = ctx.Clock + ctx.Dash.cooldown;
+            if (ctx.rb != null) ctx.rb.linearVelocity = new Vector2(0f, ctx.rb.linearVelocityY);
         }
     }
 

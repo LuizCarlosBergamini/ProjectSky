@@ -3,6 +3,38 @@ using UnityEngine;
 
 namespace HierarchicalStateMachine
 {
+    /// <summary>
+    /// A ranged enemy that backs off: after taking <see cref="hitsToDash"/> hits (in a row or not) it dashes away
+    /// from the player, still facing them. Hits taken during an attack count too; the dash waits for the attack to end.
+    /// </summary>
+    [Serializable]
+    public class EnemyDashSettings
+    {
+        [Tooltip("Liga o dash para tras depois de levar golpes.")]
+        public bool enabled;
+
+        [Tooltip("Golpes recebidos (seguidos ou nao) que disparam o dash. A contagem zera a cada dash.")]
+        [Min(1)] public int hitsToDash = 2;
+
+        [Tooltip("Distancia percorrida para tras, em unidades. Para antes se encontrar uma parede ou a barreira.")]
+        [Min(0f)] public float distance = 5f;
+
+        [Tooltip("Duracao do dash, em segundos.")]
+        [Min(0.05f)] public float duration = 0.35f;
+
+        [Tooltip("Intervalo minimo entre dois dashes, em segundos, contado do fim do anterior.")]
+        [Min(0f)] public float cooldown = 3f;
+
+        [Tooltip("Nao leva dano durante o dash.")]
+        public bool invulnerable = true;
+
+        [Tooltip("Estado do Animator tocado durante o dash.")]
+        public string animationState = "Enemy_Dash";
+
+        [Tooltip("Velocidade da animacao do dash (1 = a do clipe).")]
+        [Min(0.1f)] public float animationSpeed = 1f;
+    }
+
     [Serializable]
     public class EnemyContext
     {
@@ -60,6 +92,12 @@ namespace HierarchicalStateMachine
         public bool DeathRequested;
         public bool IsDead;
         public bool LogDecisions;
+
+        // --- Evasive dash (EnemyDashSettings on the driver) ---
+        public EnemyDashSettings Dash;
+        public bool DashRequested;        // set by the driver after enough hits, consumed by EnemyDash
+        public bool Dashing;
+        public float DashReadyTime;       // Clock time from which the next dash may start
 
         // --- Driver callbacks (states never touch the scene directly) ---
         public Action<string> PlayAnimation;
