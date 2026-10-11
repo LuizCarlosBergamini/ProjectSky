@@ -100,6 +100,7 @@ namespace HierarchicalStateMachine
 
         private readonly EnemyContext ctx = new EnemyContext();
         private readonly RaycastHit2D[] castHits = new RaycastHit2D[8];
+        private readonly Collider2D[] overlapHits = new Collider2D[8];
         private Rigidbody2D rb;
         private Collider2D bodyCollider;
         private StateMachine sm;
@@ -611,19 +612,74 @@ namespace HierarchicalStateMachine
         }
 
         // Moves the body up to distance along directionSign in one step, stopping short of walls and the arena barrier
-        // (the same cast as CommitForwardOffset, so it never ends up inside or past them).
+        // (the same cast as CommitForwardOffset, so it never ends up inside or past them). Cornered (less room behind
+        // than distance) it reappears on the other side of the player instead, distance away from them, when there
+        // is more room there.
         private void TeleportBy(float directionSign, float distance)
         {
             if (ctx.IsDead || distance <= 0f) return;
 
             Vector2 direction = new Vector2(Mathf.Sign(directionSign), 0f);
-            float allowed = Mathf.Min(distance, CastDistance(direction, distance));
-            if (allowed <= 0f) return;
+            float back = Mathf.Min(distance, CastDistance(direction, distance));
+            float x = rb.position.x + direction.x * back;
 
-            Vector2 next = rb.position + direction * allowed;
+            if (back < distance && dash.behindTargetWhenCornered && target != null)
+            {
+                // Beyond the player: the far side of them, as seen from here.
+                Vector2 beyond = -direction;
+                float room = FreeDistanceFrom(target.position.x, beyond, distance);
+                float landing = target.position.x + beyond.x * room;
+                // Only worth it when it puts more ground between him and the player than staying put.
+                if (room > back + 0.01f && Mathf.Abs(landing - target.position.x) > Mathf.Abs(rb.position.x - target.position.x))
+                    x = landing;
+            }
+
+            if (Mathf.Approximately(x, rb.position.x)) return;
+
+            Vector2 next = new Vector2(x, rb.position.y);
             rb.position = next;
             transform.position = new Vector3(next.x, next.y, transform.position.z);
             Physics2D.SyncTransforms(); // the reappearing sparks read the collider bounds right away
+        }
+
+        // How far this body could stand from x along direction (up to distance) without touching a wall or the arena
+        // barrier: a cast of the body's box starting at x, at the body's own height. The player is ignored, since it
+        // is standing right there.
+        private float FreeDistanceFrom(float x, Vector2 direction, float distance)
+        {
+            if (bodyCollider == null) return distance;
+
+            const float skin = 0.02f;
+            Bounds b = bodyCollider.bounds;
+            Vector2 origin = new Vector2(x + (b.center.x - rb.position.x), b.center.y);
+            // A little shorter than the body, so the floor it stands on never counts as a wall.
+            Vector2 size = new Vector2(b.size.x * 0.98f, b.size.y * 0.9f);
+            ContactFilter2D filter = new ContactFilter2D { useTriggers = false };
+            filter.SetLayerMask(Physics2D.GetLayerCollisionMask(gameObject.layer));
+
+            // Starting inside a wall (the player against it) leaves no room on that side.
+            int inside = Physics2D.OverlapBox(origin, size, 0f, filter, overlapHits);
+            for (int i = 0; i < inside; i++)
+            {
+                if (IsSolidObstacle(overlapHits[i])) return 0f;
+            }
+
+            int count = Physics2D.BoxCast(origin, size, 0f, direction, filter, castHits, distance + skin);
+            float free = distance;
+            for (int i = 0; i < count; i++)
+            {
+                if (!IsSolidObstacle(castHits[i].collider)) continue;
+                free = Mathf.Min(free, Mathf.Max(0f, castHits[i].distance - skin));
+            }
+            return free;
+        }
+
+        private bool IsSolidObstacle(Collider2D other)
+        {
+            if (other == null || other.isTrigger) return false;
+            if (other == bodyCollider || other.transform.IsChildOf(transform)) return false;
+            if (target != null && other.transform.IsChildOf(target)) return false;
+            return true;
         }
 
         // Teleport: hides every sprite of the body (the hit flash and telegraph keep their renderer) and its hurtbox.

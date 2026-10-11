@@ -30,6 +30,10 @@ namespace HierarchicalStateMachine
         [Tooltip("Teleporte: segundos depois de reaparecer em que ainda nao age nem leva dano.")]
         [Min(0f)] public float reappearTime = 0.2f;
 
+        [Tooltip("Teleporte: sem espaco para tras (encurralado na borda), reaparece do outro lado do jogador, a " +
+                 "Distance dele, ainda respeitando paredes e a barreira da arena.")]
+        public bool behindTargetWhenCornered = true;
+
         [Tooltip("Intervalo minimo entre dois dashes, em segundos, contado do fim do anterior.")]
         [Min(0f)] public float cooldown = 3f;
 
