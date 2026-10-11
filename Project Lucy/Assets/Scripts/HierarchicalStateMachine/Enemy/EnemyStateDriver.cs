@@ -29,6 +29,10 @@ namespace HierarchicalStateMachine
         [Tooltip("Chefes: fica parado ate o BossGate fechar a arena (BossGate.OnBossFightStarted).")]
         [SerializeField] private bool waitForActivation;
 
+        [Tooltip("Chefes: fala mostrada quando o BossGate fecha a arena. A luta so comeca quando o dialogo termina, " +
+                 "e o chefe nao leva dano enquanto isso. Vazio = a luta comeca na hora.")]
+        [SerializeField] private Dialog_SO introDialog;
+
         [Header("Attack (sem Attack Set)")]
         [SerializeField] private float attackDuration = 0.8f;
         [SerializeField] private float attackHitTime = 0.45f; // when inside the attack damage lands
@@ -66,6 +70,12 @@ namespace HierarchicalStateMachine
                  "animacao do golpe. O ataque nunca e interrompido, com ou sem esta opcao.")]
         [SerializeField] private bool superArmorWhileAttacking;
 
+        [Header("Evasive Dash")]
+        [Tooltip("Inimigos de longe: depois de levar alguns golpes, dao um dash para tras sem deixar de olhar o jogador.")]
+        [SerializeField] private EnemyDashSettings dash = new EnemyDashSettings();
+        [Tooltip("Raios azuis onde o inimigo some e onde reaparece, quando o dash e um teleporte.")]
+        [SerializeField] private EnemyTeleportSparks teleportSparks = new EnemyTeleportSparks();
+
         [Header("Feedback")]
         [Tooltip("Sprite que recebe o piscar de dano e o telegrafo. Vazio = o do Animator.")]
         [SerializeField] private SpriteRenderer tintRenderer;
@@ -90,6 +100,7 @@ namespace HierarchicalStateMachine
 
         private readonly EnemyContext ctx = new EnemyContext();
         private readonly RaycastHit2D[] castHits = new RaycastHit2D[8];
+        private readonly Collider2D[] overlapHits = new Collider2D[8];
         private Rigidbody2D rb;
         private Collider2D bodyCollider;
         private StateMachine sm;
@@ -97,6 +108,8 @@ namespace HierarchicalStateMachine
         private EnemyAttackSet runtimeSet; // legacy set built in Awake, destroyed with this enemy
         private float invulnerabilityTimer;
         private float hitAnimationTimer;
+        private int hitsSinceDash;
+        private bool introRunning;
         private string lastPath;
 
         private Transform target;
@@ -164,6 +177,7 @@ namespace HierarchicalStateMachine
             if (tintRenderer == null && animator != null) tintRenderer = animator.GetComponent<SpriteRenderer>();
             if (tintRenderer != null) baseTint = tintRenderer.color;
             hitBlood.Init(tintRenderer, groundLayer);
+            if (dash.enabled && dash.teleport) teleportSparks.Init(tintRenderer);
 
             ctx.rb = rb;
             ctx.animator = animator;
@@ -183,6 +197,7 @@ namespace HierarchicalStateMachine
             ctx.DeathDelay = deathDelay;
             ctx.Activated = !waitForActivation;
             ctx.LogDecisions = logAttackDecisions;
+            ctx.Dash = dash;
             if (attackSet == null) runtimeSet = EnemyAttackSet.CreateLegacy(LegacySettings());
             ctx.AttackSet = attackSet != null ? attackSet : runtimeSet;
             ApplyPhase(0, announce: false);
@@ -203,6 +218,9 @@ namespace HierarchicalStateMachine
             ctx.CommitForwardOffset = CommitForwardOffset;
             ctx.SetHurtboxFrame = SetHurtboxFrame;
             ctx.IsPathBlocked = IsPathBlocked;
+            ctx.TeleportBy = TeleportBy;
+            ctx.SetVisible = SetVisible;
+            ctx.EmitTeleportSparks = EmitTeleportSparks;
             ctx.OnDeathFinished = HandleDeathFinished;
 
             // Same bootstrap as PlayerStateDriver: the builder back-fills every State.Machine by
@@ -221,6 +239,7 @@ namespace HierarchicalStateMachine
         {
             BossGate.OnBossFightStarted -= HandleBossFightStarted;
             UpgradeManager.OnUpgradesChanged -= HandleUpgradesChanged;
+            DialogManager.OnDialogFinished -= HandleIntroDialogFinished;
         }
 
         private void Start()
@@ -235,6 +254,7 @@ namespace HierarchicalStateMachine
         {
             EnemyAttackSet.DestroyRuntime(runtimeSet);
             hitBlood.Release();
+            teleportSparks.Release();
         }
 
         private void Update()
@@ -282,7 +302,33 @@ namespace HierarchicalStateMachine
 
         private void HandleBossFightStarted(EnemyStateDriver boss)
         {
-            if (boss == this) Activate();
+            if (boss != this) return;
+
+            // Without a dialog box in the scene (a level played on its own) the fight simply starts.
+            if (introDialog == null || DialogManager.instance == null || introRunning)
+            {
+                if (!introRunning) Activate();
+                return;
+            }
+
+            introRunning = true;
+            DialogManager.OnDialogFinished += HandleIntroDialogFinished;
+            DialogManager.instance.Init(introDialog);
+        }
+
+        // The fight starts when the intro closes. If another dialog was still open, Init ignored the intro: it is
+        // shown again once that one closes.
+        private void HandleIntroDialogFinished(Dialog_SO finished)
+        {
+            if (finished != introDialog)
+            {
+                if (DialogManager.instance != null) DialogManager.instance.Init(introDialog);
+                return;
+            }
+
+            DialogManager.OnDialogFinished -= HandleIntroDialogFinished;
+            introRunning = false;
+            Activate();
         }
 
         private void HandleUpgradesChanged()
@@ -565,6 +611,90 @@ namespace HierarchicalStateMachine
             hurtboxMoved = true;
         }
 
+        // Moves the body up to distance along directionSign in one step, stopping short of walls and the arena barrier
+        // (the same cast as CommitForwardOffset, so it never ends up inside or past them). Cornered (less room behind
+        // than distance) it reappears on the other side of the player instead, distance away from them, when there
+        // is more room there.
+        private void TeleportBy(float directionSign, float distance)
+        {
+            if (ctx.IsDead || distance <= 0f) return;
+
+            Vector2 direction = new Vector2(Mathf.Sign(directionSign), 0f);
+            float back = Mathf.Min(distance, CastDistance(direction, distance));
+            float x = rb.position.x + direction.x * back;
+
+            if (back < distance && dash.behindTargetWhenCornered && target != null)
+            {
+                // Beyond the player: the far side of them, as seen from here.
+                Vector2 beyond = -direction;
+                float room = FreeDistanceFrom(target.position.x, beyond, distance);
+                float landing = target.position.x + beyond.x * room;
+                // Only worth it when it puts more ground between him and the player than staying put.
+                if (room > back + 0.01f && Mathf.Abs(landing - target.position.x) > Mathf.Abs(rb.position.x - target.position.x))
+                    x = landing;
+            }
+
+            if (Mathf.Approximately(x, rb.position.x)) return;
+
+            Vector2 next = new Vector2(x, rb.position.y);
+            rb.position = next;
+            transform.position = new Vector3(next.x, next.y, transform.position.z);
+            Physics2D.SyncTransforms(); // the reappearing sparks read the collider bounds right away
+        }
+
+        // How far this body could stand from x along direction (up to distance) without touching a wall or the arena
+        // barrier: a cast of the body's box starting at x, at the body's own height. The player is ignored, since it
+        // is standing right there.
+        private float FreeDistanceFrom(float x, Vector2 direction, float distance)
+        {
+            if (bodyCollider == null) return distance;
+
+            const float skin = 0.02f;
+            Bounds b = bodyCollider.bounds;
+            Vector2 origin = new Vector2(x + (b.center.x - rb.position.x), b.center.y);
+            // A little shorter than the body, so the floor it stands on never counts as a wall.
+            Vector2 size = new Vector2(b.size.x * 0.98f, b.size.y * 0.9f);
+            ContactFilter2D filter = new ContactFilter2D { useTriggers = false };
+            filter.SetLayerMask(Physics2D.GetLayerCollisionMask(gameObject.layer));
+
+            // Starting inside a wall (the player against it) leaves no room on that side.
+            int inside = Physics2D.OverlapBox(origin, size, 0f, filter, overlapHits);
+            for (int i = 0; i < inside; i++)
+            {
+                if (IsSolidObstacle(overlapHits[i])) return 0f;
+            }
+
+            int count = Physics2D.BoxCast(origin, size, 0f, direction, filter, castHits, distance + skin);
+            float free = distance;
+            for (int i = 0; i < count; i++)
+            {
+                if (!IsSolidObstacle(castHits[i].collider)) continue;
+                free = Mathf.Min(free, Mathf.Max(0f, castHits[i].distance - skin));
+            }
+            return free;
+        }
+
+        private bool IsSolidObstacle(Collider2D other)
+        {
+            if (other == null || other.isTrigger) return false;
+            if (other == bodyCollider || other.transform.IsChildOf(transform)) return false;
+            if (target != null && other.transform.IsChildOf(target)) return false;
+            return true;
+        }
+
+        // Teleport: hides every sprite of the body (the hit flash and telegraph keep their renderer) and its hurtbox.
+        private void SetVisible(bool visible)
+        {
+            foreach (SpriteRenderer sprite in GetComponentsInChildren<SpriteRenderer>(true)) sprite.enabled = visible;
+            if (hurtbox != null) hurtbox.enabled = visible;
+        }
+
+        private void EmitTeleportSparks()
+        {
+            Bounds body = bodyCollider != null ? bodyCollider.bounds : new Bounds(transform.position + Vector3.up, Vector3.one * 2f);
+            teleportSparks.Emit(body);
+        }
+
         private bool IsPathBlocked(float directionSign)
         {
             const float probe = 0.5f;
@@ -655,6 +785,8 @@ namespace HierarchicalStateMachine
             }
 
             Vector2 origin = projectileSpawnPoint != null ? (Vector2)projectileSpawnPoint.position : rb.position;
+            if (attack.useSpawnOffset)
+                origin = new Vector2(transform.position.x + attack.spawnOffset.x * (ctx.FacingRight ? 1f : -1f), SelfFeetY() + attack.spawnOffset.y);
             Vector2 forward = ctx.FacingRight ? Vector2.right : Vector2.left;
             Vector2 aim = forward;
 
@@ -836,6 +968,8 @@ namespace HierarchicalStateMachine
         public void TakeDamage(float amount, Vector2 knockback)
         {
             if (HasTakenDamage || ctx.IsDead || ctx.Health <= 0f) return;
+            if (introRunning) return; // still talking: the fight has not started
+            if (ctx.Dashing && dash.invulnerable) return;
 
             HasTakenDamage = true;
             invulnerabilityTimer = invulnerabilityTime;
@@ -851,13 +985,30 @@ namespace HierarchicalStateMachine
 
             hitBlood.Emit(HitPoint(knockback), BloodDirection(knockback), ctx.Health <= 0f);
 
-            if (ctx.Health > 0f) return;
+            if (ctx.Health > 0f)
+            {
+                CountHitForDash();
+                return;
+            }
 
             hitAnimationTimer = 0f; // do not let the hit flash block the death clip
             ctx.DeathRequested = true;
         }
 
         public bool IsAlive() => ctx.Health > 0f;
+
+        // Every hit counts, during an attack too; once there are enough and the last dash has cooled down, the next
+        // Chase frame starts a dash (an attack in progress finishes first).
+        private void CountHitForDash()
+        {
+            if (!dash.enabled || ctx.Dashing || ctx.DashRequested) return;
+
+            hitsSinceDash++;
+            if (hitsSinceDash < dash.hitsToDash || ctx.Clock < ctx.DashReadyTime) return;
+
+            hitsSinceDash = 0;
+            ctx.DashRequested = true;
+        }
 
         // Blood flies the way the hit pushes. Knockback is zero for some damage sources, so then it
         // flies away from the player, or out of the enemy's back when there is no player.

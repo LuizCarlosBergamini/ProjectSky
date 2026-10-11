@@ -32,6 +32,13 @@ namespace HierarchicalStateMachine
         [Tooltip("Angulo maximo de mira acima/abaixo da horizontal (graus).")]
         [Range(0f, 80f)] public float maxAimAngle = 35f;
 
+        [Tooltip("Marcado: o projetil sai de Spawn Offset em vez do Projectile Spawn Point do inimigo. Para quem " +
+                 "dispara de lugares diferentes em cada ataque (o arco e a mao do Mago).")]
+        public bool useSpawnOffset;
+
+        [Tooltip("Origem do projetil a partir da raiz do inimigo, em unidades: X positivo = para onde ele olha, Y a partir dos pes.")]
+        public Vector2 spawnOffset = new Vector2(1f, 1.5f);
+
         public override EnemyAttackMove CreateState(StateMachine machine, State parent, EnemyContext ctx)
         {
             return new EnemyProjectileAttack(machine, parent, ctx, this);

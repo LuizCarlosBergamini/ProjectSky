@@ -2,12 +2,13 @@ using UnityEngine;
 
 namespace HierarchicalStateMachine
 {
-    // Flat machine: Idle -> Chase -> Attack, plus Dead as an interrupt.
+    // Flat machine: Idle -> Chase -> Attack (or Dash, after enough hits), plus Dead as an interrupt.
     public class EnemyRoot : State
     {
         public readonly EnemyIdle Idle;
         public readonly EnemyChase Chase;
         public readonly EnemyAttack Attack;
+        public readonly EnemyDash Dash;
         public readonly EnemyDead Dead;
         private readonly EnemyContext ctx;
 
@@ -17,6 +18,7 @@ namespace HierarchicalStateMachine
             Idle = new EnemyIdle(sm, this, ctx);
             Chase = new EnemyChase(sm, this, ctx);
             Attack = new EnemyAttack(sm, this, ctx);
+            Dash = new EnemyDash(sm, this, ctx);
             Dead = new EnemyDead(sm, this, ctx);
         }
 
@@ -134,6 +136,8 @@ namespace HierarchicalStateMachine
         {
             EnemyRoot root = (EnemyRoot)Parent;
             if (!ctx.TargetInDetectionRange) return root.Idle;
+            // A dash asked for during an attack waits for it to end, and goes before the next one.
+            if (ctx.DashRequested) return root.Dash;
             if (ctx.AttackCooldown <= 0f && root.Attack.TrySelect()) return root.Attack;
             return null;
         }
@@ -210,6 +214,90 @@ namespace HierarchicalStateMachine
 
             float pause = ctx.AttackSet != null ? ctx.AttackSet.globalCooldown : 0f;
             ctx.AttackCooldown = pause * ctx.PhaseGlobalCooldownMultiplier;
+        }
+    }
+
+    // Gets away from the player after enough hits (EnemyDashSettings), still facing them. Sliding: moves back at a
+    // fixed speed for the dash's duration, stopping early at a wall or the arena barrier. Teleport: vanishes in a burst
+    // of lightning, stays hidden for the duration, reappears further back in another burst and holds a moment.
+    // Then back to Chase.
+    public class EnemyDash : State
+    {
+        private readonly EnemyContext ctx;
+        private float timer;
+        private float direction;
+        private bool hidden;
+
+        public EnemyDash(StateMachine sm, State parent, EnemyContext ctx) : base(sm, parent)
+        {
+            this.ctx = ctx;
+        }
+
+        protected override void OnEnter()
+        {
+            EnemyDashSettings dash = ctx.Dash;
+            ctx.DashRequested = false;
+            ctx.Dashing = true;
+            ctx.MoveDirection = 0f;
+            ctx.FaceMoveDirection = false;
+            ctx.FaceTarget?.Invoke();
+            ctx.CanTurn = false; // keeps looking at the player while it backs off
+
+            direction = ctx.FacingRight ? -1f : 1f;
+            timer = dash.duration;
+            ctx.HasForcedVelocity = true;
+
+            if (dash.teleport)
+            {
+                ctx.ForcedVelocityX = 0f; // stands still while hidden
+                ctx.EmitTeleportSparks?.Invoke();
+                ctx.SetVisible?.Invoke(false);
+                hidden = true;
+                return;
+            }
+
+            ctx.ForcedVelocityX = direction * dash.distance / dash.duration;
+            ctx.PlayAttackAnimation?.Invoke(dash.animationState, 0f, dash.animationSpeed);
+        }
+
+        protected override void OnUpdate(float deltaTime)
+        {
+            timer -= deltaTime;
+
+            if (!ctx.Dash.teleport)
+            {
+                if (ctx.IsPathBlocked != null && ctx.IsPathBlocked(direction)) timer = 0f;
+                return;
+            }
+
+            if (!hidden || timer > 0f) return;
+
+            // Reappears further back and faces the player again, whichever side of him the player now is.
+            ctx.TeleportBy?.Invoke(direction, ctx.Dash.distance);
+            ctx.FaceTarget?.Invoke();
+            ctx.SetVisible?.Invoke(true);
+            ctx.PlayAttackAnimation?.Invoke("Enemy_Idle", 0f, 1f);
+            ctx.EmitTeleportSparks?.Invoke();
+            hidden = false;
+            timer = ctx.Dash.reappearTime;
+        }
+
+        protected override State GetTransition() =>
+            !hidden && timer <= 0f ? ((EnemyRoot)Parent).Chase : null;
+
+        protected override void OnExit()
+        {
+            // Death can interrupt a teleport: never leave the body invisible.
+            if (hidden) ctx.SetVisible?.Invoke(true);
+            hidden = false;
+
+            ctx.HasForcedVelocity = false;
+            ctx.ForcedVelocityX = 0f;
+            ctx.CanTurn = true;
+            ctx.Dashing = false;
+            ctx.SetAnimationSpeed?.Invoke(1f);
+            ctx.DashReadyTime = ctx.Clock + ctx.Dash.cooldown;
+            if (ctx.rb != null) ctx.rb.linearVelocity = new Vector2(0f, ctx.rb.linearVelocityY);
         }
     }
 

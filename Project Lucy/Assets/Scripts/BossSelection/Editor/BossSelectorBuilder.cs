@@ -105,8 +105,9 @@ public static class BossSelectorBuilder
         },
         new()
         {
-            assetName = "Colosso", displayName = "Colosso", taskId = "missao-boss-3",
-            taskTitle = "Derrotar o Colosso", taskDescription = "Derrote o Colosso da arena do Level 3",
+            // The Level3 boss is the Mage (MageBossBuilder); the asset keeps its placeholder name for saves.
+            assetName = "Colosso", displayName = "O Mago", taskId = "missao-boss-3",
+            taskTitle = "Derrotar o Mago", taskDescription = "Derrote o Mago da arena do Level 3",
             rewardItemPath = "Assets/ObjectData/Items/Emerald.asset",
             scenePath = "Assets/Scenes/Level3.unity", backgroundVariant = "Winter BG", previewFile = "Background Castle  Winter.png",
             accent = new Color(0.3f, 0.85f, 0.5f, 1f), bossTint = new Color(0.5f, 1f, 0.65f, 1f), bossX = 20f,
