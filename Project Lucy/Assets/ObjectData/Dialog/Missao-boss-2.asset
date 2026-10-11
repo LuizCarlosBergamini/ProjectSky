@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0229f9af6181a38469057567674f0751, type: 3}
+  m_Name: Missao-boss-2
+  m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
+  dialogs:
+  - dialogId: daisy-boss2-01
+    dialogContent: "Lucy, espera! A arena logo \xE0 frente \xE9 guardada por uma Kitsune, uma raposa de nove caudas."
+    nextDialog: lucy-boss2-01
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: lucy-boss2-01
+    dialogContent: "Uma raposa? Depois da Medusa, isso n\xE3o deve ser t\xE3o dif\xEDcil..."
+    nextDialog: daisy-boss2-02
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
+  - dialogId: daisy-boss2-02
+    dialogContent: "N\xE3o se engane! Ela lan\xE7a fogo-f\xE1tuo de longe e, quando se enfurece, solta rajadas de chamas por todo lado."
+    nextDialog: daisy-boss2-03
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: daisy-boss2-03
+    dialogContent: "E se chegar perto, cuidado com as caudas: elas incendeiam o ch\xE3o em volta dela. Pule as chamas!"
+    nextDialog: daisy-boss2-04
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: daisy-boss2-04
+    dialogContent: "Derrote ela e a Engrenagem de Ouro \xE9 sua. Vou voltar e te esperar no Hub. Boa sorte!"
+    nextDialog: 
+    triggerEvent: missao-boss-2-iniciada
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}

@@ -95,8 +95,9 @@ public static class BossSelectorBuilder
         },
         new()
         {
-            assetName = "Sentinela", displayName = "Sentinela", taskId = "missao-boss-2",
-            taskTitle = "Derrotar a Sentinela", taskDescription = "Derrote a Sentinela da arena do Level 2",
+            // The Level2 boss is the Kitsune (KitsuneBossBuilder); the asset keeps its placeholder name for saves.
+            assetName = "Sentinela", displayName = "Kitsune", taskId = "missao-boss-2",
+            taskTitle = "Derrotar a Kitsune", taskDescription = "Derrote a Kitsune da arena do Level 2",
             rewardItemPath = "Assets/ObjectData/Items/Engrenagem_Ouro.asset",
             scenePath = "Assets/Scenes/Level2.unity", backgroundVariant = "Autumn BG", previewFile = "Background Castle Autumn.png",
             accent = new Color(0.98f, 0.78f, 0.18f, 1f), bossTint = new Color(1f, 0.85f, 0.35f, 1f), bossX = 28f,
