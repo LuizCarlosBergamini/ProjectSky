@@ -255,7 +255,7 @@ Transform:
   m_GameObject: {fileID: 45041377}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.8016396, y: 2.90884, z: -10}
+  m_LocalPosition: {x: 24.078, y: 4.965, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -305,10 +305,10 @@ MonoBehaviour:
       Size: {x: 0.5, y: 0.5936963}
       Offset: {x: 0, y: 0}
   CenterOnActivate: 1
-  TargetOffset: {x: 3.5, y: 1, z: 0}
+  TargetOffset: {x: 0, y: 0, z: 0}
   Damping: {x: 0.75, y: 2, z: 0}
   Lookahead:
-    Enabled: 1
+    Enabled: 0
     Time: 0.05
     Smoothing: 1
     IgnoreY: 1
@@ -332,12 +332,12 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 539102401}
+    TrackingTarget: {fileID: 1846120002}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 60
-    OrthographicSize: 4.82
+    OrthographicSize: 7.6
     NearClipPlane: 0.3
     FarClipPlane: 1000
     Dutch: 0
@@ -386,7 +386,8 @@ Transform:
   m_LocalPosition: {x: -14.39, y: 6.74, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1846120002}
   m_Father: {fileID: 539102402}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!50 &84508812
@@ -416,6 +417,37 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!1 &1846120001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1846120002}
+  m_Layer: 0
+  m_Name: BossCameraAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1846120002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846120001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 38.467834, y: -1.7749977, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 84508810}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!61 &84508813
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -460,7 +492,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 26.746216, y: 12.341518}
+  m_Size: {x: 27.4, y: 15.6}
   m_EdgeRadius: 0
 --- !u!66 &84508814
 CompositeCollider2D:
@@ -503,20 +535,20 @@ CompositeCollider2D:
   m_ColliderPaths:
   - m_Collider: {fileID: 84508813}
     m_ColliderPaths:
-    - - X: 518409408
-        Y: 43957616
-      - X: 250947264
-        Y: 43957616
-      - X: 250947264
-        Y: -79457568
-      - X: 518409408
-        Y: -79457568
+    - - X: 521678340
+        Y: 60250023
+      - X: 247678340
+        Y: 60250023
+      - X: 247678340
+        Y: -95749977
+      - X: 521678340
+        Y: -95749977
   m_CompositePaths:
     m_Paths:
-    - - {x: 51.84091, y: -7.945757}
-      - {x: 51.84091, y: 4.3957615}
-      - {x: 25.094727, y: 4.3957324}
-      - {x: 25.094755, y: -7.945757}
+    - - {x: 52.167835, y: -9.574998}
+      - {x: 52.167835, y: 6.0250025}
+      - {x: 24.767834, y: 6.0250025}
+      - {x: 24.767834, y: -9.574998}
   m_VertexDistance: 0.0005
   m_OffsetDistance: 0.00005
   m_UseDelaunayMesh: 0

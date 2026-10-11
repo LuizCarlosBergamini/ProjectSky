@@ -878,6 +878,7 @@ public static class KitsuneBossBuilder
             Segment("segunda rajada", AttackSegmentKind.Active, 6, 7, 0.25f),
             Segment("recupera", AttackSegmentKind.Recovery, 8, 9, 0.45f)
         };
+        d.recoveryHoldTime = 0.3f; // lets the last wisps fade (f8-9) before she settles back into Idle
         d.projectilePrefab = foxfire;
         d.speed = 11f;
         d.damage = 9f;
