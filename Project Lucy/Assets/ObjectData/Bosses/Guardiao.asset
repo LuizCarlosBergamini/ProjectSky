@@ -30,4 +30,6 @@ MonoBehaviour:
   prerequisites: []
   requireAllPrerequisites: 1
   lockedHint: 
+  defeatDialog: {fileID: 11400000, guid: 2932aa7dd95546d89d5f1ada9f218d11, type: 2}
+  defeatDialogOnlyOnFirstWin: 1
   upgradeScaling: {fileID: 11400000, guid: 21fe562d5f35c2d438439c231f28028c, type: 2}

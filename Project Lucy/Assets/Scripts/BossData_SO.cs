@@ -42,6 +42,13 @@ public class BossData_SO : ScriptableObject
     [Tooltip("Texto do painel bloqueado. Vazio = 'Derrote <requisitos> para desbloquear'.")]
     public string lockedHint;
 
+    [Header("Fim da luta")]
+    [Tooltip("Dialogo tocado na arena logo depois que o chefe morre. Vazio = nenhum dialogo.")]
+    public Dialog_SO defeatDialog;
+
+    [Tooltip("Marcado: o dialogo so toca na primeira vitoria, nao a cada vez que o chefe e farmado.")]
+    public bool defeatDialogOnlyOnFirstWin = true;
+
     [Header("Adaptacao")]
     [Tooltip("Como o chefe fica mais forte conforme os upgrades do jogador. Vazio = nao se adapta.")]
     public BossUpgradeScaling_SO upgradeScaling;
