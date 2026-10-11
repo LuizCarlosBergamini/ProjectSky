@@ -83,10 +83,7 @@ namespace HierarchicalStateMachine
         public bool IsGrounded => ctx.IsGrounded;
         public bool IsAttacking => ctx.IsAttacking;
         public bool IsGrappling => ctx.IsGrappling;
-        // Read from the rotation, not from ctx.isFacingRight: Turn() flips that flag the opposite way to the
-        // rotation (after the first turn it is true while the player looks LEFT, rotation y = 180), so the flag
-        // cannot say where the player is actually looking. Rotation y = 0 is the art's right-facing pose, and
-        // the attack point sits in front of it.
+        // Rotation y = 0 is the art's right-facing pose, and the attack point sits in front of it.
         public bool IsFacingRight => Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, 0f)) < 90f;
 
         private readonly RaycastHit2D[] groundHits = new RaycastHit2D[8];
@@ -110,6 +107,9 @@ namespace HierarchicalStateMachine
             ctx.AttackInputBufferTime = ctx.Data.attackInputBufferTime;
             ctx.ComboGravityMultiplier = ctx.Data.comboGravityMultiplier;
             ctx.MaxComboStep = ctx.Data.maxComboStep;
+            // Start from where the sprite actually looks. The flag used to default to true and was read
+            // inverted, so pressing left first never turned the sprite.
+            ctx.isFacingRight = IsFacingRight;
             this.isFacingRightLocal = ctx.isFacingRight;
             ctx.playerTransform = transform;
             ctx.ropeRenderer = ropeRenderer;
@@ -655,30 +655,19 @@ namespace HierarchicalStateMachine
         public void TurnCheck()
         {
             // changes direction of player based on movement
-            if (ctx.MovementInput.x > 0 && ctx.isFacingRight) Turn();
-            else if (ctx.MovementInput.x < 0 && !ctx.isFacingRight) Turn();
+            if (ctx.MovementInput.x > 0 && !ctx.isFacingRight) Turn();
+            else if (ctx.MovementInput.x < 0 && ctx.isFacingRight) Turn();
         }
         
         #endregion
         
         private void Turn()
         {
-            if (ctx.isFacingRight)
-            {
-                ctx.isFacingRight = !ctx.isFacingRight;
-                this.isFacingRightLocal = ctx.isFacingRight;
-                transform.rotation = Quaternion.Euler(transform.rotation.x, 0f, transform.rotation.y);
-                // Turn the camera object to smooth the movement
-                CameraFollowObject.CallTurn();
-            }
-            else
-            {
-                ctx.isFacingRight = !ctx.isFacingRight;
-                this.isFacingRightLocal = ctx.isFacingRight;
-                transform.rotation = Quaternion.Euler(transform.rotation.x, 180f, transform.rotation.y);
-                // Turn the camera object to smooth the movement
-                CameraFollowObject.CallTurn();
-            }
+            ctx.isFacingRight = !ctx.isFacingRight;
+            this.isFacingRightLocal = ctx.isFacingRight;
+            transform.rotation = Quaternion.Euler(0f, ctx.isFacingRight ? 0f : 180f, 0f);
+            // Turn the camera object to smooth the movement
+            CameraFollowObject.CallTurn();
         }
         
 

@@ -28,7 +28,7 @@ public class CameraManager : MonoBehaviour
     private Vector2 startingTrackedObjectOffset;
 
     /// <summary>
-    /// Takes the enabled virtual camera as the current one and caches its composer defaults.
+    /// Takes the live virtual camera as the current one and caches its composer defaults.
     /// Empty slots are skipped, so one missing camera cannot leave the damping and panning uninitialized.
     /// </summary>
     private void Awake()
@@ -38,19 +38,36 @@ public class CameraManager : MonoBehaviour
             instance = this;
         }
 
+        // Scenes can ship with more than one camera enabled (the Hub has both, the player camera wins on
+        // priority). Taking the last enabled one as current made SwapCamera think the other camera was live,
+        // so the first pass through a swap trigger did nothing. Pick the one Cinemachine shows (highest
+        // priority, first in the array on a tie) and disable the rest so the swap logic and the screen agree.
         for (int i = 0; i < allVirtualCameras.Length; i++)
         {
-            if (allVirtualCameras[i] == null)
+            CinemachineCamera cam = allVirtualCameras[i];
+            if (cam == null)
             {
                 Debug.LogWarning($"{name}: allVirtualCameras[{i}] esta vazio, slot ignorado.", this);
                 continue;
             }
 
-            if (allVirtualCameras[i].enabled)
+            if (cam.enabled && (currentCamera == null || cam.Priority.Value > currentCamera.Priority.Value))
             {
-                currentCamera = allVirtualCameras[i];
-                positionComposer = currentCamera.GetComponent<CinemachinePositionComposer>();
+                currentCamera = cam;
             }
+        }
+
+        for (int i = 0; i < allVirtualCameras.Length; i++)
+        {
+            if (allVirtualCameras[i] != null && allVirtualCameras[i] != currentCamera)
+            {
+                allVirtualCameras[i].enabled = false;
+            }
+        }
+
+        if (currentCamera != null)
+        {
+            positionComposer = currentCamera.GetComponent<CinemachinePositionComposer>();
         }
 
         if (positionComposer == null)
