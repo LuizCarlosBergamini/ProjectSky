@@ -524,14 +524,16 @@ public static class KitsuneBossBuilder
 
     #region Data
 
-    // Level2 is the second boss: a little more health and a little faster than Medusa (150 / 3.2).
+    // Level2 is the second boss, and without any upgrade answer she is already stronger than Medusa fully adapted to
+    // the first row (Golpe Reforcado, Carcaca Reforcada, Passo Leve): Medusa tops out at 150 x1.25 = 187.5 health,
+    // her hits at x1.05 (strongest 20 -> 21) and speed 3.2 x1.03 = 3.3. The attacks below carry the damage.
     private static EnemyScriptableObject BuildStats()
     {
         return LoadOrCreate<EnemyScriptableObject>(StatsPath, stats =>
         {
             stats.moveSpeed = 3.4f;
-            stats.maxHealth = 220f;
-            stats.damage = 14f;        // only used by the legacy attacks; the attack assets carry their own
+            stats.maxHealth = 250f;
+            stats.damage = 18f;        // only used by the legacy attacks; the attack assets carry their own
             stats.knockbackForce = 25f;
         });
     }
@@ -851,8 +853,9 @@ public static class KitsuneBossBuilder
         d.segments = new List<AttackSegment>
         {
             Segment("gira as caudas", AttackSegmentKind.WindUp, 0, 4, 0.7f),
-            FireSegment(s, "chamas no chao", 5, 6, 0.2f, -FrameSize, 14f, 24f, 0.6f),
-            FireSegment(s, "onda", 7, 8, 0.2f, 8, 16f, 28f, 0.8f),
+            // Above Medusa's adapted melee: her Coil Crush strike (16.8) for the flames, her strongest hit (21) for the wave.
+            FireSegment(s, "chamas no chao", 5, 6, 0.2f, -FrameSize, 18f, 24f, 0.6f),
+            FireSegment(s, "onda", 7, 8, 0.2f, 8, 24f, 28f, 0.8f),
             Segment("recupera", AttackSegmentKind.Recovery, 9, 9, 0.45f)
         };
         d.minRange = 0f;
@@ -881,7 +884,7 @@ public static class KitsuneBossBuilder
         };
         d.projectilePrefab = fireball;
         d.speed = 9f;
-        d.damage = 15f;
+        d.damage = 18f; // above Medusa's adapted lunge (15.75) and venom spit (10.5)
         d.knockback = 22f;
         d.count = 1;
         d.extraProjectilesPerPhase = 1; // second phase: two wisps in a narrow fan
@@ -917,7 +920,7 @@ public static class KitsuneBossBuilder
         d.recoveryHoldTime = 0.3f; // lets the last wisps fade (f8-9) before she settles back into Idle
         d.projectilePrefab = foxfire;
         d.speed = 11f;
-        d.damage = 9f;
+        d.damage = 12f; // per wisp, above Medusa's adapted venom spit (10.5)
         d.knockback = 16f;
         d.count = 4;
         d.extraProjectilesPerPhase = 0;
