@@ -59,7 +59,7 @@ MonoBehaviour:
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: alma-05
     dialogContent: "Voc\xEA pode se movimentar para os lados usando 'A' e 'D'\nPara
-      pular 'W' ou 'Espa\xE7o'\nPara atacar aperte 'F'"
+      pular 'W' ou 'Espa\xE7o'\nPara atacar use o 'Bot\xE3o esquerdo do Mouse'"
     nextDialog: alma-06
     triggerEvent: 
     dialogDuration: 0
@@ -67,8 +67,7 @@ MonoBehaviour:
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: alma-06
     dialogContent: "Ah... Al\xE9m disso voc\xEA pode se pendurar em algumas coisas
-      com seu agarrador.\nUse o 'Bot\xE3o esquerdo do Mouse' para agarrar e 'Bot\xE3o
-      direito do Mouse' ou 'Espa\xE7o' para se soltar."
+      com seu agarrador.\nAperte 'F' para agarrar e 'Espa\xE7o' para se soltar."
     nextDialog: alma-07
     triggerEvent: 
     dialogDuration: 0
