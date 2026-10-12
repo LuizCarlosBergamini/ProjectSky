@@ -353,14 +353,14 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   grapplingAudioClip: {fileID: 0}
-  springConstant: 150
-  dampingCoefficient: 5
   maxGrappleDistance: 5
   playerGrappleRadius: 5
-  minRopeLength: 0
-  reelSpeed: 10
-  swingForce: 100
+  swingAcceleration: 40
+  maxSwingAngle: 70
+  maxSwingSpeed: 25
+  swingDamping: 0.5
   releaseJumpForce: 30
+  maxReleaseSpeed: 35
 --- !u!1 &482227086916469963
 GameObject:
   m_ObjectHideFlags: 0

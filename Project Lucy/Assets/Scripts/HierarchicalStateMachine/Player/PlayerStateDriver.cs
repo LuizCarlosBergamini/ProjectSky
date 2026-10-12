@@ -48,14 +48,19 @@ namespace HierarchicalStateMachine
         [SerializeField] private LineRenderer ropeRenderer;
         [SerializeField] private LayerMask grappleableLayer = 1 << 6;
         [SerializeField] private AudioClip grapplingAudioClip;
-        [SerializeField] private float springConstant = 150f;
-        [SerializeField] private float dampingCoefficient = 5f;
         [SerializeField] private float maxGrappleDistance = 5f;
         [SerializeField] private float playerGrappleRadius = 5f;
-        [SerializeField] private float minRopeLength;
-        [SerializeField] private float reelSpeed = 10f;
-        [SerializeField] private float swingForce = 100f;
+        [Tooltip("Aceleracao tangencial (m/s^2) aplicada ao segurar A/D durante o balanco. Independe da massa.")]
+        [SerializeField, Min(0f)] private float swingAcceleration = 40f;
+        [Tooltip("Angulo maximo (graus, a partir da vertical abaixo do ponto) que o balanco atinge so com o input. A/D para de dar energia ao chegar nele, entao nao da para dar voltas no objeto.")]
+        [SerializeField, Range(10f, 90f)] private float maxSwingAngle = 70f;
+        [Tooltip("Velocidade maxima (m/s) enquanto preso na corda.")]
+        [SerializeField, Min(0f)] private float maxSwingSpeed = 25f;
+        [Tooltip("Arrasto linear do corpo durante o balanco. Maior = o balanco morre mais rapido.")]
+        [SerializeField, Min(0f)] private float swingDamping = 0.5f;
         [SerializeField] private float releaseJumpForce = 30f;
+        [Tooltip("Velocidade maxima (m/s) logo apos soltar a corda, ja contando o impulso de releaseJumpForce.")]
+        [SerializeField, Min(0f)] private float maxReleaseSpeed = 35f;
         
         private string lastPath;
         private float invulnerabilityTimer;
@@ -115,14 +120,14 @@ namespace HierarchicalStateMachine
             ctx.ropeRenderer = ropeRenderer;
             ctx.grappleableLayer = grappleableLayer;
             ctx.grapplingAudioClip = grapplingAudioClip;
-            ctx.SpringConstant = springConstant;
-            ctx.DampingCoefficient = dampingCoefficient;
             ctx.MaxGrappleDistance = maxGrappleDistance;
             ctx.PlayerGrappleRadius = playerGrappleRadius;
-            ctx.MinRopeLength = minRopeLength;
-            ctx.ReelSpeed = reelSpeed;
-            ctx.SwingForce = swingForce;
+            ctx.SwingAcceleration = swingAcceleration;
+            ctx.MaxSwingAngle = maxSwingAngle;
+            ctx.MaxSwingSpeed = maxSwingSpeed;
+            ctx.SwingDamping = swingDamping;
             ctx.ReleaseJumpForce = releaseJumpForce;
+            ctx.MaxReleaseSpeed = maxReleaseSpeed;
             ctx.DefaultDrag = rb.linearDamping;
             ctx.health = maxHealth;
 
@@ -754,14 +759,14 @@ namespace HierarchicalStateMachine
         public LineRenderer ropeRenderer;
         public LayerMask grappleableLayer;
         public AudioClip grapplingAudioClip;
-        public float SpringConstant;
-        public float DampingCoefficient;
         public float MaxGrappleDistance;
         public float PlayerGrappleRadius;
-        public float MinRopeLength;
-        public float ReelSpeed;
-        public float SwingForce;
+        public float SwingAcceleration;
+        public float MaxSwingAngle;
+        public float MaxSwingSpeed;
+        public float SwingDamping;
         public float ReleaseJumpForce;
+        public float MaxReleaseSpeed;
         public float DefaultDrag;
         public bool IsGrappling;
         public Vector2 GrapplePoint;
