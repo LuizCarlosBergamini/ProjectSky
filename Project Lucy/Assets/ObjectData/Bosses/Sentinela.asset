@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Sentinela
   m_EditorClassIdentifier: Assembly-CSharp::BossData_SO
   bossId: Sentinela
-  entity: {fileID: 11400000, guid: 9e478c5fa1327c8478d1d993799c6fa3, type: 2}
+  entity: {fileID: 11400000, guid: 3a011f2ea63a9f34c9898b38da8481b4, type: 2}
   rewardTaskId: missao-boss-2
   previewImage: {fileID: -7184494986957967393, guid: df5ac6553291f2b48bc13bb2a544d831, type: 3}
   accentColor: {r: 0.98, g: 0.78, b: 0.18, a: 1}
@@ -33,3 +33,4 @@ MonoBehaviour:
   lockedHint: 
   defeatDialog: {fileID: 11400000, guid: 2a923a747fc049ceb80c0b61481592ee, type: 2}
   defeatDialogOnlyOnFirstWin: 1
+  upgradeScaling: {fileID: 11400000, guid: 3da103925b988e746b3dd637e660f2e6, type: 2}

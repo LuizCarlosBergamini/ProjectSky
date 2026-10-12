@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Mago
   m_EditorClassIdentifier: 
   entityName: O Mago
-  entitySprite: {fileID: 0}
+  entitySprite: {fileID: 1932408208, guid: 9ad591bb7e6bbf14b87e1bc2ce6e00cc, type: 3}
   enitityAnimation: {fileID: 0}
