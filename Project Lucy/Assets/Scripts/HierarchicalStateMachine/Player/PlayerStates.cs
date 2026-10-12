@@ -352,7 +352,13 @@ namespace HierarchicalStateMachine
                 ctx.GrapplePoint = ctx.GrappleTarget.GetAnchorPoint();
             }
 
-            if (ctx.playerActions.Release.WasPressedThisFrame())
+            // Hold-to-grapple: letting go of Fire drops the rope and keeps the swing momentum,
+            // without the upward boost that the Space release gives.
+            if (!ctx.playerActions.Fire.IsPressed())
+            {
+                shouldExit = true;
+            }
+            else if (ctx.playerActions.Release.WasPressedThisFrame())
             {
                 if (ctx.ForceTarget.bodyType == RigidbodyType2D.Dynamic)
                 {
@@ -427,7 +433,7 @@ namespace HierarchicalStateMachine
             body.linearVelocity = Vector2.ClampMagnitude(velocity, ctx.MaxSwingSpeed);
 
             // Pull the body back onto the rope. The length is fixed at attach time: holding Fire
-            // no longer reels the rope in.
+            // keeps the grapple attached but does not reel the rope in.
             if (distance > ctx.RopeRestLength)
             {
                 body.position = anchorPoint + radial * ctx.RopeRestLength;
