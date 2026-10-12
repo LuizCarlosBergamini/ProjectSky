@@ -355,8 +355,6 @@ MonoBehaviour:
   grapplingAudioClip: {fileID: 0}
   maxGrappleDistance: 5
   playerGrappleRadius: 5
-  minRopeLength: 1
-  reelSpeed: 10
   swingAcceleration: 40
   maxSwingAngle: 70
   maxSwingSpeed: 25

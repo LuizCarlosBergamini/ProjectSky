@@ -50,9 +50,6 @@ namespace HierarchicalStateMachine
         [SerializeField] private AudioClip grapplingAudioClip;
         [SerializeField] private float maxGrappleDistance = 5f;
         [SerializeField] private float playerGrappleRadius = 5f;
-        [Tooltip("Comprimento minimo da corda ao recolher. Cordas muito curtas fazem o jogador girar rapido demais em volta do objeto.")]
-        [SerializeField, Min(0f)] private float minRopeLength = 1f;
-        [SerializeField] private float reelSpeed = 10f;
         [Tooltip("Aceleracao tangencial (m/s^2) aplicada ao segurar A/D durante o balanco. Independe da massa.")]
         [SerializeField, Min(0f)] private float swingAcceleration = 40f;
         [Tooltip("Angulo maximo (graus, a partir da vertical abaixo do ponto) que o balanco atinge so com o input. A/D para de dar energia ao chegar nele, entao nao da para dar voltas no objeto.")]
@@ -125,8 +122,6 @@ namespace HierarchicalStateMachine
             ctx.grapplingAudioClip = grapplingAudioClip;
             ctx.MaxGrappleDistance = maxGrappleDistance;
             ctx.PlayerGrappleRadius = playerGrappleRadius;
-            ctx.MinRopeLength = minRopeLength;
-            ctx.ReelSpeed = reelSpeed;
             ctx.SwingAcceleration = swingAcceleration;
             ctx.MaxSwingAngle = maxSwingAngle;
             ctx.MaxSwingSpeed = maxSwingSpeed;
@@ -766,8 +761,6 @@ namespace HierarchicalStateMachine
         public AudioClip grapplingAudioClip;
         public float MaxGrappleDistance;
         public float PlayerGrappleRadius;
-        public float MinRopeLength;
-        public float ReelSpeed;
         public float SwingAcceleration;
         public float MaxSwingAngle;
         public float MaxSwingSpeed;

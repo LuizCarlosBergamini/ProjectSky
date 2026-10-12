@@ -261,9 +261,6 @@ namespace HierarchicalStateMachine
 
     public class Grappling : State
     {
-        // Hard floor for the reel-in, so the rope can never collapse to zero length even if
-        // MinRopeLength is set to 0 in the inspector.
-        private const float MinRopeLengthFloor = 0.25f;
         private const float RopeTautTolerance = 0.02f;
 
         private readonly PlayerContext ctx;
@@ -355,12 +352,6 @@ namespace HierarchicalStateMachine
                 ctx.GrapplePoint = ctx.GrappleTarget.GetAnchorPoint();
             }
 
-            if (ctx.playerActions.Fire.IsPressed())
-            {
-                ctx.RopeRestLength -= ctx.ReelSpeed * deltaTime;
-                ctx.RopeRestLength = Mathf.Max(ctx.RopeRestLength, Mathf.Max(MinRopeLengthFloor, ctx.MinRopeLength));
-            }
-
             if (ctx.playerActions.Release.WasPressedThisFrame())
             {
                 if (ctx.ForceTarget.bodyType == RigidbodyType2D.Dynamic)
@@ -435,7 +426,8 @@ namespace HierarchicalStateMachine
 
             body.linearVelocity = Vector2.ClampMagnitude(velocity, ctx.MaxSwingSpeed);
 
-            // Pull the body back onto the rope (also what reels it in while Fire is held).
+            // Pull the body back onto the rope. The length is fixed at attach time: holding Fire
+            // no longer reels the rope in.
             if (distance > ctx.RopeRestLength)
             {
                 body.position = anchorPoint + radial * ctx.RopeRestLength;
