@@ -239,12 +239,19 @@ public class TaskManager : MonoBehaviour
         {
             baseTopPadding ??= layout.padding.top;
             layout.padding.top = baseTopPadding.Value + (active ? Mathf.RoundToInt(extraTopPadding) : 0);
-            LayoutRebuilder.MarkLayoutForRebuild((RectTransform)taskItemContainer.transform);
         }
 
         foreach (TaskItem card in taskItems.Values)
         {
             if (card != null) card.SetTitleOnly(active);
+        }
+
+        // Rebuild now, not at the end of the frame: the boss's reward task completes in the same frame the
+        // fight ends, and its HideTask animation sets ignoreLayout, which would freeze the card where it was
+        // during the fight and slide it out from the middle of the screen.
+        if (taskItemContainer != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)taskItemContainer.transform);
         }
     }
 
