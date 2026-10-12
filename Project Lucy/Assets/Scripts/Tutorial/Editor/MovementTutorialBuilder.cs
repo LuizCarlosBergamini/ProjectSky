@@ -94,8 +94,8 @@ public static class MovementTutorialBuilder
         },
         new()
         {
-            name = "Agarrar", icon = IconKind.MouseLeft,
-            title = "AGARRAR", description = "SEGURE PARA SE PUXAR\nA/D PARA BALANÇAR",
+            name = "Agarrar", icon = IconKind.Key, keyLabel = "F", keyWidth = 0.8f,
+            title = "AGARRAR", description = "CORDA DE TAMANHO FIXO\nA/D PARA BALANÇAR",
             iconCenter = new Vector2(20.5f, 5.975f), titleCenter = new Vector2(20.5f, 5.08f),
             descriptionCenter = new Vector2(20.5f, 4.15f),
             arrows = new[]
@@ -106,8 +106,8 @@ public static class MovementTutorialBuilder
         },
         new()
         {
-            name = "Soltar", icon = IconKind.MouseRight,
-            title = "SOLTAR", description = "OU ESPAÇO\nGANHE IMPULSO PARA CIMA",
+            name = "Soltar", icon = IconKind.Key, keyLabel = "ESPAÇO", keyWidth = 1.8f,
+            title = "SOLTAR", description = "GANHE IMPULSO PARA CIMA",
             iconCenter = new Vector2(25.3f, 1.175f), titleCenter = new Vector2(25.3f, 0.28f),
             descriptionCenter = new Vector2(25.3f, -0.65f),
             arrows = new[] { new ArrowSpec(new Vector2(25.95f, 1.2f), new Vector2(28.3f, 2.7f), new Vector2(28.7f, -1f)) }

@@ -461,7 +461,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "SEGURE PARA SE PUXAR\nA/D PARA BALAN\xC7AR"
+  m_text: "CORDA DE TAMANHO FIXO\nA/D PARA BALAN\xC7AR"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: e2f8c8e268636d342a5f1917272ce576, type: 2}
   m_sharedMaterial: {fileID: 7904177031652447338, guid: e2f8c8e268636d342a5f1917272ce576, type: 2}
@@ -12470,7 +12470,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "OU ESPA\xC7O\nGANHE IMPULSO PARA CIMA"
+  m_text: GANHE IMPULSO PARA CIMA
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: e2f8c8e268636d342a5f1917272ce576, type: 2}
   m_sharedMaterial: {fileID: 7904177031652447338, guid: e2f8c8e268636d342a5f1917272ce576, type: 2}
