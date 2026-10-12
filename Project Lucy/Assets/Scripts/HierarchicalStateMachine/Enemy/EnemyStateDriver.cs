@@ -1130,12 +1130,15 @@ namespace HierarchicalStateMachine
             return ctx.FacingRight ? -1f : 1f;
         }
 
-        // Upper body, on the side facing the attacker, so the spray starts where the blade landed.
+        // Upper body, on the side facing the attacker, so the spray starts where the blade landed. The hurtbox is
+        // what the player hit: during an attack it follows the body drawn on the current frame (the lunge draws her
+        // well ahead of the root), so the spray comes out of the sprite instead of the empty spot she left.
         private Vector2 HitPoint(Vector2 knockback)
         {
-            if (bodyCollider == null) return transform.position;
+            Collider2D struck = hurtbox != null && hurtbox.enabled ? hurtbox : bodyCollider;
+            if (struck == null) return transform.position;
 
-            Bounds b = bodyCollider.bounds;
+            Bounds b = struck.bounds;
             float towardAttacker = -BloodDirection(knockback);
             return new Vector2(
                 b.center.x + towardAttacker * b.extents.x * 0.4f,
