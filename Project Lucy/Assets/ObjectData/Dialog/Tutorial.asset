@@ -67,7 +67,9 @@ MonoBehaviour:
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: alma-06
     dialogContent: "Ah... Al\xE9m disso voc\xEA pode se pendurar em algumas coisas
-      com seu agarrador.\nAperte 'F' para agarrar e 'Espa\xE7o' para se soltar."
+      com seu agarrador.\nSegure 'F' para agarrar e solte para se soltar.\nNo
+      meio do balan\xE7o, aperte 'Espa\xE7o' para se soltar com um impulso para
+      cima."
     nextDialog: alma-07
     triggerEvent: 
     dialogDuration: 0
