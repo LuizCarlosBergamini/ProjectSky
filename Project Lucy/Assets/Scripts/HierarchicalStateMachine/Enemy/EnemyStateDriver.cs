@@ -64,6 +64,11 @@ namespace HierarchicalStateMachine
                  "enquanto o collider fica na raiz. Vazio = so o collider da raiz recebe golpes.")]
         [SerializeField] private BoxCollider2D hurtbox;
 
+        [Tooltip("Corpo desenhado em cada quadro de Enemy_Death (x para frente, y a partir dos pes; preenchido pelo " +
+                 "builder). Ao morrer, a hurtbox e a altura do collider da raiz seguem o corpo caido, que e mais baixo " +
+                 "que o de pe. Vazio = os colliders ficam como estao.")]
+        [SerializeField] private AttackFrameBody[] deathBodyFrames;
+
         [Header("Ground Check")]
         [SerializeField] private Transform groundCheck;
         [SerializeField] private float groundCheckRadius = 0.25f;
@@ -131,6 +136,11 @@ namespace HierarchicalStateMachine
         private Vector2 hurtboxRestOffset;
         private Vector2 hurtboxRestSize;
         private bool hurtboxMoved;
+        private Vector2 bodyRestOffset;
+        private Vector2 bodyRestSize;
+        private int deathBodyFrame = -1;
+
+        private static readonly int DeathStateHash = Animator.StringToHash("Enemy_Death");
 
         private Color baseTint = Color.white;
         private Color? telegraphColor;
@@ -196,6 +206,11 @@ namespace HierarchicalStateMachine
             {
                 hurtboxRestOffset = hurtbox.offset;
                 hurtboxRestSize = hurtbox.size;
+            }
+            if (bodyCollider is BoxCollider2D bodyBox)
+            {
+                bodyRestOffset = bodyBox.offset;
+                bodyRestSize = bodyBox.size;
             }
 
             ctx.Data = data;
@@ -288,6 +303,7 @@ namespace HierarchicalStateMachine
             if (hitAnimationTimer > 0f) hitAnimationTimer -= deltaTime;
 
             sm.Tick(deltaTime);
+            if (ctx.IsDead) FitBodyToDeathFrame();
             TurnCheck();
             UpdateTint(deltaTime);
 
@@ -669,6 +685,41 @@ namespace HierarchicalStateMachine
             hurtbox.offset = frames[frame].center;
             hurtbox.size = Vector2.Max(frames[frame].size, hurtboxRestSize);
             hurtboxMoved = true;
+        }
+
+        // While the death clip plays, shrinks the hurtbox and the root collider to the body drawn on the current frame,
+        // so swings and the player's body stop meeting an upright Medusa that is already lying down. The frame comes
+        // from the animator, whatever speed the clip runs at. The root collider keeps its width and its bottom (the
+        // feet), so the rigidbody neither drops nor gets pushed into a wall; only its top comes down.
+        private void FitBodyToDeathFrame()
+        {
+            if (deathBodyFrames == null || deathBodyFrames.Length == 0 || animator == null) return;
+
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+            if (state.shortNameHash != DeathStateHash) return; // the clip has not started yet
+
+            int frame = Mathf.Clamp(Mathf.FloorToInt(state.normalizedTime * deathBodyFrames.Length), 0, deathBodyFrames.Length - 1);
+            if (frame == deathBodyFrame) return;
+            deathBodyFrame = frame;
+
+            AttackFrameBody drawn = deathBodyFrames[frame];
+            if (drawn.size.x <= 0f || drawn.size.y <= 0f) return; // nothing drawn: keep the last box
+
+            if (hurtbox != null)
+            {
+                hurtbox.offset = drawn.center;
+                hurtbox.size = drawn.size;
+                hurtboxMoved = true;
+            }
+
+            if (bodyCollider is BoxCollider2D box)
+            {
+                float bottom = bodyRestOffset.y - bodyRestSize.y * 0.5f;
+                float top = drawn.center.y + drawn.size.y * 0.5f;
+                float height = Mathf.Clamp(top - bottom, 0.1f, bodyRestSize.y);
+                box.size = new Vector2(bodyRestSize.x, height);
+                box.offset = new Vector2(bodyRestOffset.x, bottom + height * 0.5f);
+            }
         }
 
         // Moves the body up to distance along directionSign in one step, stopping short of walls and the arena barrier

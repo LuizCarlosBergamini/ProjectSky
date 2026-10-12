@@ -775,6 +775,7 @@ public static class MedusaBossBuilder
             so.FindProperty("groundLayer").intValue = LayerMask.GetMask("Ground");
             so.FindProperty("tintRenderer").objectReferenceValue = renderer;
             so.FindProperty("hurtbox").objectReferenceValue = hurtbox;
+            WriteDeathBodyFrames(so);
 
             BossData_SO bossData = AssetDatabase.LoadAssetAtPath<BossData_SO>(BossDataPath);
             if (so.FindProperty("bossData").objectReferenceValue == null) so.FindProperty("bossData").objectReferenceValue = bossData;
@@ -820,6 +821,22 @@ public static class MedusaBossBuilder
         return hurtbox;
     }
 
+    // The lying body of every Dead frame: the driver shrinks the hurtbox and the root collider to it while she dies.
+    // Derived from the art, so it is rewritten on every run.
+    private static void WriteDeathBodyFrames(SerializedObject driver)
+    {
+        AttackFrameBody[] frames = ComputeBodyFrames(GetSheet("Dead"));
+        SerializedProperty property = driver.FindProperty("deathBodyFrames");
+        property.arraySize = frames.Length;
+        for (int i = 0; i < frames.Length; i++)
+        {
+            SerializedProperty element = property.GetArrayElementAtIndex(i);
+            element.FindPropertyRelative("center").vector2Value = frames[i].center;
+            element.FindPropertyRelative("size").vector2Value = frames[i].size;
+        }
+        Report.Add($"{PrefabPath}: {frames.Length} death body frames");
+    }
+
     private static T GetOrAdd<T>(GameObject go) where T : Component
     {
         return go.TryGetComponent(out T component) ? component : go.AddComponent<T>();
@@ -835,8 +852,8 @@ public static class MedusaBossBuilder
     };
 
     /// <summary>
-    /// Adds only what the hurtbox needs to an already built Medusa: the per-frame body boxes on the attack assets
-    /// and the Hurtbox child on the prefab. No sprite reimport, no scene change.
+    /// Adds only what the hurtbox needs to an already built Medusa: the per-frame body boxes on the attack assets and
+    /// the death clip, and the Hurtbox child on the prefab. No sprite reimport, no scene change.
     /// </summary>
     [MenuItem("Tools/Lucy/Update Medusa Hurtbox")]
     public static void UpdateHurtbox()
@@ -887,13 +904,16 @@ public static class MedusaBossBuilder
             if (property.objectReferenceValue != null)
             {
                 Report.Add($"{PrefabPath}: hurtbox already wired");
-                return;
+            }
+            else
+            {
+                property.objectReferenceValue = GetOrCreateHurtbox(root, body);
+                Report.Add($"{PrefabPath}: Hurtbox child added and wired");
             }
 
-            property.objectReferenceValue = GetOrCreateHurtbox(root, body);
+            WriteDeathBodyFrames(so);
             so.ApplyModifiedPropertiesWithoutUndo();
             PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
-            Report.Add($"{PrefabPath}: Hurtbox child added and wired");
         }
         finally
         {
