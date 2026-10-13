@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using HierarchicalStateMachine;
 using TMPro;
 using UnityEditor;
@@ -16,8 +17,9 @@ using Object = UnityEngine.Object;
 /// - Level1-3: a "DeathPortal" behind the start point (back to the Hub, only shown after a death) and the
 ///   boss's HubReturnTrigger turned from walk-in into press-E.
 /// - Hub: the boss selector portal opens on press-E with "Escolha a fase".
+/// Every portal gets a purple placeholder until its art exists.
 /// Safe to run again: anything that already has an InteractPortal is left alone, so the DeathPortal can be moved
-/// by hand in each level without being reset.
+/// by hand in each level without being reset; only a missing placeholder is added.
 /// </summary>
 public static class PortalBuilder
 {
@@ -33,6 +35,7 @@ public static class PortalBuilder
     private const string InputActionsPath = "Assets/InputS/PlayerInputs.inputactions";
     private const string NpcPrefabPath = "Assets/Renan/Prefabs/NPC.prefab";
     private const string InteractActionName = "Dialog/Interact";
+    private const string PlaceholderSpritePath = "Assets/Sprites/Portals/portal_placeholder.png";
 
     private const string DeathPortalName = "DeathPortal";
     private const string BossPortalName = "HubReturnTrigger";
@@ -51,12 +54,17 @@ public static class PortalBuilder
     private const float PromptGap = 0.5f;
     private const int PromptSortingOrder = 20;
 
+    // Behind Lucy (10), in front of the tilemaps (0).
+    private const int PlaceholderSortingOrder = 5;
+    private static readonly Color PlaceholderColor = new(0.55f, 0.25f, 0.85f, 0.7f);
+
     private class PortalAssets
     {
         public TMP_FontAsset font;
         public InputActionReference interact;
         public Sprite keySprite;
         public Image.Type keySpriteType;
+        public Sprite placeholder;
     }
 
     [MenuItem("Tools/Lucy/Build Portals")]
@@ -106,6 +114,7 @@ public static class PortalBuilder
 
         BuildDeathPortal(scene, runManager, assets, changes);
         ConvertBossPortal(scene, runManager, assets, changes);
+        AddPlaceholders(scene, assets, changes);
         EditorSceneManager.MarkSceneDirty(scene);
     }
 
@@ -197,7 +206,32 @@ public static class PortalBuilder
             changes.Add($"Hub: {trigger.name} com tecla de acao");
         }
 
+        AddPlaceholders(scene, assets, changes);
         EditorSceneManager.MarkSceneDirty(scene);
+    }
+
+    /// <summary>Purple stand-in for the portal art; InteractPortal sizes it to Lucy and puts it on the ground.</summary>
+    private static void AddPlaceholders(Scene scene, PortalAssets assets, List<string> changes)
+    {
+        foreach (InteractPortal portal in FindAllInScene<InteractPortal>(scene))
+        {
+            SerializedObject so = new(portal);
+            SerializedProperty placeholderProperty = so.FindProperty("_placeholder");
+            if (placeholderProperty.objectReferenceValue != null) continue;
+
+            GameObject placeholder = new("Placeholder");
+            placeholder.transform.SetParent(portal.transform, false);
+            placeholder.layer = portal.gameObject.layer;
+
+            SpriteRenderer renderer = placeholder.AddComponent<SpriteRenderer>();
+            renderer.sprite = assets.placeholder;
+            renderer.color = PlaceholderColor;
+            renderer.sortingOrder = PlaceholderSortingOrder;
+
+            placeholderProperty.objectReferenceValue = renderer;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            changes.Add($"{scene.name}: placeholder em {portal.name}");
+        }
     }
 
     #endregion
@@ -357,7 +391,41 @@ public static class PortalBuilder
         }
 
         if (assets.keySprite == null) Debug.LogWarning("[Portais] Caixa da tecla do NPC nao encontrada; a tecla fica sem fundo.");
+
+        assets.placeholder = LoadPlaceholderSprite();
         return assets;
+    }
+
+    /// <summary>A plain white square (one unit), tinted purple on each portal. Generated once, then left alone.</summary>
+    private static Sprite LoadPlaceholderSprite()
+    {
+        string fullPath = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? string.Empty, PlaceholderSpritePath);
+        if (!File.Exists(fullPath))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? string.Empty);
+
+            const int size = 4;
+            Texture2D texture = new(size, size, TextureFormat.RGBA32, false);
+            Color32[] pixels = new Color32[size * size];
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = new Color32(255, 255, 255, 255);
+            texture.SetPixels32(pixels);
+            File.WriteAllBytes(fullPath, texture.EncodeToPNG());
+            Object.DestroyImmediate(texture);
+
+            AssetDatabase.ImportAsset(PlaceholderSpritePath, ImportAssetOptions.ForceSynchronousImport);
+            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(PlaceholderSpritePath);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = size;
+            importer.filterMode = FilterMode.Point;
+            importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+        }
+
+        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(PlaceholderSpritePath);
+        if (sprite == null) Debug.LogWarning($"[Portais] Sprite do placeholder nao encontrado em {PlaceholderSpritePath}.");
+        return sprite;
     }
 
     #endregion
