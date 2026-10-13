@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -33,8 +34,9 @@ namespace HierarchicalStateMachine
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float invulnerabilityTime = 0.4f;
         [SerializeField] private float hitAnimationTime = 0.25f;
-        [Tooltip("Espera apos a morte antes de reiniciar a fase (usado quando nao ha GameManager na cena).")]
+        [Tooltip("Espera minima apos a morte antes de reiniciar a fase (usado quando nao ha GameManager na cena). Se a animacao de morte for mais longa, espera ela terminar.")]
         [SerializeField] private float deathRestartDelay = 1.5f;
+        private const string DeathAnimationState = "Player_Death";
 
         [Header("Attack")]
         [SerializeField] private Transform attackTransform;
@@ -177,7 +179,8 @@ namespace HierarchicalStateMachine
         {
             if (inputEnabled)
             {
-                if (isActiveAndEnabled) ctx.playerActions.Enable();
+                // A dialog or menu closing after the death must not hand control back.
+                if (isActiveAndEnabled && !ctx.isDead) ctx.playerActions.Enable();
                 return;
             }
 
@@ -368,9 +371,13 @@ namespace HierarchicalStateMachine
 
             rb.AddForce(knockback, ForceMode2D.Impulse);
             CancelAttack();
-            PlayHitAnimation();
 
-            if (ctx.health > 0f) return;
+            if (ctx.health > 0f)
+            {
+                PlayHitAnimation();
+                return;
+            }
+
             Die();
         }
 
@@ -400,6 +407,9 @@ namespace HierarchicalStateMachine
             hitAnimationTimer = 0f;
             ctx.isDead = true;
             ctx.canWalk = false;
+            // Without this a jump or attack pressed after dying would replace the death clip.
+            SetInputEnabled(false);
+            PlayDeathAnimation();
 
             if (GameManager.instance != null)
             {
@@ -408,11 +418,25 @@ namespace HierarchicalStateMachine
             }
 
             // Levels entered from the Hub have no GameManager; LevelRunManager owns the retry there.
-            if (LevelRunManager.instance != null) Invoke(nameof(RestartLevel), deathRestartDelay);
+            if (LevelRunManager.instance != null) StartCoroutine(RestartLevelAfterDeath());
         }
 
-        private void RestartLevel()
+        private IEnumerator RestartLevelAfterDeath()
         {
+            // Animator.Play only takes effect on the animator's next update, so the death state's
+            // length can be read one frame later.
+            yield return null;
+
+            float delay = deathRestartDelay;
+            if (ctx.animator != null)
+            {
+                AnimatorStateInfo state = ctx.animator.GetCurrentAnimatorStateInfo(0);
+                if (state.shortNameHash == Animator.StringToHash(DeathAnimationState))
+                    delay = Mathf.Max(delay, state.length);
+            }
+
+            yield return new WaitForSeconds(delay);
+
             if (LevelRunManager.instance != null) LevelRunManager.instance.HandlePlayerDeath();
         }
 
@@ -424,7 +448,7 @@ namespace HierarchicalStateMachine
         private void PlayStateAnimation(string stateName)
         {
             if (animator == null || string.IsNullOrEmpty(stateName)) return;
-            if (hitAnimationTimer > 0f) return;
+            if (hitAnimationTimer > 0f || ctx.isDead) return;
 
             int hash = Animator.StringToHash(stateName);
             if (!animator.HasState(0, hash)) return;
@@ -442,6 +466,19 @@ namespace HierarchicalStateMachine
 
             hitAnimationTimer = hitAnimationTime;
             // Restarted from frame 0 so consecutive hits re-trigger the reaction.
+            ctx.animator.Play(hash, 0, 0f);
+        }
+
+        // Placeholder: the controller has no death state yet. Once a state named Player_Death exists
+        // in PlayerAnimator (no parameters or transitions needed) it plays here; until then the
+        // player keeps the pose they died in and the level restarts after deathRestartDelay.
+        private void PlayDeathAnimation()
+        {
+            if (ctx.animator == null) return;
+
+            int hash = Animator.StringToHash(DeathAnimationState);
+            if (!ctx.animator.HasState(0, hash)) return;
+
             ctx.animator.Play(hash, 0, 0f);
         }
 
