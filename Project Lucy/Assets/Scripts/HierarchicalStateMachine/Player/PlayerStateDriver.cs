@@ -103,7 +103,8 @@ namespace HierarchicalStateMachine
         // for single physics steps while sliding, and letting input back in on those steps made the
         // player flicker between the slide and walking the other way.
         private Collider2D slideEnemy;
-        private float slideDirection;
+        // Raw horizontal input, read even while ctx.MovementInput is zeroed for the slide.
+        private float slideInputX;
         private const float SlideTopTolerance = 0.3f;
         
         Rigidbody2D rb;
@@ -233,7 +234,8 @@ namespace HierarchicalStateMachine
         private void Update()
         {
             ctx.MovementInput = ctx.playerActions.Movement.ReadValue<Vector2>();
-            // No steering or turning while sliding off an enemy.
+            slideInputX = ctx.MovementInput.x;
+            // While sliding off an enemy the input only picks the slide's side, it doesn't walk or turn.
             if (slideEnemy != null) ctx.MovementInput = Vector2.zero;
             ctx.IsGrounded = CheckGrounded();
             UpdateDamageTimers(Time.deltaTime);
@@ -524,7 +526,7 @@ namespace HierarchicalStateMachine
             UpdateEnemySlide();
             if (slideEnemy != null)
             {
-                rb.linearVelocity = new Vector2(slideDirection * enemyTopSlideSpeed, rb.linearVelocityY);
+                rb.linearVelocity = new Vector2(GetSlideDirection(slideEnemy) * enemyTopSlideSpeed, rb.linearVelocityY);
             }
             else
             {
@@ -589,15 +591,7 @@ namespace HierarchicalStateMachine
         {
             if (TryGetEnemyBelow(out Collider2D enemyBelow))
             {
-                // The direction is picked once per enemy. Recomputing it every step could flip it when
-                // the player crosses the center, or when turning shifts an off-center collider.
-                if (enemyBelow != slideEnemy)
-                {
-                    slideEnemy = enemyBelow;
-                    float playerX = bodyCollider != null ? bodyCollider.bounds.center.x : rb.position.x;
-                    // Closer to the right edge than the left one exactly when right of the center.
-                    slideDirection = playerX >= enemyBelow.bounds.center.x ? 1f : -1f;
-                }
+                slideEnemy = enemyBelow;
                 return;
             }
 
@@ -605,6 +599,16 @@ namespace HierarchicalStateMachine
             {
                 slideEnemy = null;
             }
+        }
+
+        // A held direction wins; with no input the player goes to the nearest edge.
+        private float GetSlideDirection(Collider2D enemy)
+        {
+            if (Mathf.Abs(slideInputX) > 0.01f) return Mathf.Sign(slideInputX);
+
+            float playerX = bodyCollider != null ? bodyCollider.bounds.center.x : rb.position.x;
+            // Closer to the right edge than the left one exactly when right of the center.
+            return playerX >= enemy.bounds.center.x ? 1f : -1f;
         }
 
         // Bridges the steps where the contact drops out: the slide only ends once the player is past
