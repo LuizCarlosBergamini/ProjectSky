@@ -99,6 +99,12 @@ namespace HierarchicalStateMachine
 
         private readonly RaycastHit2D[] groundHits = new RaycastHit2D[8];
         private readonly ContactPoint2D[] bodyContacts = new ContactPoint2D[16];
+        // Enemy the player is sliding off, kept until the player has left its top. Contacts drop out
+        // for single physics steps while sliding, and letting input back in on those steps made the
+        // player flicker between the slide and walking the other way.
+        private Collider2D slideEnemy;
+        private float slideDirection;
+        private const float SlideTopTolerance = 0.3f;
         
         Rigidbody2D rb;
         StateMachine sm;
@@ -227,6 +233,8 @@ namespace HierarchicalStateMachine
         private void Update()
         {
             ctx.MovementInput = ctx.playerActions.Movement.ReadValue<Vector2>();
+            // No steering or turning while sliding off an enemy.
+            if (slideEnemy != null) ctx.MovementInput = Vector2.zero;
             ctx.IsGrounded = CheckGrounded();
             UpdateDamageTimers(Time.deltaTime);
 
@@ -513,10 +521,10 @@ namespace HierarchicalStateMachine
 
             // Standing on an enemy let the attack reach it from above, so the player is pushed off
             // instead. Input is skipped meanwhile, otherwise holding the other way would cancel the slide.
-            if (TryGetEnemyBelow(out Collider2D enemyBelow))
+            UpdateEnemySlide();
+            if (slideEnemy != null)
             {
-                SlideOffEnemy(enemyBelow);
-                TurnCheck();
+                rb.linearVelocity = new Vector2(slideDirection * enemyTopSlideSpeed, rb.linearVelocityY);
             }
             else
             {
@@ -577,14 +585,42 @@ namespace HierarchicalStateMachine
             return otherBody != null && otherBody.gameObject.tag == enemyTag;
         }
 
-        private void SlideOffEnemy(Collider2D enemy)
+        private void UpdateEnemySlide()
         {
-            Bounds enemyBounds = enemy.bounds;
-            float playerX = bodyCollider != null ? bodyCollider.bounds.center.x : rb.position.x;
-            // Closer to the right edge than the left one exactly when right of the center.
-            float direction = playerX >= enemyBounds.center.x ? 1f : -1f;
+            if (TryGetEnemyBelow(out Collider2D enemyBelow))
+            {
+                // The direction is picked once per enemy. Recomputing it every step could flip it when
+                // the player crosses the center, or when turning shifts an off-center collider.
+                if (enemyBelow != slideEnemy)
+                {
+                    slideEnemy = enemyBelow;
+                    float playerX = bodyCollider != null ? bodyCollider.bounds.center.x : rb.position.x;
+                    // Closer to the right edge than the left one exactly when right of the center.
+                    slideDirection = playerX >= enemyBelow.bounds.center.x ? 1f : -1f;
+                }
+                return;
+            }
 
-            rb.linearVelocity = new Vector2(direction * enemyTopSlideSpeed, rb.linearVelocityY);
+            if (slideEnemy != null && (ctx.IsGrappling || ctx.isDead || !IsStillOnTopOf(slideEnemy)))
+            {
+                slideEnemy = null;
+            }
+        }
+
+        // Bridges the steps where the contact drops out: the slide only ends once the player is past
+        // the enemy's edge or clearly above it.
+        private bool IsStillOnTopOf(Collider2D enemy)
+        {
+            if (enemy == null || !enemy.enabled || !enemy.gameObject.activeInHierarchy) return false;
+
+            Bounds enemyBounds = enemy.bounds;
+            Bounds playerBounds = bodyCollider != null
+                ? bodyCollider.bounds
+                : new Bounds(rb.position, Vector3.zero);
+
+            bool overlapsHorizontally = playerBounds.min.x < enemyBounds.max.x && playerBounds.max.x > enemyBounds.min.x;
+            float heightAboveTop = playerBounds.min.y - enemyBounds.max.y;
+            return overlapsHorizontally && heightAboveTop > -SlideTopTolerance && heightAboveTop < SlideTopTolerance;
         }
 
         private void ApplyGroundEdgeSnap()
