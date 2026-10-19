@@ -177,7 +177,7 @@ namespace HierarchicalStateMachine
         public AttackScoring scoring = new();
 
         [Header("Telegrafo")]
-        [Tooltip("Cor que pulsa no sprite durante os trechos WindUp. Alfa 0 = sem telegrafo.")]
+        [Tooltip("Cor que pulsa no sprite durante os trechos WindUp (no olhar, tambem nos Active). Alfa 0 = sem telegrafo.")]
         public Color telegraphColor = new Color(1f, 0.55f, 0.55f, 1f);
 
         [Header("Deslocamento do sprite")]

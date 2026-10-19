@@ -125,7 +125,7 @@ namespace HierarchicalStateMachine
                 ctx.PlayAttackAnimation?.Invoke(Definition.animationState, start, natural / Mathf.Max(0.01f, segment.duration));
             }
 
-            bool telegraph = segment.kind == AttackSegmentKind.WindUp && Definition.telegraphColor.a > 0f;
+            bool telegraph = ShowsTelegraph(segment) && Definition.telegraphColor.a > 0f;
             ctx.SetTelegraph?.Invoke(telegraph ? Definition.telegraphColor : (Color?)null);
 
             ctx.HasForcedVelocity = !Mathf.Approximately(segment.advanceDistance, 0f);
@@ -136,6 +136,9 @@ namespace HierarchicalStateMachine
             UpdateHurtbox(segment, 0f);
             OnSegmentStart(segment);
         }
+
+        /// <summary>Whether the telegraph glows during this segment. By default only the wind-up warns.</summary>
+        protected virtual bool ShowsTelegraph(AttackSegment segment) => segment.kind == AttackSegmentKind.WindUp;
 
         // The clip shows the segment's frames evenly across its duration, so the frame on screen is known
         // here. The hurtbox follows the body drawn on that frame (see AttackFrameBody): the player can hit
@@ -244,6 +247,11 @@ namespace HierarchicalStateMachine
         }
 
         protected override void OnMoveEnter() => landed = false;
+
+        // The glow stays on for the whole window the gaze can land in, so the player can see it is still
+        // dangerous to look at her until the glow goes out.
+        protected override bool ShowsTelegraph(AttackSegment segment) =>
+            segment.kind == AttackSegmentKind.WindUp || segment.kind == AttackSegmentKind.Active;
 
         protected override void OnSegmentUpdate(AttackSegment segment, float progress)
         {
