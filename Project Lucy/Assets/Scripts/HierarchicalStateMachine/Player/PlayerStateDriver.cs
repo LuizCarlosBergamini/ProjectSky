@@ -26,7 +26,13 @@ namespace HierarchicalStateMachine
         [SerializeField] private float upperCornerCheckDistance = 0.08f;
         [SerializeField] private float upperCornerCorrectionMax = 0.18f;
         [SerializeField] private int upperCornerCorrectionSteps = 4;
-        
+
+        [Header("Enemy Top Slide")]
+        [Tooltip("Tag dos colliders de inimigo. Em cima deles o player escorrega para a borda mais proxima.")]
+        [SerializeField] private string enemyTag = "Inimigo";
+        [Tooltip("Velocidade horizontal (m/s) com que o player escorrega de cima do inimigo.")]
+        [SerializeField, Min(0f)] private float enemyTopSlideSpeed = 8f;
+
         [SerializeField] CameraFollowObject CameraFollowObject;
 
         [Header("Health")]
@@ -92,6 +98,7 @@ namespace HierarchicalStateMachine
         public bool IsFacingRight => Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, 0f)) < 90f;
 
         private readonly RaycastHit2D[] groundHits = new RaycastHit2D[8];
+        private readonly ContactPoint2D[] bodyContacts = new ContactPoint2D[16];
         
         Rigidbody2D rb;
         StateMachine sm;
@@ -503,7 +510,18 @@ namespace HierarchicalStateMachine
         public void FixedUpdate()
         {
             sm.FixedTick(Time.fixedDeltaTime);
-            RunFunction(1);
+
+            // Standing on an enemy let the attack reach it from above, so the player is pushed off
+            // instead. Input is skipped meanwhile, otherwise holding the other way would cancel the slide.
+            if (TryGetEnemyBelow(out Collider2D enemyBelow))
+            {
+                SlideOffEnemy(enemyBelow);
+                TurnCheck();
+            }
+            else
+            {
+                RunFunction(1);
+            }
             // ApplyGroundEdgeSnap();
             // ApplyUpperCornerCorrection();
         }
@@ -522,6 +540,51 @@ namespace HierarchicalStateMachine
             }
 
             return false;
+        }
+
+        private bool TryGetEnemyBelow(out Collider2D enemy)
+        {
+            enemy = null;
+            if (ctx.IsGrappling || ctx.isDead || string.IsNullOrEmpty(enemyTag)) return false;
+
+            ContactFilter2D filter = new ContactFilter2D();
+            filter.useTriggers = false;
+            int contactCount = rb.GetContacts(filter, bodyContacts);
+
+            for (int i = 0; i < contactCount; i++)
+            {
+                // The normal points from the other collider towards the player, so an upward
+                // normal means the player is resting on top of it, not touching its side.
+                if (bodyContacts[i].normal.y < minGroundNormalY) continue;
+
+                Collider2D other = bodyContacts[i].collider;
+                if (other == null || !IsEnemy(other)) continue;
+
+                enemy = other;
+                return true;
+            }
+
+            return false;
+        }
+
+        // The tag may sit on the collider itself or on the enemy root that owns the rigidbody.
+        // Comparing strings instead of CompareTag avoids an error log every frame if the tag is
+        // missing from the project's tag list.
+        private bool IsEnemy(Collider2D other)
+        {
+            if (other.gameObject.tag == enemyTag) return true;
+            Rigidbody2D otherBody = other.attachedRigidbody;
+            return otherBody != null && otherBody.gameObject.tag == enemyTag;
+        }
+
+        private void SlideOffEnemy(Collider2D enemy)
+        {
+            Bounds enemyBounds = enemy.bounds;
+            float playerX = bodyCollider != null ? bodyCollider.bounds.center.x : rb.position.x;
+            // Closer to the right edge than the left one exactly when right of the center.
+            float direction = playerX >= enemyBounds.center.x ? 1f : -1f;
+
+            rb.linearVelocity = new Vector2(direction * enemyTopSlideSpeed, rb.linearVelocityY);
         }
 
         private void ApplyGroundEdgeSnap()
