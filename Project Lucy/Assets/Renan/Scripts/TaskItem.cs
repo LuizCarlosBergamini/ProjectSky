@@ -12,7 +12,6 @@ public class TaskItem : MonoBehaviour
     [SerializeField] private float _backgroundPadding = 12f;
 
     private bool _titleOnly;
-    private readonly Vector3[] _corners = new Vector3[4];
 
     public void Apply(string newTitleText, string newDescriptionText)
     {
