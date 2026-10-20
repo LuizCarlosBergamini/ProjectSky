@@ -35,7 +35,7 @@ public class InteractPortal : MonoBehaviour
     [Header("Posicao")]
     [Tooltip("Distancia entre o topo da cabeca da Lucy e a label, em unidades.")]
     [SerializeField] private float _labelAboveHead = 1f;
-    [Tooltip("Altura usada quando a Lucy nao e encontrada na cena.")]
+    [Tooltip("Altura usada quando a Lucy (ou o collider dela) nao e encontrada na cena.")]
     [SerializeField] private float _fallbackPlayerHeight = 2f;
 
     [Header("Placeholder")]
@@ -148,15 +148,19 @@ public class InteractPortal : MonoBehaviour
             1f);
     }
 
+    /// <summary>
+    /// Lucy's body height, from her solid collider. Not the sprite: the Martial Hero frames are 200x200 with most of
+    /// it empty, so their bounds are about four times taller than she looks and pushed the label off screen.
+    /// </summary>
     private float PlayerHeight(GameObject player)
     {
         if (player == null) return _fallbackPlayerHeight;
 
         float height = 0f;
-        foreach (SpriteRenderer sprite in player.GetComponentsInChildren<SpriteRenderer>())
+        foreach (Collider2D body in player.GetComponents<Collider2D>())
         {
-            if (!sprite.enabled || sprite.sprite == null) continue;
-            height = Mathf.Max(height, sprite.bounds.size.y);
+            if (!body.enabled || body.isTrigger) continue;
+            height = Mathf.Max(height, body.bounds.size.y);
         }
 
         return height > 0f ? height : _fallbackPlayerHeight;
