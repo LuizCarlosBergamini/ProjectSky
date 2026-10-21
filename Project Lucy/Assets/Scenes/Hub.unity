@@ -2449,6 +2449,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5890962430133262475, guid: fa7714cee09094446b2aea2d10ddfe37, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.79
+      objectReference: {fileID: 0}
+    - target: {fileID: 6646083394416341506, guid: fa7714cee09094446b2aea2d10ddfe37, type: 3}
+      propertyPath: attackRadius
+      value: 1.15
+      objectReference: {fileID: 0}
     - target: {fileID: 6646083394416341506, guid: fa7714cee09094446b2aea2d10ddfe37, type: 3}
       propertyPath: CameraFollowObject
       value: 
