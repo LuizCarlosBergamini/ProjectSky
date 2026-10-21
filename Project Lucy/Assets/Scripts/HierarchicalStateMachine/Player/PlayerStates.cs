@@ -316,6 +316,9 @@ namespace HierarchicalStateMachine
             ctx.RopeRestLengthFixed = Vector2.Distance(ctx.rb.position, ctx.GrapplePoint);
             ctx.RopeRestLength = ctx.RopeRestLengthFixed;
 
+            ctx.UpdateGrapplePose();
+            ctx.PlayAnimation?.Invoke("Player_Grapple");
+
             if (ctx.ropeRenderer != null)
             {
                 ctx.ropeRenderer.positionCount = 2;
@@ -375,6 +378,7 @@ namespace HierarchicalStateMachine
                 shouldExit = true;
             }
 
+            ctx.UpdateGrapplePose();
             ctx.UpdateRopeVisuals();
         }
 
