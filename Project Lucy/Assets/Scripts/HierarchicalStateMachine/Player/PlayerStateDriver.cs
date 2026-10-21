@@ -119,6 +119,7 @@ namespace HierarchicalStateMachine
             ctx.rb = rb;
             ctx.playerActions = new PlayerInputs().InGame;
             ctx.animator = this.animator;
+            ctx.spriteRenderer = animator != null ? animator.GetComponent<SpriteRenderer>() : null;
             ctx.Data = this.Data;
             ctx.Jump = Jump;
             ctx.JumpCut = JumpCut;
@@ -482,7 +483,13 @@ namespace HierarchicalStateMachine
         private void RestoreStateAnimation()
         {
             if (ctx.animator == null || ctx.isDead || ctx.IsAttacking) return;
-        
+
+            if (ctx.IsGrappling)
+            {
+                ctx.animator.Play("Player_Grapple");
+                return;
+            }
+
             if (!ctx.IsGrounded)
             {
                 ctx.animator.Play(rb.linearVelocityY > 0f ? "Player_Jump" : "Player_Fall");
@@ -828,6 +835,7 @@ namespace HierarchicalStateMachine
     {
         public Rigidbody2D rb;
         public Animator animator;
+        public SpriteRenderer spriteRenderer;
         public bool IsGrounded;
         public PlayerInputs.InGameActions playerActions;
         public bool isDead;
@@ -879,6 +887,23 @@ namespace HierarchicalStateMachine
         public bool PullTargetIsPlayer;
         public float RopeRestLength;
         public float RopeRestLengthFixed;
+        public int GrappleFrame;
+
+        private static readonly int GrappleSwingParam = Animator.StringToHash("GrappleSwing");
+
+        // Hand of each "Lucy pendurada" frame, in pixels from the 96x64 frame's top-left corner.
+        // The frames sweep the arm from straight ahead (0) through straight up (4) to behind the head (7).
+        private static readonly Vector2[] GrappleHandPixels =
+        {
+            new Vector2(65.5f, 31.5f),
+            new Vector2(66f, 25.5f),
+            new Vector2(61f, 20f),
+            new Vector2(55f, 15.5f),
+            new Vector2(48f, 12.5f),
+            new Vector2(41f, 13.5f),
+            new Vector2(33.5f, 18.5f),
+            new Vector2(30f, 25.5f),
+        };
 
         public bool TryStartGrapple()
         {
@@ -909,15 +934,52 @@ namespace HierarchicalStateMachine
         {
             if (ropeRenderer == null || !ropeRenderer.enabled || playerTransform == null) return;
 
-            ropeRenderer.SetPosition(0, playerTransform.position);
-            Vector3 anchorPoint = GrapplePoint;
+            ropeRenderer.SetPosition(0, GrappleHandPosition());
+            ropeRenderer.SetPosition(1, RopeAnchorPoint());
+        }
 
-            if (!PullTargetIsPlayer && GrappledObject != null)
-            {
-                anchorPoint = GrappledObject.transform.position;
-            }
+        /// <summary>
+        /// Picks the hanging frame whose arm points at the rope's anchor and feeds it to the
+        /// Player_Grapple state, which reads its time from the GrappleSwing parameter.
+        /// </summary>
+        public void UpdateGrapplePose()
+        {
+            if (playerTransform == null) return;
 
-            ropeRenderer.SetPosition(1, anchorPoint);
+            Vector2 toAnchor = (Vector2)RopeAnchorPoint() - (Vector2)playerTransform.position;
+            // The art faces right, so measure the angle in the sprite's own facing.
+            float forward = isFacingRight ? toAnchor.x : -toAnchor.x;
+            // 0 = anchor straight ahead, 90 = straight up, 180 = straight behind.
+            float angle = Mathf.Atan2(toAnchor.y, forward) * Mathf.Rad2Deg;
+            if (angle < 0f) angle = forward >= 0f ? 0f : 180f;
+
+            int lastFrame = GrappleHandPixels.Length - 1;
+            GrappleFrame = Mathf.Clamp(Mathf.RoundToInt(angle / 180f * lastFrame), 0, lastFrame);
+
+            // Sample the middle of the frame so float error never shows the neighbouring one.
+            if (animator != null) animator.SetFloat(GrappleSwingParam, (GrappleFrame + 0.5f) / GrappleHandPixels.Length);
+        }
+
+        private Vector3 RopeAnchorPoint()
+        {
+            if (!PullTargetIsPlayer && GrappledObject != null) return GrappledObject.transform.position;
+            return GrapplePoint;
+        }
+
+        private Vector3 GrappleHandPosition()
+        {
+            if (spriteRenderer == null || spriteRenderer.sprite == null) return playerTransform.position;
+
+            // Going through the sprite's own pivot and pixels-per-unit keeps the hand right if the
+            // import settings or the Sprite object's offset and scale change.
+            Sprite sprite = spriteRenderer.sprite;
+            Vector2 hand = GrappleHandPixels[GrappleFrame];
+            Vector2 local = new Vector2(hand.x - sprite.pivot.x, sprite.rect.height - hand.y - sprite.pivot.y)
+                            / sprite.pixelsPerUnit;
+            if (spriteRenderer.flipX) local.x = -local.x;
+
+            // TransformPoint also applies the 180° turn, so the hand mirrors with the player.
+            return spriteRenderer.transform.TransformPoint(local);
         }
 
         private bool TryFindGrappleTarget(out GrappleableTarget target)
