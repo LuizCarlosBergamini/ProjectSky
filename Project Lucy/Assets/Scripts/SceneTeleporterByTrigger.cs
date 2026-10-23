@@ -8,12 +8,12 @@ public class SceneTeleporterByTrigger : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene(onTriggerScene);
+            LevelManager.Load(onTriggerScene);
         }
     }
 
     public void OnEventTriggered(string sceneName)
     {
-        UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+        LevelManager.Load(sceneName);
     }
 }

@@ -251,16 +251,9 @@ public class BossProgressionManager : MonoBehaviour
         return BossEnterResult.Success;
     }
 
-    // Same fallback as LevelRunManager: LevelManager only exists when the game starts from the menu.
     private static void LoadScene(string sceneName)
     {
-        if (LevelManager.instance != null)
-        {
-            LevelManager.instance.LoadScene(sceneName);
-            return;
-        }
-
-        SceneManager.LoadScene(sceneName);
+        LevelManager.Load(sceneName);
     }
 
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
