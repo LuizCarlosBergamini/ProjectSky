@@ -31,7 +31,7 @@ public class SceneControl : MonoBehaviour
         }
         else
         {
-            SceneManager.LoadScene(nextscene);
+            LevelManager.Load(System.IO.Path.GetFileNameWithoutExtension(SceneUtility.GetScenePathByBuildIndex(nextscene)));
         }
     }
 
@@ -39,7 +39,7 @@ public class SceneControl : MonoBehaviour
     { 
         if(Application.CanStreamedLevelBeLoaded(cena))
         {
-            SceneManager.LoadScene(cena);
+            LevelManager.Load(cena);
         }
         else
         {

@@ -72,12 +72,6 @@ public class LevelRunManager : MonoBehaviour
 
     private void LoadScene(string sceneName)
     {
-        if (LevelManager.instance != null)
-        {
-            LevelManager.instance.LoadScene(sceneName);
-            return;
-        }
-
-        SceneManager.LoadScene(sceneName);
+        LevelManager.Load(sceneName);
     }
 }

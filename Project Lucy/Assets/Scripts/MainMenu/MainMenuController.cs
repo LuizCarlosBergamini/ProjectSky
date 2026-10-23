@@ -1,14 +1,13 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
 /// The main menu of the MainMenu scene (build index 0, the game's entry point). Scene-specific: owns the New Game,
-/// Continue, Options and Quit buttons and the art slots. Scenes load through LevelManager (the fade), falling back to
-/// SceneManager like the rest of the project. Options are a separate reusable prefab: this menu only opens it and
-/// decides what happens when it closes. Save data is only reached through SaveSystem.
+/// Continue, Options and Quit buttons and the art slots. Scenes load through LevelManager.Load (the fade). Options
+/// are a separate reusable prefab: this menu only opens it and decides what happens when it closes. Save data is
+/// only reached through SaveSystem.
 /// </summary>
 public class MainMenuController : MonoBehaviour
 {
@@ -231,13 +230,7 @@ public class MainMenuController : MonoBehaviour
         _loading = true;
         SetButtonsInteractable(false);
 
-        if (LevelManager.instance != null)
-        {
-            LevelManager.instance.LoadScene(sceneName);
-            return;
-        }
-
-        SceneManager.LoadScene(sceneName);
+        LevelManager.Load(sceneName);
     }
 
     private void SetButtonsInteractable(bool interactable)

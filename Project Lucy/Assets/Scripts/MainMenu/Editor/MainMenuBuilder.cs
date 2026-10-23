@@ -13,8 +13,8 @@ using Scene = UnityEngine.SceneManagement.Scene;
 
 /// <summary>
 /// Generates the MainMenu scene so nothing has to be wired by hand: placeholder art, the canvas hierarchy, the
-/// MainMenuController references, the LevelManager (fade) and EventSystem, the Options prefab link, and registers
-/// the scene as build index 0.
+/// MainMenuController references, the EventSystem, the Options prefab link, and registers the scene as build index 0.
+/// The LevelManager (fade) is not placed here: it creates itself from Resources before the first scene loads.
 /// Safe to run again: placeholder sprites are only written when missing (final art dropped over them is kept) and
 /// an existing scene is only re-linked and re-registered. "Rebuild Main Menu Scene" is the only command that
 /// recreates the scene, and it asks first.
@@ -25,7 +25,6 @@ public static class MainMenuBuilder
 
     private const string SpriteFolder = "Assets/Sprites/UI/MainMenu";
     private const string HubScenePath = "Assets/Scenes/Hub.unity";
-    private const string LevelManagerPrefabPath = "Assets/Renan/Prefabs/LevelManager.prefab";
     private const string FontPath = "Assets/Renan/Fonts/Jersey10-Regular SDF 1.asset";
 
     private static readonly string BackgroundSpritePath = $"{SpriteFolder}/MainMenu_Background_Placeholder.png";
@@ -146,11 +145,6 @@ public static class MainMenuBuilder
         InputSystemUIInputModule module = eventSystemObject.AddComponent<InputSystemUIInputModule>();
         module.AssignDefaultActions();
         eventSystemObject.AddComponent<SingleEventSystem>();
-
-        // The persistent scene loader with the fade. Living here, it exists from the first frame of the game.
-        GameObject levelManagerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(LevelManagerPrefabPath);
-        if (levelManagerPrefab != null) PrefabUtility.InstantiatePrefab(levelManagerPrefab, scene);
-        else Debug.LogWarning($"[Menu] {LevelManagerPrefabPath} nao encontrado: as cenas vao carregar sem fade.");
 
         // Canvas
         GameObject canvasObject = new("MainMenuCanvas", typeof(RectTransform)) { layer = UILayer };

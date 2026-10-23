@@ -5,8 +5,15 @@ using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
 
+/// <summary>
+/// Persistent scene loader with the fade. Every scene change in the game goes through <see cref="Load"/>, so it
+/// always fades out and back in. One instance is created from Resources/LevelManager before the first scene
+/// loads (whatever scene Play starts in); a copy placed in a scene destroys itself.
+/// </summary>
 public class LevelManager : MonoBehaviour
 {
+    public const string ResourcePath = "LevelManager";
+
     public static LevelManager instance;
     [SerializeField] Animator canvasTransition;
     //[SerializeField] FadeUI gameOverScreen;
@@ -24,6 +31,52 @@ public class LevelManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        // Keeps Enter Play Mode without domain reload from seeing the last session's instance.
+        instance = null;
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void Bootstrap()
+    {
+        EnsureInstance();
+    }
+
+    /// <summary>The loader, created from Resources/LevelManager when none exists yet. Null only if the prefab is missing.</summary>
+    public static LevelManager EnsureInstance()
+    {
+        if (instance != null) return instance;
+
+        LevelManager prefab = Resources.Load<LevelManager>(ResourcePath);
+        if (prefab == null)
+        {
+            Debug.LogWarning("Prefab Resources/LevelManager nao encontrado: as cenas vao carregar sem fade.");
+            return null;
+        }
+
+        LevelManager created = Instantiate(prefab);
+        created.name = prefab.name;
+        return instance;
+    }
+
+    /// <summary>
+    /// The one way to change scene: fades out, loads <paramref name="sceneName"/> and fades back in. Calls made while
+    /// a load is running are ignored, so triggers that fire twice load once. Without the prefab it loads directly.
+    /// </summary>
+    public static void Load(string sceneName)
+    {
+        LevelManager manager = EnsureInstance();
+        if (manager != null)
+        {
+            manager.LoadScene(sceneName);
+            return;
+        }
+
+        SceneManager.LoadScene(sceneName);
     }
 
     void Start()
