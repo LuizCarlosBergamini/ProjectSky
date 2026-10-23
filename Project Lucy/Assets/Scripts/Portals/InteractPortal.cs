@@ -1,0 +1,187 @@
+using System;
+using HierarchicalStateMachine;
+using TMPro;
+using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+/// <summary>
+/// A portal the player uses on purpose: standing inside the trigger shows a label with the action key (the same
+/// "E" box as the NPCs) and only pressing that key fires the portal. What it does is up to whoever listens:
+/// the UnityEvent for scene wiring (back to the Hub) or <see cref="Interacted"/> from code (boss selector).
+/// Until the art exists a purple placeholder stands in, sized to Lucy; the label sits a fixed distance above
+/// her head, measured from the ground under the portal, so every portal shows it at the same height.
+/// </summary>
+[RequireComponent(typeof(Collider2D))]
+public class InteractPortal : MonoBehaviour
+{
+    [Tooltip("Texto mostrado acima do portal quando o jogador chega perto.")]
+    [SerializeField] private string _label = "Voltar ao hub?";
+
+    [Tooltip("Tecla de acao, a mesma dos dialogos dos NPCs (E).")]
+    [SerializeField] private InputActionReference _interactAction;
+
+    [SerializeField] private string _playerTag = "Player";
+
+    [Header("Label")]
+    [Tooltip("Objeto com o texto e a tecla. Fica escondido ate o jogador entrar no portal.")]
+    [SerializeField] private GameObject _prompt;
+    [SerializeField] private TextMeshProUGUI _labelText;
+    [SerializeField] private TextMeshProUGUI _keyText;
+    [Tooltip("Caixa da tecla; a largura acompanha o nome da tecla, como nos NPCs.")]
+    [SerializeField] private LayoutElement _keyBox;
+
+    [Header("Posicao")]
+    [Tooltip("Distancia entre o topo da cabeca da Lucy e a label, em unidades.")]
+    [SerializeField] private float _labelAboveHead = 1f;
+    [Tooltip("Altura usada quando a Lucy (ou o collider dela) nao e encontrada na cena.")]
+    [SerializeField] private float _fallbackPlayerHeight = 2f;
+
+    [Header("Placeholder")]
+    [Tooltip("Visual provisorio do portal. Troque o sprite aqui quando a arte existir.")]
+    [SerializeField] private SpriteRenderer _placeholder;
+    [Tooltip("Ajusta o placeholder para a altura da Lucy, apoiado no chao. Desligue ao colocar a arte final.")]
+    [SerializeField] private bool _fitPlaceholderToPlayer = true;
+    [SerializeField] private float _placeholderWidth = 1.5f;
+
+    [Header("Events")]
+    [SerializeField] private UnityEvent _onInteract;
+
+    /// <summary>Raised when the player presses the action key inside the portal, before the UnityEvent.</summary>
+    public event Action Interacted;
+
+    // A player can carry more than one collider; the portal counts them so leaving with one does not hide the label.
+    private int _playerColliders;
+    private PlayerStateDriver _player;
+
+    public bool PlayerInside => _playerColliders > 0;
+
+    private void Awake()
+    {
+        if (_labelText != null) _labelText.text = _label;
+        ShowPrompt(false);
+    }
+
+    private void Start()
+    {
+        PlaceVisuals();
+
+        if (_interactAction == null || _interactAction.action == null || _keyText == null) return;
+        if (_interactAction.action.bindings.Count == 0) return;
+
+        _keyText.text = _interactAction.action.bindings[0].ToDisplayString();
+        if (_keyBox != null) _keyBox.preferredWidth = _keyText.text.Length * 2f + 2f;
+    }
+
+    private void OnDisable()
+    {
+        // Disabled with the player inside (scene unload, gate closing): exit is never called for those colliders.
+        _playerColliders = 0;
+        _player = null;
+        ShowPrompt(false);
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (!other.CompareTag(_playerTag)) return;
+
+        _playerColliders++;
+        if (_player == null) _player = other.GetComponentInParent<PlayerStateDriver>();
+        ShowPrompt(true);
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (!other.CompareTag(_playerTag)) return;
+
+        _playerColliders = Mathf.Max(0, _playerColliders - 1);
+        if (_playerColliders > 0) return;
+
+        _player = null;
+        ShowPrompt(false);
+    }
+
+    private void Update()
+    {
+        if (!PlayerInside || !CanInteract()) return;
+        if (_interactAction == null || _interactAction.action == null || !_interactAction.action.WasPressedThisFrame()) return;
+
+        Interacted?.Invoke();
+        _onInteract?.Invoke();
+    }
+
+    private bool CanInteract()
+    {
+        // Paused, or a menu that freezes the game (boss selector, upgrades) is open.
+        if (Time.timeScale <= 0f) return false;
+        if (LevelManager.instance != null && LevelManager.instance.IsLoading) return false;
+        if (_player != null && !_player.IsAlive()) return false;
+        return true;
+    }
+
+    /// <summary>Puts the placeholder on the ground and the label one Lucy-height plus the gap above it.</summary>
+    private void PlaceVisuals()
+    {
+        GameObject player = GameObject.FindWithTag(_playerTag);
+        float height = PlayerHeight(player);
+        float ground = GroundBelow(player);
+
+        if (_prompt != null)
+        {
+            // The prompt's pivot is its centre; lift it by half the key box so its bottom edge is the reference.
+            float halfPrompt = _keyBox != null ? _keyBox.preferredHeight * _prompt.transform.lossyScale.y * 0.5f : 0f;
+            Vector3 position = _prompt.transform.position;
+            _prompt.transform.position = new Vector3(transform.position.x, ground + height + _labelAboveHead + halfPrompt, position.z);
+        }
+
+        if (_placeholder == null || !_fitPlaceholderToPlayer) return;
+
+        Transform placeholder = _placeholder.transform;
+        placeholder.position = new Vector3(transform.position.x, ground + height * 0.5f, placeholder.position.z);
+
+        Vector2 spriteSize = _placeholder.sprite != null ? (Vector2)_placeholder.sprite.bounds.size : Vector2.one;
+        Vector3 parentScale = placeholder.parent != null ? placeholder.parent.lossyScale : Vector3.one;
+        placeholder.localScale = new Vector3(
+            _placeholderWidth / Mathf.Max(spriteSize.x * Mathf.Abs(parentScale.x), 0.0001f),
+            height / Mathf.Max(spriteSize.y * Mathf.Abs(parentScale.y), 0.0001f),
+            1f);
+    }
+
+    /// <summary>
+    /// Lucy's body height, from her solid collider. Not the sprite: the Martial Hero frames are 200x200 with most of
+    /// it empty, so their bounds are about four times taller than she looks and pushed the label off screen.
+    /// </summary>
+    private float PlayerHeight(GameObject player)
+    {
+        if (player == null) return _fallbackPlayerHeight;
+
+        float height = 0f;
+        foreach (Collider2D body in player.GetComponents<Collider2D>())
+        {
+            if (!body.enabled || body.isTrigger) continue;
+            height = Mathf.Max(height, body.bounds.size.y);
+        }
+
+        return height > 0f ? height : _fallbackPlayerHeight;
+    }
+
+    /// <summary>Top of the ground under the portal (Lucy's ground mask), or the bottom of the trigger without one.</summary>
+    private float GroundBelow(GameObject player)
+    {
+        Collider2D trigger = GetComponent<Collider2D>();
+        float fallback = trigger != null ? trigger.bounds.min.y : transform.position.y;
+
+        PlayerStateDriver driver = player != null ? player.GetComponent<PlayerStateDriver>() : null;
+        if (driver == null || driver.groundMask.value == 0) return fallback;
+
+        Vector2 origin = trigger != null ? (Vector2)trigger.bounds.center : (Vector2)transform.position;
+        RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.down, 50f, driver.groundMask);
+        return hit.collider != null ? hit.point.y : fallback;
+    }
+
+    private void ShowPrompt(bool visible)
+    {
+        if (_prompt != null) _prompt.SetActive(visible);
+    }
+}
