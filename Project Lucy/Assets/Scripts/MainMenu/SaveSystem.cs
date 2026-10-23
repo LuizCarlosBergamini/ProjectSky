@@ -6,9 +6,9 @@ using UnityEngine.SceneManagement;
 
 /// <summary>
 /// The one entry point to save data. Everything else (menus, pause, autosave) only calls these static methods.
-/// A save is <see cref="SaveData"/> as JSON, signed by <see cref="SaveSigner"/> and written atomically with a backup
-/// by <see cref="SaveFileStore"/> under Application.persistentDataPath/Saves. Settings are not part of it: they stay
-/// in PlayerPrefs with SettingsManager.
+/// A save is <see cref="SaveData"/> as plain JSON, written atomically with a backup by <see cref="SaveFileStore"/>
+/// under Application.persistentDataPath/Saves. The file is not protected against hand editing (a deliberate choice).
+/// Settings are not part of it: they stay in PlayerPrefs with SettingsManager.
 ///
 /// What is kept: inventory, defeated bosses and attempts, purchased upgrades, started/finished tasks, and the scene
 /// to continue from. Saving is allowed anywhere outside the main menu, but only progress that is already secured is
@@ -94,7 +94,7 @@ public static class SaveSystem
 
     #region Main Menu API
 
-    /// <summary>True when there is a valid (signed, readable) save the Continue button can load.</summary>
+    /// <summary>True when there is a valid (readable) save the Continue button can load.</summary>
     public static bool HasSave()
     {
         return Store.Exists(ActiveSlot) && TryRead(ActiveSlot, out _);
@@ -146,7 +146,7 @@ public static class SaveSystem
         try
         {
             string json = JsonUtility.ToJson(Capture(), Debug.isDebugBuild);
-            Store.Write(ActiveSlot, SaveSigner.Wrap(json));
+            Store.Write(ActiveSlot, json);
         }
         catch (Exception e)
         {
@@ -215,7 +215,7 @@ public static class SaveSystem
         foreach (string text in Store.ReadCandidates(slot))
         {
             if (TryParse(text, out data)) return true;
-            Debug.LogWarning("Save invalido ou alterado fora do jogo; tentando o backup.");
+            Debug.LogWarning("Save corrompido ou invalido; tentando o backup.");
         }
 
         return false;
@@ -224,14 +224,15 @@ public static class SaveSystem
     private static bool TryParse(string fileText, out SaveData data)
     {
         data = null;
-        if (!SaveSigner.TryUnwrap(fileText, out string json)) return false;
+        if (string.IsNullOrWhiteSpace(fileText)) return false;
 
         try
         {
-            data = JsonUtility.FromJson<SaveData>(json);
+            data = JsonUtility.FromJson<SaveData>(fileText);
         }
         catch (Exception)
         {
+            // Not JSON at all (truncated or garbage file).
             return false;
         }
 
