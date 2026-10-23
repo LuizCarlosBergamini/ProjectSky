@@ -9,6 +9,7 @@ public class EnemyPatrol : MonoBehaviour
     private Transform currentPoint;
     public float speed;
     public Enemy enemyScript;
+    [SerializeField] private FootstepTimer footsteps = new FootstepTimer { interval = 0.4f };
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -24,6 +25,8 @@ public class EnemyPatrol : MonoBehaviour
     void Update()
     {
         Vector2 point = currentPoint.position - transform.position;
+        bool walking = enemyScript.canMove && enemyScript.IsAlive();
+        if (footsteps.Tick(walking, Time.deltaTime)) AudioManager.PlayAt(SoundEffect.EnemyWalk, transform.position);
         if (!enemyScript.canMove) return;
         if (currentPoint == pointB.transform)
         {

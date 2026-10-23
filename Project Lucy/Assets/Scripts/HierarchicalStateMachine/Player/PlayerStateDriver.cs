@@ -55,7 +55,6 @@ namespace HierarchicalStateMachine
         [Header("Grappling")]
         [SerializeField] private LineRenderer ropeRenderer;
         [SerializeField] private LayerMask grappleableLayer = 1 << 6;
-        [SerializeField] private AudioClip grapplingAudioClip;
         [SerializeField] private float maxGrappleDistance = 5f;
         [SerializeField] private float playerGrappleRadius = 5f;
         [Tooltip("Aceleracao tangencial (m/s^2) aplicada ao segurar A/D durante o balanco. Independe da massa.")]
@@ -69,6 +68,12 @@ namespace HierarchicalStateMachine
         [SerializeField] private float releaseJumpForce = 30f;
         [Tooltip("Velocidade maxima (m/s) logo apos soltar a corda, ja contando o impulso de releaseJumpForce.")]
         [SerializeField, Min(0f)] private float maxReleaseSpeed = 35f;
+
+        [Header("Audio")]
+        [Tooltip("Ritmo do som de passo (AudioManager > PlayerWalk) enquanto anda no chao.")]
+        [SerializeField] private FootstepTimer footsteps = new FootstepTimer();
+        [Tooltip("Abaixo desta velocidade horizontal (m/s) o player nao conta como andando.")]
+        [SerializeField, Min(0f)] private float footstepMinSpeed = 0.5f;
         
         private string lastPath;
         private float invulnerabilityTimer;
@@ -136,7 +141,6 @@ namespace HierarchicalStateMachine
             ctx.playerTransform = transform;
             ctx.ropeRenderer = ropeRenderer;
             ctx.grappleableLayer = grappleableLayer;
-            ctx.grapplingAudioClip = grapplingAudioClip;
             ctx.MaxGrappleDistance = maxGrappleDistance;
             ctx.PlayerGrappleRadius = playerGrappleRadius;
             ctx.SwingAcceleration = swingAcceleration;
@@ -263,6 +267,7 @@ namespace HierarchicalStateMachine
             else ctx.LastOnGroundTime -= Time.deltaTime;
             
             sm.Tick(Time.deltaTime);
+            UpdateFootsteps(Time.deltaTime);
 
             var path = StatePath(sm.Root.Leaf());
             if (path != lastPath)
@@ -338,7 +343,20 @@ namespace HierarchicalStateMachine
                 force -= ctx.rb.linearVelocityY;
         
             PlayStateAnimation("Player_Jump");
+            AudioManager.Play(SoundEffect.Jump);
             ctx.rb.AddForce(Vector2.up * force, ForceMode2D.Impulse);
+        }
+
+        // Walking = on the ground, moving because of the player's input, and not swinging, attacking
+        // or sliding off an enemy (those move the body without the legs).
+        private void UpdateFootsteps(float deltaTime)
+        {
+            bool walking = ctx.IsGrounded && ctx.canWalk && !ctx.isDead && !ctx.IsAttacking && !ctx.IsGrappling
+                           && slideEnemy == null
+                           && Mathf.Abs(ctx.MovementInput.x) > 0.01f
+                           && Mathf.Abs(rb.linearVelocityX) > footstepMinSpeed;
+
+            if (footsteps.Tick(walking, deltaTime)) AudioManager.Play(SoundEffect.PlayerWalk);
         }
 
         public void JumpCut()
@@ -386,6 +404,7 @@ namespace HierarchicalStateMachine
 
             Debug.Log("health " + ctx.health);
             RaiseHealthChanged();
+            AudioManager.Play(SoundEffect.Hit);
 
             rb.AddForce(knockback, ForceMode2D.Impulse);
             CancelAttack();
@@ -906,7 +925,6 @@ namespace HierarchicalStateMachine
         public Transform playerTransform;
         public LineRenderer ropeRenderer;
         public LayerMask grappleableLayer;
-        public AudioClip grapplingAudioClip;
         public float MaxGrappleDistance;
         public float PlayerGrappleRadius;
         public float SwingAcceleration;

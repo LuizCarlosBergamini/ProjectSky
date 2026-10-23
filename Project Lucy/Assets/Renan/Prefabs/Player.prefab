@@ -352,7 +352,6 @@ MonoBehaviour:
   grappleableLayer:
     serializedVersion: 2
     m_Bits: 64
-  grapplingAudioClip: {fileID: 0}
   maxGrappleDistance: 5
   playerGrappleRadius: 5
   swingAcceleration: 40
