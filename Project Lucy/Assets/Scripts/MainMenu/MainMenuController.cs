@@ -161,7 +161,7 @@ public class MainMenuController : MonoBehaviour
         }
 
         SetButtonsInteractable(false);
-        options.Open();
+        options.Open(OptionsMenuMode.MainMenu);
     }
 
     public void QuitGame()
