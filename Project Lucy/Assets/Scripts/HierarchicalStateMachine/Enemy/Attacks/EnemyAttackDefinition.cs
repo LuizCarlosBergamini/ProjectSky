@@ -67,6 +67,18 @@ namespace HierarchicalStateMachine
     }
 
     /// <summary>
+    /// Where the body is drawn on one frame of an attack clip, in world units from the enemy's root (x forward,
+    /// y up from the feet). Attack sheets draw lunges inside the frame while the collider stays at the root, so
+    /// without this the player would swing at the drawn body and miss.
+    /// </summary>
+    [Serializable]
+    public struct AttackFrameBody
+    {
+        public Vector2 center;
+        public Vector2 size;
+    }
+
+    /// <summary>
     /// How much the selector likes this attack in a given situation. Every value multiplies the score;
     /// 1 means "does not care".
     /// </summary>
@@ -130,6 +142,11 @@ namespace HierarchicalStateMachine
         [Tooltip("Total de quadros do clipe (preenchido pelo builder).")]
         [Min(1)] public int totalFrames = 1;
 
+        [Tooltip("Corpo desenhado em cada quadro do clipe (preenchido pelo builder a partir da arte). Durante o " +
+                 "ataque, a hurtbox do inimigo segue estas caixas para o jogador poder acertar o que ve. " +
+                 "Vazio = a hurtbox fica parada na raiz.")]
+        public AttackFrameBody[] bodyFrames = System.Array.Empty<AttackFrameBody>();
+
         [Header("Linha do tempo (wind-up / active / recovery)")]
         public List<AttackSegment> segments = new();
 
@@ -160,13 +177,29 @@ namespace HierarchicalStateMachine
         public AttackScoring scoring = new();
 
         [Header("Telegrafo")]
-        [Tooltip("Cor que pulsa no sprite durante os trechos WindUp. Alfa 0 = sem telegrafo.")]
+        [Tooltip("Cor que pulsa no sprite durante os trechos WindUp (no olhar, tambem nos Active). Alfa 0 = sem telegrafo.")]
         public Color telegraphColor = new Color(1f, 0.55f, 0.55f, 1f);
 
         [Header("Deslocamento do sprite")]
         [Tooltip("Quanto o corpo termina a frente dentro do proprio sprite. Aplicado ao fim do ataque para a " +
                  "troca de volta ao Idle nao puxar o chefe para tras.")]
         public float exitForwardOffset;
+
+        [Header("Volta ao Idle")]
+        [Tooltip("Marcado: no ultimo trecho de recuperacao o corpo volta ao repouso (clipe de retorno ou Idle) " +
+                 "em vez de ficar congelado no ultimo quadro do golpe. A duracao do ataque nao muda.")]
+        public bool settleIntoIdle = true;
+
+        [Tooltip("Segundos que o ultimo quadro do golpe fica na tela antes de voltar ao repouso.")]
+        [Min(0f)] public float recoveryHoldTime = 0.1f;
+
+        [Tooltip("Estado do Animator com a animacao de retorno ao Idle, esticada para caber no resto da " +
+                 "recuperacao. Vazio = usa '<animationState>_Recover' se existir, senao o Enemy_Idle.")]
+        public string recoveryAnimationState;
+
+        /// <summary>The return-to-rest clip to try first; the driver falls back to Enemy_Idle when it is missing.</summary>
+        public string SettleAnimationState =>
+            string.IsNullOrEmpty(recoveryAnimationState) ? animationState + "_Recover" : recoveryAnimationState;
 
         public abstract EnemyAttackMove CreateState(StateMachine machine, State parent, EnemyContext ctx);
 

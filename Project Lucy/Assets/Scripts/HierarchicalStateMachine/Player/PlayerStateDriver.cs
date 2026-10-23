@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -26,15 +27,22 @@ namespace HierarchicalStateMachine
         [SerializeField] private float upperCornerCheckDistance = 0.08f;
         [SerializeField] private float upperCornerCorrectionMax = 0.18f;
         [SerializeField] private int upperCornerCorrectionSteps = 4;
-        
+
+        [Header("Enemy Top Slide")]
+        [Tooltip("Tag dos colliders de inimigo. Em cima deles o player escorrega para a borda mais proxima.")]
+        [SerializeField] private string enemyTag = "Inimigo";
+        [Tooltip("Velocidade horizontal (m/s) com que o player escorrega de cima do inimigo.")]
+        [SerializeField, Min(0f)] private float enemyTopSlideSpeed = 8f;
+
         [SerializeField] CameraFollowObject CameraFollowObject;
 
         [Header("Health")]
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float invulnerabilityTime = 0.4f;
         [SerializeField] private float hitAnimationTime = 0.25f;
-        [Tooltip("Espera apos a morte antes de reiniciar a fase (usado quando nao ha GameManager na cena).")]
+        [Tooltip("Espera minima apos a morte antes de reiniciar a fase (usado quando nao ha GameManager na cena). Se a animacao de morte for mais longa, espera ela terminar.")]
         [SerializeField] private float deathRestartDelay = 1.5f;
+        private const string DeathAnimationState = "Player_Death";
 
         [Header("Attack")]
         [SerializeField] private Transform attackTransform;
@@ -48,14 +56,19 @@ namespace HierarchicalStateMachine
         [SerializeField] private LineRenderer ropeRenderer;
         [SerializeField] private LayerMask grappleableLayer = 1 << 6;
         [SerializeField] private AudioClip grapplingAudioClip;
-        [SerializeField] private float springConstant = 150f;
-        [SerializeField] private float dampingCoefficient = 5f;
         [SerializeField] private float maxGrappleDistance = 5f;
         [SerializeField] private float playerGrappleRadius = 5f;
-        [SerializeField] private float minRopeLength;
-        [SerializeField] private float reelSpeed = 10f;
-        [SerializeField] private float swingForce = 100f;
+        [Tooltip("Aceleracao tangencial (m/s^2) aplicada ao segurar A/D durante o balanco. Independe da massa.")]
+        [SerializeField, Min(0f)] private float swingAcceleration = 40f;
+        [Tooltip("Angulo maximo (graus, a partir da vertical abaixo do ponto) que o balanco atinge so com o input. A/D para de dar energia ao chegar nele, entao nao da para dar voltas no objeto.")]
+        [SerializeField, Range(10f, 90f)] private float maxSwingAngle = 70f;
+        [Tooltip("Velocidade maxima (m/s) enquanto preso na corda.")]
+        [SerializeField, Min(0f)] private float maxSwingSpeed = 25f;
+        [Tooltip("Arrasto linear do corpo durante o balanco. Maior = o balanco morre mais rapido.")]
+        [SerializeField, Min(0f)] private float swingDamping = 0.5f;
         [SerializeField] private float releaseJumpForce = 30f;
+        [Tooltip("Velocidade maxima (m/s) logo apos soltar a corda, ja contando o impulso de releaseJumpForce.")]
+        [SerializeField, Min(0f)] private float maxReleaseSpeed = 35f;
         
         private string lastPath;
         private float invulnerabilityTimer;
@@ -69,6 +82,8 @@ namespace HierarchicalStateMachine
 
         public float AttackDamage => attackDamage + damageBonus;
         public float MaxHealth => maxHealth + maxHealthBonus;
+        /// <summary>Max health before upgrades; the HUD sizes Lucy's bar relative to it.</summary>
+        public float BaseMaxHealth => maxHealth;
         public float RunMaxSpeed => ctx.Data.runMaxSpeed + moveSpeedBonus;
         public float CurrentHealth => ctx.health;
 
@@ -81,9 +96,18 @@ namespace HierarchicalStateMachine
         public bool IsGrounded => ctx.IsGrounded;
         public bool IsAttacking => ctx.IsAttacking;
         public bool IsGrappling => ctx.IsGrappling;
-        public bool IsFacingRight => ctx.isFacingRight;
+        // Rotation y = 0 is the art's right-facing pose, and the attack point sits in front of it.
+        public bool IsFacingRight => Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, 0f)) < 90f;
 
         private readonly RaycastHit2D[] groundHits = new RaycastHit2D[8];
+        private readonly ContactPoint2D[] bodyContacts = new ContactPoint2D[16];
+        // Enemy the player is sliding off, kept until the player has left its top. Contacts drop out
+        // for single physics steps while sliding, and letting input back in on those steps made the
+        // player flicker between the slide and walking the other way.
+        private Collider2D slideEnemy;
+        // Raw horizontal input, read even while ctx.MovementInput is zeroed for the slide.
+        private float slideInputX;
+        private const float SlideTopTolerance = 0.3f;
         
         Rigidbody2D rb;
         StateMachine sm;
@@ -97,6 +121,7 @@ namespace HierarchicalStateMachine
             ctx.rb = rb;
             ctx.playerActions = new PlayerInputs().InGame;
             ctx.animator = this.animator;
+            ctx.spriteRenderer = animator != null ? animator.GetComponent<SpriteRenderer>() : null;
             ctx.Data = this.Data;
             ctx.Jump = Jump;
             ctx.JumpCut = JumpCut;
@@ -104,19 +129,22 @@ namespace HierarchicalStateMachine
             ctx.AttackInputBufferTime = ctx.Data.attackInputBufferTime;
             ctx.ComboGravityMultiplier = ctx.Data.comboGravityMultiplier;
             ctx.MaxComboStep = ctx.Data.maxComboStep;
+            // Start from where the sprite actually looks. The flag used to default to true and was read
+            // inverted, so pressing left first never turned the sprite.
+            ctx.isFacingRight = IsFacingRight;
             this.isFacingRightLocal = ctx.isFacingRight;
             ctx.playerTransform = transform;
             ctx.ropeRenderer = ropeRenderer;
             ctx.grappleableLayer = grappleableLayer;
             ctx.grapplingAudioClip = grapplingAudioClip;
-            ctx.SpringConstant = springConstant;
-            ctx.DampingCoefficient = dampingCoefficient;
             ctx.MaxGrappleDistance = maxGrappleDistance;
             ctx.PlayerGrappleRadius = playerGrappleRadius;
-            ctx.MinRopeLength = minRopeLength;
-            ctx.ReelSpeed = reelSpeed;
-            ctx.SwingForce = swingForce;
+            ctx.SwingAcceleration = swingAcceleration;
+            ctx.MaxSwingAngle = maxSwingAngle;
+            ctx.MaxSwingSpeed = maxSwingSpeed;
+            ctx.SwingDamping = swingDamping;
             ctx.ReleaseJumpForce = releaseJumpForce;
+            ctx.MaxReleaseSpeed = maxReleaseSpeed;
             ctx.DefaultDrag = rb.linearDamping;
             ctx.health = maxHealth;
 
@@ -166,7 +194,8 @@ namespace HierarchicalStateMachine
         {
             if (inputEnabled)
             {
-                if (isActiveAndEnabled) ctx.playerActions.Enable();
+                // A dialog or menu closing after the death must not hand control back.
+                if (isActiveAndEnabled && !ctx.isDead) ctx.playerActions.Enable();
                 return;
             }
 
@@ -209,6 +238,9 @@ namespace HierarchicalStateMachine
         private void Update()
         {
             ctx.MovementInput = ctx.playerActions.Movement.ReadValue<Vector2>();
+            slideInputX = ctx.MovementInput.x;
+            // While sliding off an enemy the input only picks the slide's side, it doesn't walk or turn.
+            if (slideEnemy != null) ctx.MovementInput = Vector2.zero;
             ctx.IsGrounded = CheckGrounded();
             UpdateDamageTimers(Time.deltaTime);
 
@@ -357,9 +389,13 @@ namespace HierarchicalStateMachine
 
             rb.AddForce(knockback, ForceMode2D.Impulse);
             CancelAttack();
-            PlayHitAnimation();
 
-            if (ctx.health > 0f) return;
+            if (ctx.health > 0f)
+            {
+                PlayHitAnimation();
+                return;
+            }
+
             Die();
         }
 
@@ -389,6 +425,9 @@ namespace HierarchicalStateMachine
             hitAnimationTimer = 0f;
             ctx.isDead = true;
             ctx.canWalk = false;
+            // Without this a jump or attack pressed after dying would replace the death clip.
+            SetInputEnabled(false);
+            PlayDeathAnimation();
 
             if (GameManager.instance != null)
             {
@@ -397,11 +436,25 @@ namespace HierarchicalStateMachine
             }
 
             // Levels entered from the Hub have no GameManager; LevelRunManager owns the retry there.
-            if (LevelRunManager.instance != null) Invoke(nameof(RestartLevel), deathRestartDelay);
+            if (LevelRunManager.instance != null) StartCoroutine(RestartLevelAfterDeath());
         }
 
-        private void RestartLevel()
+        private IEnumerator RestartLevelAfterDeath()
         {
+            // Animator.Play only takes effect on the animator's next update, so the death state's
+            // length can be read one frame later.
+            yield return null;
+
+            float delay = deathRestartDelay;
+            if (ctx.animator != null)
+            {
+                AnimatorStateInfo state = ctx.animator.GetCurrentAnimatorStateInfo(0);
+                if (state.shortNameHash == Animator.StringToHash(DeathAnimationState))
+                    delay = Mathf.Max(delay, state.length);
+            }
+
+            yield return new WaitForSeconds(delay);
+
             if (LevelRunManager.instance != null) LevelRunManager.instance.HandlePlayerDeath();
         }
 
@@ -413,7 +466,7 @@ namespace HierarchicalStateMachine
         private void PlayStateAnimation(string stateName)
         {
             if (animator == null || string.IsNullOrEmpty(stateName)) return;
-            if (hitAnimationTimer > 0f) return;
+            if (hitAnimationTimer > 0f || ctx.isDead) return;
 
             int hash = Animator.StringToHash(stateName);
             if (!animator.HasState(0, hash)) return;
@@ -431,6 +484,19 @@ namespace HierarchicalStateMachine
 
             hitAnimationTimer = hitAnimationTime;
             // Restarted from frame 0 so consecutive hits re-trigger the reaction.
+            ctx.animator.Play(hash, 0, 0f);
+        }
+
+        // Placeholder: the controller has no death state yet. Once a state named Player_Death exists
+        // in PlayerAnimator (no parameters or transitions needed) it plays here; until then the
+        // player keeps the pose they died in and the level restarts after deathRestartDelay.
+        private void PlayDeathAnimation()
+        {
+            if (ctx.animator == null) return;
+
+            int hash = Animator.StringToHash(DeathAnimationState);
+            if (!ctx.animator.HasState(0, hash)) return;
+
             ctx.animator.Play(hash, 0, 0f);
         }
 
@@ -454,7 +520,13 @@ namespace HierarchicalStateMachine
         private void RestoreStateAnimation()
         {
             if (ctx.animator == null || ctx.isDead || ctx.IsAttacking) return;
-        
+
+            if (ctx.IsGrappling)
+            {
+                ctx.animator.Play("Player_Grapple");
+                return;
+            }
+
             if (!ctx.IsGrounded)
             {
                 ctx.animator.Play(rb.linearVelocityY > 0f ? "Player_Jump" : "Player_Fall");
@@ -492,7 +564,18 @@ namespace HierarchicalStateMachine
         public void FixedUpdate()
         {
             sm.FixedTick(Time.fixedDeltaTime);
-            RunFunction(1);
+
+            // Standing on an enemy let the attack reach it from above, so the player is pushed off
+            // instead. Input is skipped meanwhile, otherwise holding the other way would cancel the slide.
+            UpdateEnemySlide();
+            if (slideEnemy != null)
+            {
+                rb.linearVelocity = new Vector2(GetSlideDirection(slideEnemy) * enemyTopSlideSpeed, rb.linearVelocityY);
+            }
+            else
+            {
+                RunFunction(1);
+            }
             // ApplyGroundEdgeSnap();
             // ApplyUpperCornerCorrection();
         }
@@ -511,6 +594,81 @@ namespace HierarchicalStateMachine
             }
 
             return false;
+        }
+
+        private bool TryGetEnemyBelow(out Collider2D enemy)
+        {
+            enemy = null;
+            if (ctx.IsGrappling || ctx.isDead || string.IsNullOrEmpty(enemyTag)) return false;
+
+            ContactFilter2D filter = new ContactFilter2D();
+            filter.useTriggers = false;
+            int contactCount = rb.GetContacts(filter, bodyContacts);
+
+            for (int i = 0; i < contactCount; i++)
+            {
+                // The normal points from the other collider towards the player, so an upward
+                // normal means the player is resting on top of it, not touching its side.
+                if (bodyContacts[i].normal.y < minGroundNormalY) continue;
+
+                Collider2D other = bodyContacts[i].collider;
+                if (other == null || !IsEnemy(other)) continue;
+
+                enemy = other;
+                return true;
+            }
+
+            return false;
+        }
+
+        // The tag may sit on the collider itself or on the enemy root that owns the rigidbody.
+        // Comparing strings instead of CompareTag avoids an error log every frame if the tag is
+        // missing from the project's tag list.
+        private bool IsEnemy(Collider2D other)
+        {
+            if (other.gameObject.tag == enemyTag) return true;
+            Rigidbody2D otherBody = other.attachedRigidbody;
+            return otherBody != null && otherBody.gameObject.tag == enemyTag;
+        }
+
+        private void UpdateEnemySlide()
+        {
+            if (TryGetEnemyBelow(out Collider2D enemyBelow))
+            {
+                slideEnemy = enemyBelow;
+                return;
+            }
+
+            if (slideEnemy != null && (ctx.IsGrappling || ctx.isDead || !IsStillOnTopOf(slideEnemy)))
+            {
+                slideEnemy = null;
+            }
+        }
+
+        // A held direction wins; with no input the player goes to the nearest edge.
+        private float GetSlideDirection(Collider2D enemy)
+        {
+            if (Mathf.Abs(slideInputX) > 0.01f) return Mathf.Sign(slideInputX);
+
+            float playerX = bodyCollider != null ? bodyCollider.bounds.center.x : rb.position.x;
+            // Closer to the right edge than the left one exactly when right of the center.
+            return playerX >= enemy.bounds.center.x ? 1f : -1f;
+        }
+
+        // Bridges the steps where the contact drops out: the slide only ends once the player is past
+        // the enemy's edge or clearly above it.
+        private bool IsStillOnTopOf(Collider2D enemy)
+        {
+            if (enemy == null || !enemy.enabled || !enemy.gameObject.activeInHierarchy) return false;
+
+            Bounds enemyBounds = enemy.bounds;
+            Bounds playerBounds = bodyCollider != null
+                ? bodyCollider.bounds
+                : new Bounds(rb.position, Vector3.zero);
+
+            bool overlapsHorizontally = playerBounds.min.x < enemyBounds.max.x && playerBounds.max.x > enemyBounds.min.x;
+            float heightAboveTop = playerBounds.min.y - enemyBounds.max.y;
+            return overlapsHorizontally && heightAboveTop > -SlideTopTolerance && heightAboveTop < SlideTopTolerance;
         }
 
         private void ApplyGroundEdgeSnap()
@@ -649,30 +807,19 @@ namespace HierarchicalStateMachine
         public void TurnCheck()
         {
             // changes direction of player based on movement
-            if (ctx.MovementInput.x > 0 && ctx.isFacingRight) Turn();
-            else if (ctx.MovementInput.x < 0 && !ctx.isFacingRight) Turn();
+            if (ctx.MovementInput.x > 0 && !ctx.isFacingRight) Turn();
+            else if (ctx.MovementInput.x < 0 && ctx.isFacingRight) Turn();
         }
         
         #endregion
         
         private void Turn()
         {
-            if (ctx.isFacingRight)
-            {
-                ctx.isFacingRight = !ctx.isFacingRight;
-                this.isFacingRightLocal = ctx.isFacingRight;
-                transform.rotation = Quaternion.Euler(transform.rotation.x, 0f, transform.rotation.y);
-                // Turn the camera object to smooth the movement
-                CameraFollowObject.CallTurn();
-            }
-            else
-            {
-                ctx.isFacingRight = !ctx.isFacingRight;
-                this.isFacingRightLocal = ctx.isFacingRight;
-                transform.rotation = Quaternion.Euler(transform.rotation.x, 180f, transform.rotation.y);
-                // Turn the camera object to smooth the movement
-                CameraFollowObject.CallTurn();
-            }
+            ctx.isFacingRight = !ctx.isFacingRight;
+            this.isFacingRightLocal = ctx.isFacingRight;
+            transform.rotation = Quaternion.Euler(0f, ctx.isFacingRight ? 0f : 180f, 0f);
+            // Turn the camera object to smooth the movement
+            CameraFollowObject.CallTurn();
         }
         
 
@@ -725,6 +872,7 @@ namespace HierarchicalStateMachine
     {
         public Rigidbody2D rb;
         public Animator animator;
+        public SpriteRenderer spriteRenderer;
         public bool IsGrounded;
         public PlayerInputs.InGameActions playerActions;
         public bool isDead;
@@ -759,14 +907,14 @@ namespace HierarchicalStateMachine
         public LineRenderer ropeRenderer;
         public LayerMask grappleableLayer;
         public AudioClip grapplingAudioClip;
-        public float SpringConstant;
-        public float DampingCoefficient;
         public float MaxGrappleDistance;
         public float PlayerGrappleRadius;
-        public float MinRopeLength;
-        public float ReelSpeed;
-        public float SwingForce;
+        public float SwingAcceleration;
+        public float MaxSwingAngle;
+        public float MaxSwingSpeed;
+        public float SwingDamping;
         public float ReleaseJumpForce;
+        public float MaxReleaseSpeed;
         public float DefaultDrag;
         public bool IsGrappling;
         public Vector2 GrapplePoint;
@@ -776,6 +924,23 @@ namespace HierarchicalStateMachine
         public bool PullTargetIsPlayer;
         public float RopeRestLength;
         public float RopeRestLengthFixed;
+        public int GrappleFrame;
+
+        private static readonly int GrappleSwingParam = Animator.StringToHash("GrappleSwing");
+
+        // Hand of each "Lucy pendurada" frame, in pixels from the 96x64 frame's top-left corner.
+        // The frames sweep the arm from straight ahead (0) through straight up (4) to behind the head (7).
+        private static readonly Vector2[] GrappleHandPixels =
+        {
+            new Vector2(65.5f, 31.5f),
+            new Vector2(66f, 25.5f),
+            new Vector2(61f, 20f),
+            new Vector2(55f, 15.5f),
+            new Vector2(48f, 12.5f),
+            new Vector2(41f, 13.5f),
+            new Vector2(33.5f, 18.5f),
+            new Vector2(30f, 25.5f),
+        };
 
         public bool TryStartGrapple()
         {
@@ -806,15 +971,52 @@ namespace HierarchicalStateMachine
         {
             if (ropeRenderer == null || !ropeRenderer.enabled || playerTransform == null) return;
 
-            ropeRenderer.SetPosition(0, playerTransform.position);
-            Vector3 anchorPoint = GrapplePoint;
+            ropeRenderer.SetPosition(0, GrappleHandPosition());
+            ropeRenderer.SetPosition(1, RopeAnchorPoint());
+        }
 
-            if (!PullTargetIsPlayer && GrappledObject != null)
-            {
-                anchorPoint = GrappledObject.transform.position;
-            }
+        /// <summary>
+        /// Picks the hanging frame whose arm points at the rope's anchor and feeds it to the
+        /// Player_Grapple state, which reads its time from the GrappleSwing parameter.
+        /// </summary>
+        public void UpdateGrapplePose()
+        {
+            if (playerTransform == null) return;
 
-            ropeRenderer.SetPosition(1, anchorPoint);
+            Vector2 toAnchor = (Vector2)RopeAnchorPoint() - (Vector2)playerTransform.position;
+            // The art faces right, so measure the angle in the sprite's own facing.
+            float forward = isFacingRight ? toAnchor.x : -toAnchor.x;
+            // 0 = anchor straight ahead, 90 = straight up, 180 = straight behind.
+            float angle = Mathf.Atan2(toAnchor.y, forward) * Mathf.Rad2Deg;
+            if (angle < 0f) angle = forward >= 0f ? 0f : 180f;
+
+            int lastFrame = GrappleHandPixels.Length - 1;
+            GrappleFrame = Mathf.Clamp(Mathf.RoundToInt(angle / 180f * lastFrame), 0, lastFrame);
+
+            // Sample the middle of the frame so float error never shows the neighbouring one.
+            if (animator != null) animator.SetFloat(GrappleSwingParam, (GrappleFrame + 0.5f) / GrappleHandPixels.Length);
+        }
+
+        private Vector3 RopeAnchorPoint()
+        {
+            if (!PullTargetIsPlayer && GrappledObject != null) return GrappledObject.transform.position;
+            return GrapplePoint;
+        }
+
+        private Vector3 GrappleHandPosition()
+        {
+            if (spriteRenderer == null || spriteRenderer.sprite == null) return playerTransform.position;
+
+            // Going through the sprite's own pivot and pixels-per-unit keeps the hand right if the
+            // import settings or the Sprite object's offset and scale change.
+            Sprite sprite = spriteRenderer.sprite;
+            Vector2 hand = GrappleHandPixels[GrappleFrame];
+            Vector2 local = new Vector2(hand.x - sprite.pivot.x, sprite.rect.height - hand.y - sprite.pivot.y)
+                            / sprite.pixelsPerUnit;
+            if (spriteRenderer.flipX) local.x = -local.x;
+
+            // TransformPoint also applies the 180° turn, so the hand mirrors with the player.
+            return spriteRenderer.transform.TransformPoint(local);
         }
 
         private bool TryFindGrappleTarget(out GrappleableTarget target)

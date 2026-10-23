@@ -6,6 +6,7 @@ TagManager:
   tags:
   - grap
   - Grappleable
+  - Inimigo
   layers:
   - Default
   - TransparentFX

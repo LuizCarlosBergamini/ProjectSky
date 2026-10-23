@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Colosso
   m_EditorClassIdentifier: Assembly-CSharp::BossData_SO
   bossId: Colosso
-  entity: {fileID: 11400000, guid: 21ebbee3a2ca599409a1917c7324bb5f, type: 2}
+  entity: {fileID: 11400000, guid: 5e5bcfff5f674820a181727d1db1949f, type: 2}
   rewardTaskId: missao-boss-3
   previewImage: {fileID: 3975763283138365421, guid: ca4a90c919f12b142a591af16aa5a7ca, type: 3}
   accentColor: {r: 0.3, g: 0.85, b: 0.5, a: 1}
@@ -31,3 +31,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e95b61ce3025f0441a9de87a8d9ad2ec, type: 2}
   requireAllPrerequisites: 1
   lockedHint: 
+  defeatDialog: {fileID: 0}
+  defeatDialogOnlyOnFirstWin: 1
+  upgradeScaling: {fileID: 11400000, guid: 18ef2cc57d7700140964c9454ca81c0b, type: 2}

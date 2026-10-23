@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0229f9af6181a38469057567674f0751, type: 3}
+  m_Name: Missao-boss-3
+  m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
+  dialogs:
+  - dialogId: daisy-boss3-01
+    dialogContent: "Lucy, espera! Sinto uma magia muito forte vindo da arena logo \xE0 frente."
+    nextDialog: daisy-boss3-02
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: daisy-boss3-02
+    dialogContent: "Mais um guardi\xE3o? Depois da Medusa e da Kitsune, j\xE1 estou pronta pra qualquer coisa."
+    nextDialog: daisy-boss3-03
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
+  - dialogId: daisy-boss3-03
+    dialogContent: "Desta vez \xE9 diferente. Dizem que um mago foi quem invocou os outros guardi\xF5es. Ele ataca de longe, com flechas e esferas de magia."
+    nextDialog: daisy-boss3-04
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: daisy-boss3-04
+    dialogContent: "E ele n\xE3o gosta de apanhar: depois de alguns golpes ele recua de repente. N\xE3o deixe ele fugir pra longe!"
+    nextDialog: daisy-boss3-05
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: daisy-boss3-05
+    dialogContent: "Derrote ele e a Esmeralda \xE9 sua. Vou voltar e te esperar no Hub. Boa sorte!"
+    nextDialog: 
+    triggerEvent: missao-boss-3-iniciada
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}

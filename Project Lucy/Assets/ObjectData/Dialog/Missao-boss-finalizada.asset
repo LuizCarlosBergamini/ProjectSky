@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
   dialogs:
   - dialogId: daisy-bossfim-01
-    dialogContent: "Lucy! Voc\xEA derrotou o Guardi\xE3o? Eu sabia que voc\xEA conseguiria!"
+    dialogContent: "Lucy! Voc\xEA derrotou a Medusa? Eu sabia que voc\xEA conseguiria!"
     nextDialog: lucy-bossfim-01
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: lucy-bossfim-01
-    dialogContent: "N\xE3o foi f\xE1cil, mas ele n\xE3o vai mais bloquear o caminho."
+    dialogContent: "N\xE3o foi f\xE1cil, mas ela n\xE3o vai mais bloquear o caminho."
     nextDialog: daisy-bossfim-02
     triggerEvent: 
     dialogDuration: 0

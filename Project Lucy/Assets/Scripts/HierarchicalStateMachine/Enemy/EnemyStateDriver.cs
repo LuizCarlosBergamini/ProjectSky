@@ -29,6 +29,18 @@ namespace HierarchicalStateMachine
         [Tooltip("Chefes: fica parado ate o BossGate fechar a arena (BossGate.OnBossFightStarted).")]
         [SerializeField] private bool waitForActivation;
 
+        [Tooltip("Chefes: fala mostrada quando o BossGate fecha a arena. A luta so comeca quando o dialogo termina, " +
+                 "e o chefe nao leva dano enquanto isso. Vazio = a luta comeca na hora.")]
+        [SerializeField] private Dialog_SO introDialog;
+
+        [Tooltip("Chefes: uma fala por revanche, no lugar do dialogo completo. A 1a e a da 2a luta, a 2a e a da 3a, " +
+                 "e assim por diante; a ultima se repete dai em diante. {N} vira o numero da luta. Quem fala e o " +
+                 "primeiro personagem do Intro Dialog. Vazio = o dialogo completo toda vez.")]
+        [TextArea] [SerializeField] private List<string> retryIntroLines = new();
+
+        [Tooltip("Chefes: depois que o jogador vence este chefe, as revanches comecam sem nenhum dialogo.")]
+        [SerializeField] private bool skipIntroAfterVictory;
+
         [Header("Attack (sem Attack Set)")]
         [SerializeField] private float attackDuration = 0.8f;
         [SerializeField] private float attackHitTime = 0.45f; // when inside the attack damage lands
@@ -46,6 +58,17 @@ namespace HierarchicalStateMachine
         [SerializeField] private float rangedAttackDuration = 0.9f;
         [SerializeField] private float rangedAttackFireTime = 0.45f; // when the projectile leaves
 
+        [Header("Hurtbox")]
+        [Tooltip("Caixa (trigger) que recebe os golpes do jogador. Durante os ataques ela segue o corpo desenhado " +
+                 "em cada quadro (AttackFrameBody), porque as folhas de sprite desenham o bote dentro do quadro " +
+                 "enquanto o collider fica na raiz. Vazio = so o collider da raiz recebe golpes.")]
+        [SerializeField] private BoxCollider2D hurtbox;
+
+        [Tooltip("Corpo desenhado em cada quadro de Enemy_Death (x para frente, y a partir dos pes; preenchido pelo " +
+                 "builder). Ao morrer, a hurtbox e a altura do collider da raiz seguem o corpo caido, que e mais baixo " +
+                 "que o de pe. Vazio = os colliders ficam como estao.")]
+        [SerializeField] private AttackFrameBody[] deathBodyFrames;
+
         [Header("Ground Check")]
         [SerializeField] private Transform groundCheck;
         [SerializeField] private float groundCheckRadius = 0.25f;
@@ -60,11 +83,21 @@ namespace HierarchicalStateMachine
                  "animacao do golpe. O ataque nunca e interrompido, com ou sem esta opcao.")]
         [SerializeField] private bool superArmorWhileAttacking;
 
+        [Header("Evasive Dash")]
+        [Tooltip("Inimigos de longe: depois de levar alguns golpes, dao um dash para tras sem deixar de olhar o jogador.")]
+        [SerializeField] private EnemyDashSettings dash = new EnemyDashSettings();
+        [Tooltip("Raios azuis onde o inimigo some e onde reaparece, quando o dash e um teleporte.")]
+        [SerializeField] private EnemyTeleportSparks teleportSparks = new EnemyTeleportSparks();
+
         [Header("Feedback")]
         [Tooltip("Sprite que recebe o piscar de dano e o telegrafo. Vazio = o do Animator.")]
         [SerializeField] private SpriteRenderer tintRenderer;
         [SerializeField] private Color hitFlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         [SerializeField] private float hitFlashTime = 0.1f;
+        [Tooltip("Pisca o sprite em todo golpe, nao so durante ataques com super armor.")]
+        [SerializeField] private bool flashOnEveryHit = true;
+        [Tooltip("Jato de sangue em particulas ao levar dano.")]
+        [SerializeField] private EnemyHitBlood hitBlood = new EnemyHitBlood();
         [Tooltip("Pulsos por segundo da cor de telegrafo.")]
         [SerializeField] private float telegraphPulseRate = 6f;
 
@@ -80,6 +113,7 @@ namespace HierarchicalStateMachine
 
         private readonly EnemyContext ctx = new EnemyContext();
         private readonly RaycastHit2D[] castHits = new RaycastHit2D[8];
+        private readonly Collider2D[] overlapHits = new Collider2D[8];
         private Rigidbody2D rb;
         private Collider2D bodyCollider;
         private StateMachine sm;
@@ -87,6 +121,10 @@ namespace HierarchicalStateMachine
         private EnemyAttackSet runtimeSet; // legacy set built in Awake, destroyed with this enemy
         private float invulnerabilityTimer;
         private float hitAnimationTimer;
+        private int hitsSinceDash;
+        private bool introRunning;
+        private Dialog_SO activeIntro; // introDialog, the one-line retry built for this fight, or none
+        private Dialog_SO retryIntro;
         private string lastPath;
 
         private Transform target;
@@ -94,6 +132,15 @@ namespace HierarchicalStateMachine
         private Rigidbody2D targetBody;
         private IDamageable targetDamageable;
         private PlayerStateDriver targetPlayer;
+
+        private Vector2 hurtboxRestOffset;
+        private Vector2 hurtboxRestSize;
+        private bool hurtboxMoved;
+        private Vector2 bodyRestOffset;
+        private Vector2 bodyRestSize;
+        private int deathBodyFrame = -1;
+
+        private static readonly int DeathStateHash = Animator.StringToHash("Enemy_Death");
 
         private Color baseTint = Color.white;
         private Color? telegraphColor;
@@ -149,10 +196,23 @@ namespace HierarchicalStateMachine
             animator = ResolveAnimator();
             if (tintRenderer == null && animator != null) tintRenderer = animator.GetComponent<SpriteRenderer>();
             if (tintRenderer != null) baseTint = tintRenderer.color;
+            hitBlood.Init(tintRenderer, groundLayer);
+            if (dash.enabled && dash.teleport) teleportSparks.Init(tintRenderer);
 
             ctx.rb = rb;
             ctx.animator = animator;
             ctx.self = transform;
+            if (hurtbox != null)
+            {
+                hurtboxRestOffset = hurtbox.offset;
+                hurtboxRestSize = hurtbox.size;
+            }
+            if (bodyCollider is BoxCollider2D bodyBox)
+            {
+                bodyRestOffset = bodyBox.offset;
+                bodyRestSize = bodyBox.size;
+            }
+
             ctx.Data = data;
             ctx.Health = data.maxHealth;
             ctx.MaxHealth = data.maxHealth;
@@ -162,6 +222,7 @@ namespace HierarchicalStateMachine
             ctx.DeathDelay = deathDelay;
             ctx.Activated = !waitForActivation;
             ctx.LogDecisions = logAttackDecisions;
+            ctx.Dash = dash;
             if (attackSet == null) runtimeSet = EnemyAttackSet.CreateLegacy(LegacySettings());
             ctx.AttackSet = attackSet != null ? attackSet : runtimeSet;
             ApplyPhase(0, announce: false);
@@ -173,13 +234,18 @@ namespace HierarchicalStateMachine
             ctx.HasAnimation = HasAnimation;
             ctx.PlayAttackAnimation = PlayAttackAnimation;
             ctx.SetAnimationSpeed = SetAnimationSpeed;
+            ctx.PlaySettleAnimation = PlaySettleAnimation;
             ctx.SetTelegraph = SetTelegraph;
             ctx.ApplyHitbox = ApplyHitbox;
             ctx.FireProjectiles = FireProjectiles;
             ctx.ApplyGaze = ApplyGaze;
             ctx.FaceTarget = FaceTarget;
             ctx.CommitForwardOffset = CommitForwardOffset;
+            ctx.SetHurtboxFrame = SetHurtboxFrame;
             ctx.IsPathBlocked = IsPathBlocked;
+            ctx.TeleportBy = TeleportBy;
+            ctx.SetVisible = SetVisible;
+            ctx.EmitTeleportSparks = EmitTeleportSparks;
             ctx.OnDeathFinished = HandleDeathFinished;
 
             // Same bootstrap as PlayerStateDriver: the builder back-fills every State.Machine by
@@ -198,6 +264,7 @@ namespace HierarchicalStateMachine
         {
             BossGate.OnBossFightStarted -= HandleBossFightStarted;
             UpgradeManager.OnUpgradesChanged -= HandleUpgradesChanged;
+            DialogManager.OnDialogFinished -= HandleIntroDialogFinished;
         }
 
         private void Start()
@@ -211,6 +278,9 @@ namespace HierarchicalStateMachine
         private void OnDestroy()
         {
             EnemyAttackSet.DestroyRuntime(runtimeSet);
+            hitBlood.Release();
+            teleportSparks.Release();
+            DestroyRetryIntro();
         }
 
         private void Update()
@@ -233,6 +303,7 @@ namespace HierarchicalStateMachine
             if (hitAnimationTimer > 0f) hitAnimationTimer -= deltaTime;
 
             sm.Tick(deltaTime);
+            if (ctx.IsDead) FitBodyToDeathFrame();
             TurnCheck();
             UpdateTint(deltaTime);
 
@@ -258,7 +329,82 @@ namespace HierarchicalStateMachine
 
         private void HandleBossFightStarted(EnemyStateDriver boss)
         {
-            if (boss == this) Activate();
+            if (boss != this) return;
+
+            if (introRunning) return;
+
+            // Counted before any early return, so a fight without a dialog box still counts as a try.
+            BossProgressionManager progression = BossProgressionManager.instance;
+            bool beaten = progression != null && progression.IsDefeated(bossData);
+            int attempt = progression != null ? progression.RegisterAttempt(bossData) : 1;
+
+            if (skipIntroAfterVictory && beaten) activeIntro = null;
+            else activeIntro = PickIntro(attempt);
+
+            // Without a dialog box in the scene (a level played on its own) the fight simply starts.
+            if (activeIntro == null || DialogManager.instance == null)
+            {
+                Activate();
+                return;
+            }
+
+            introRunning = true;
+            DialogManager.OnDialogFinished += HandleIntroDialogFinished;
+            DialogManager.instance.Init(activeIntro);
+        }
+
+        // First fight: the full intro. Later fights: one line said by the intro's first speaker.
+        private Dialog_SO PickIntro(int attempt)
+        {
+            if (introDialog == null || attempt <= 1 || retryIntroLines == null || retryIntroLines.Count == 0)
+                return introDialog;
+
+            Entity_SO speaker = introDialog.dialogs != null && introDialog.dialogs.Count > 0
+                ? introDialog.dialogs[0].dialogEntity
+                : null;
+            if (speaker == null) return introDialog;
+
+            string line = retryIntroLines[Mathf.Min(attempt - 2, retryIntroLines.Count - 1)];
+            if (string.IsNullOrWhiteSpace(line)) return introDialog;
+
+            DestroyRetryIntro();
+            retryIntro = ScriptableObject.CreateInstance<Dialog_SO>();
+            retryIntro.name = introDialog.name + "-retry-" + attempt;
+            retryIntro.dialogs = new List<DialogItem>
+            {
+                new DialogItem
+                {
+                    dialogId = retryIntro.name,
+                    dialogContent = line.Replace("{N}", attempt.ToString()),
+                    nextDialog = "",
+                    triggerEvent = "",
+                    dialogOptions = new List<DialogOption>(),
+                    dialogEntity = speaker
+                }
+            };
+            return retryIntro;
+        }
+
+        private void DestroyRetryIntro()
+        {
+            if (retryIntro == null) return;
+            Destroy(retryIntro);
+            retryIntro = null;
+        }
+
+        // The fight starts when the intro closes. If another dialog was still open, Init ignored the intro: it is
+        // shown again once that one closes.
+        private void HandleIntroDialogFinished(Dialog_SO finished)
+        {
+            if (finished != activeIntro)
+            {
+                if (DialogManager.instance != null) DialogManager.instance.Init(activeIntro);
+                return;
+            }
+
+            DialogManager.OnDialogFinished -= HandleIntroDialogFinished;
+            introRunning = false;
+            Activate();
         }
 
         private void HandleUpgradesChanged()
@@ -519,6 +665,147 @@ namespace HierarchicalStateMachine
             transform.position = new Vector3(next.x, next.y, transform.position.z);
         }
 
+        // Puts the hurtbox where the body is drawn on this attack frame; (null, _) puts it back at rest. The
+        // hurtbox is a child of the (rotated) root, so its local x is "forward" and mirrors with the facing.
+        // It is never smaller than the resting box, so a coiled frame cannot make her harder to hit.
+        private void SetHurtboxFrame(EnemyAttackDefinition attack, int frame)
+        {
+            if (hurtbox == null) return;
+
+            AttackFrameBody[] frames = attack != null ? attack.bodyFrames : null;
+            if (frames == null || frame < 0 || frame >= frames.Length)
+            {
+                if (!hurtboxMoved) return;
+                hurtbox.offset = hurtboxRestOffset;
+                hurtbox.size = hurtboxRestSize;
+                hurtboxMoved = false;
+                return;
+            }
+
+            hurtbox.offset = frames[frame].center;
+            hurtbox.size = Vector2.Max(frames[frame].size, hurtboxRestSize);
+            hurtboxMoved = true;
+        }
+
+        // While the death clip plays, shrinks the hurtbox and the root collider to the body drawn on the current frame,
+        // so swings and the player's body stop meeting an upright Medusa that is already lying down. The frame comes
+        // from the animator, whatever speed the clip runs at. The root collider keeps its width and its bottom (the
+        // feet), so the rigidbody neither drops nor gets pushed into a wall; only its top comes down.
+        private void FitBodyToDeathFrame()
+        {
+            if (deathBodyFrames == null || deathBodyFrames.Length == 0 || animator == null) return;
+
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+            if (state.shortNameHash != DeathStateHash) return; // the clip has not started yet
+
+            int frame = Mathf.Clamp(Mathf.FloorToInt(state.normalizedTime * deathBodyFrames.Length), 0, deathBodyFrames.Length - 1);
+            if (frame == deathBodyFrame) return;
+            deathBodyFrame = frame;
+
+            AttackFrameBody drawn = deathBodyFrames[frame];
+            if (drawn.size.x <= 0f || drawn.size.y <= 0f) return; // nothing drawn: keep the last box
+
+            if (hurtbox != null)
+            {
+                hurtbox.offset = drawn.center;
+                hurtbox.size = drawn.size;
+                hurtboxMoved = true;
+            }
+
+            if (bodyCollider is BoxCollider2D box)
+            {
+                float bottom = bodyRestOffset.y - bodyRestSize.y * 0.5f;
+                float top = drawn.center.y + drawn.size.y * 0.5f;
+                float height = Mathf.Clamp(top - bottom, 0.1f, bodyRestSize.y);
+                box.size = new Vector2(bodyRestSize.x, height);
+                box.offset = new Vector2(bodyRestOffset.x, bottom + height * 0.5f);
+            }
+        }
+
+        // Moves the body up to distance along directionSign in one step, stopping short of walls and the arena barrier
+        // (the same cast as CommitForwardOffset, so it never ends up inside or past them). Cornered (less room behind
+        // than distance) it reappears on the other side of the player instead, distance away from them, when there
+        // is more room there.
+        private void TeleportBy(float directionSign, float distance)
+        {
+            if (ctx.IsDead || distance <= 0f) return;
+
+            Vector2 direction = new Vector2(Mathf.Sign(directionSign), 0f);
+            float back = Mathf.Min(distance, CastDistance(direction, distance));
+            float x = rb.position.x + direction.x * back;
+
+            if (back < distance && dash.behindTargetWhenCornered && target != null)
+            {
+                // Beyond the player: the far side of them, as seen from here.
+                Vector2 beyond = -direction;
+                float room = FreeDistanceFrom(target.position.x, beyond, distance);
+                float landing = target.position.x + beyond.x * room;
+                // Only worth it when it puts more ground between him and the player than staying put.
+                if (room > back + 0.01f && Mathf.Abs(landing - target.position.x) > Mathf.Abs(rb.position.x - target.position.x))
+                    x = landing;
+            }
+
+            if (Mathf.Approximately(x, rb.position.x)) return;
+
+            Vector2 next = new Vector2(x, rb.position.y);
+            rb.position = next;
+            transform.position = new Vector3(next.x, next.y, transform.position.z);
+            Physics2D.SyncTransforms(); // the reappearing sparks read the collider bounds right away
+        }
+
+        // How far this body could stand from x along direction (up to distance) without touching a wall or the arena
+        // barrier: a cast of the body's box starting at x, at the body's own height. The player is ignored, since it
+        // is standing right there.
+        private float FreeDistanceFrom(float x, Vector2 direction, float distance)
+        {
+            if (bodyCollider == null) return distance;
+
+            const float skin = 0.02f;
+            Bounds b = bodyCollider.bounds;
+            Vector2 origin = new Vector2(x + (b.center.x - rb.position.x), b.center.y);
+            // A little shorter than the body, so the floor it stands on never counts as a wall.
+            Vector2 size = new Vector2(b.size.x * 0.98f, b.size.y * 0.9f);
+            ContactFilter2D filter = new ContactFilter2D { useTriggers = false };
+            filter.SetLayerMask(Physics2D.GetLayerCollisionMask(gameObject.layer));
+
+            // Starting inside a wall (the player against it) leaves no room on that side.
+            int inside = Physics2D.OverlapBox(origin, size, 0f, filter, overlapHits);
+            for (int i = 0; i < inside; i++)
+            {
+                if (IsSolidObstacle(overlapHits[i])) return 0f;
+            }
+
+            int count = Physics2D.BoxCast(origin, size, 0f, direction, filter, castHits, distance + skin);
+            float free = distance;
+            for (int i = 0; i < count; i++)
+            {
+                if (!IsSolidObstacle(castHits[i].collider)) continue;
+                free = Mathf.Min(free, Mathf.Max(0f, castHits[i].distance - skin));
+            }
+            return free;
+        }
+
+        private bool IsSolidObstacle(Collider2D other)
+        {
+            if (other == null || other.isTrigger) return false;
+            if (other == bodyCollider || other.transform.IsChildOf(transform)) return false;
+            if (target != null && other.transform.IsChildOf(target)) return false;
+            return true;
+        }
+
+        // Teleport: hides every sprite of the body (the hit flash and telegraph keep their renderer) and its hurtbox.
+        private void SetVisible(bool visible)
+        {
+            foreach (SpriteRenderer sprite in GetComponentsInChildren<SpriteRenderer>(true)) sprite.enabled = visible;
+            if (hurtbox != null) hurtbox.enabled = visible;
+        }
+
+        private void EmitTeleportSparks()
+        {
+            Bounds body = bodyCollider != null ? bodyCollider.bounds : new Bounds(transform.position + Vector3.up, Vector3.one * 2f);
+            teleportSparks.Emit(body);
+        }
+
         private bool IsPathBlocked(float directionSign)
         {
             const float probe = 0.5f;
@@ -609,6 +896,8 @@ namespace HierarchicalStateMachine
             }
 
             Vector2 origin = projectileSpawnPoint != null ? (Vector2)projectileSpawnPoint.position : rb.position;
+            if (attack.useSpawnOffset)
+                origin = new Vector2(transform.position.x + attack.spawnOffset.x * (ctx.FacingRight ? 1f : -1f), SelfFeetY() + attack.spawnOffset.y);
             Vector2 forward = ctx.FacingRight ? Vector2.right : Vector2.left;
             Vector2 aim = forward;
 
@@ -709,6 +998,29 @@ namespace HierarchicalStateMachine
             if (animator != null) animator.speed = speed;
         }
 
+        // The end of an attack's recovery: instead of freezing on the last strike frame until Chase takes
+        // over, the body eases back to rest. A dedicated return clip is stretched over the time left; without
+        // one the looping idle starts right away, so Chase finds it already playing and nothing restarts.
+        private void PlaySettleAnimation(string stateName, float duration)
+        {
+            if (animator == null) return;
+
+            hitAnimationTimer = 0f;
+            if (HasAnimation(stateName))
+            {
+                animator.speed = 1f;
+                animator.Play(Animator.StringToHash(stateName), 0, 0f);
+                animator.Update(0f); // so the state info below already describes the new clip
+                float length = animator.GetCurrentAnimatorStateInfo(0).length;
+                animator.speed = length > 0f && duration > 0.01f ? length / duration : 1f;
+                return;
+            }
+
+            if (!HasAnimation("Enemy_Idle")) return;
+            animator.speed = 1f;
+            animator.Play(Animator.StringToHash("Enemy_Idle"), 0, 0f);
+        }
+
         private void PlayHitAnimation()
         {
             if (animator == null) return;
@@ -767,6 +1079,8 @@ namespace HierarchicalStateMachine
         public void TakeDamage(float amount, Vector2 knockback)
         {
             if (HasTakenDamage || ctx.IsDead || ctx.Health <= 0f) return;
+            if (introRunning) return; // still talking: the fight has not started
+            if (ctx.Dashing && dash.invulnerable) return;
 
             HasTakenDamage = true;
             invulnerabilityTimer = invulnerabilityTime;
@@ -778,14 +1092,58 @@ namespace HierarchicalStateMachine
             // only the sprite flashes; otherwise the hit reaction borrows the animator for a moment.
             if (superArmorWhileAttacking && ctx.InAttack) hitFlashTimer = hitFlashTime;
             else PlayHitAnimation();
+            if (flashOnEveryHit) hitFlashTimer = hitFlashTime;
 
-            if (ctx.Health > 0f) return;
+            hitBlood.Emit(HitPoint(knockback), BloodDirection(knockback), ctx.Health <= 0f);
+
+            if (ctx.Health > 0f)
+            {
+                CountHitForDash();
+                return;
+            }
 
             hitAnimationTimer = 0f; // do not let the hit flash block the death clip
             ctx.DeathRequested = true;
         }
 
         public bool IsAlive() => ctx.Health > 0f;
+
+        // Every hit counts, during an attack too; once there are enough and the last dash has cooled down, the next
+        // Chase frame starts a dash (an attack in progress finishes first).
+        private void CountHitForDash()
+        {
+            if (!dash.enabled || ctx.Dashing || ctx.DashRequested) return;
+
+            hitsSinceDash++;
+            if (hitsSinceDash < dash.hitsToDash || ctx.Clock < ctx.DashReadyTime) return;
+
+            hitsSinceDash = 0;
+            ctx.DashRequested = true;
+        }
+
+        // Blood flies the way the hit pushes. Knockback is zero for some damage sources, so then it
+        // flies away from the player, or out of the enemy's back when there is no player.
+        private float BloodDirection(Vector2 knockback)
+        {
+            if (Mathf.Abs(knockback.x) > 0.01f) return Mathf.Sign(knockback.x);
+            if (target != null) return transform.position.x >= target.position.x ? 1f : -1f;
+            return ctx.FacingRight ? -1f : 1f;
+        }
+
+        // Upper body, on the side facing the attacker, so the spray starts where the blade landed. The hurtbox is
+        // what the player hit: during an attack it follows the body drawn on the current frame (the lunge draws her
+        // well ahead of the root), so the spray comes out of the sprite instead of the empty spot she left.
+        private Vector2 HitPoint(Vector2 knockback)
+        {
+            Collider2D struck = hurtbox != null && hurtbox.enabled ? hurtbox : bodyCollider;
+            if (struck == null) return transform.position;
+
+            Bounds b = struck.bounds;
+            float towardAttacker = -BloodDirection(knockback);
+            return new Vector2(
+                b.center.x + towardAttacker * b.extents.x * 0.4f,
+                b.center.y + b.extents.y * UnityEngine.Random.Range(-0.1f, 0.35f));
+        }
 
         public void Heal(int amount)
         {
@@ -825,6 +1183,16 @@ namespace HierarchicalStateMachine
 
             if (attackSet != null) DrawAttackSetGizmos(facingRight);
             else DrawLegacyConeGizmo(forward);
+
+            if (hurtbox != null)
+            {
+                // The box the player's swings test; it moves with the drawn body during attacks.
+                Gizmos.color = new Color(0f, 1f, 1f, 0.9f);
+                Matrix4x4 previous = Gizmos.matrix;
+                Gizmos.matrix = hurtbox.transform.localToWorldMatrix;
+                Gizmos.DrawWireCube(hurtbox.offset, hurtbox.size);
+                Gizmos.matrix = previous;
+            }
 
             if (projectileSpawnPoint != null)
             {

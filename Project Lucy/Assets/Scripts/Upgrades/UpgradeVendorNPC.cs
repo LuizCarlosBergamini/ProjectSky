@@ -3,12 +3,16 @@ using UnityEngine;
 /// <summary>
 /// Turns a regular NPC into the upgrade vendor: the NPC component still owns the trigger, the prompt and
 /// the dialog, and once the dialog this NPC started is over the upgrade canvas opens.
+/// Only shows up in the Hub after the first boss is beaten (any boss, see BossProgressionManager.HasDefeatedAnyBoss).
 /// </summary>
 [RequireComponent(typeof(NPC))]
 public class UpgradeVendorNPC : MonoBehaviour
 {
     [Tooltip("Canvas aberto ao fim do dialogo. Vazio = o UpgradeCanvas da cena.")]
     [SerializeField] private UpgradeCanvas _upgradeCanvas;
+
+    [Tooltip("Esconde o vendedor ao carregar a cena enquanto nenhum chefe foi derrotado.")]
+    [SerializeField] private bool _requireBossDefeat = true;
 
     private NPC _npc;
 
@@ -19,6 +23,17 @@ public class UpgradeVendorNPC : MonoBehaviour
     private void Awake()
     {
         _npc = GetComponent<NPC>();
+    }
+
+    private void Start()
+    {
+        // Checked once on load, like DisableOnTaskStatus: bosses are fought in their own scenes, so the Hub is
+        // always reloaded after a defeat. Without a BossProgressionManager (scene played on its own) the vendor stays.
+        BossProgressionManager progression = BossProgressionManager.instance;
+        if (_requireBossDefeat && progression != null && !progression.HasDefeatedAnyBoss)
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     private void OnEnable()

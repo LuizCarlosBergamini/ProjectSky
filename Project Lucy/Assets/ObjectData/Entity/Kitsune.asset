@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7736f259fa3d6ef48978f884933ef6e0, type: 3}
-  m_Name: Guardiao
+  m_Name: Kitsune
   m_EditorClassIdentifier: Assembly-CSharp::Entity_SO
-  entityName: "Guardi\xE3o"
-  entitySprite: {fileID: -3318188226485093758, guid: e1b704ea83c2c3749af424cafb55d780, type: 3}
+  entityName: Kitsune
+  entitySprite: {fileID: -1055501642, guid: 64d6aceaf05517a4ba06c5825c43d286, type: 3}
   enitityAnimation: {fileID: 0}

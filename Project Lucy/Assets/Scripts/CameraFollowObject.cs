@@ -44,7 +44,7 @@ public class CameraFollowObject : MonoBehaviour
 
     private float DetermineEndRotation()
     {
-        // Retorna a rotação baseada no estado ATUAL, sem inverter
-        return isFacingRight ? 180f : 0f;
+        // Acompanha a rotacao do player: 0 olhando para a direita, 180 para a esquerda
+        return isFacingRight ? 0f : 180f;
     }
 }

@@ -106,6 +106,7 @@ public static class UpgradeSystemBuilder
 
             List<Item_SO> rowMaterials = PrepareUpgradeMaterials();
             List<UpgradeTree_SO> trees = BuildData(sprites, rowMaterials);
+            BuildTierIcons(trees);
 
             GameObject managerPrefab = BuildManagerPrefab(trees);
             UpgradeCanvas canvasPrefab = BuildUiPrefabs(sprites, overwriteUi);
@@ -189,6 +190,94 @@ public static class UpgradeSystemBuilder
         }
 
         return AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+    }
+
+    [MenuItem("Tools/Lucy/Build Upgrade Tier Icons")]
+    public static void BuildTierIconsMenu()
+    {
+        EnsureFolder(SpriteFolder);
+
+        List<UpgradeTree_SO> trees = new();
+        foreach (string guid in AssetDatabase.FindAssets("t:UpgradeTree_SO", new[] { DataFolder }))
+        {
+            UpgradeTree_SO tree = AssetDatabase.LoadAssetAtPath<UpgradeTree_SO>(AssetDatabase.GUIDToAssetPath(guid));
+            if (tree != null) trees.Add(tree);
+        }
+
+        int assigned = BuildTierIcons(trees);
+        AssetDatabase.SaveAssets();
+        Debug.Log($"[Upgrades] Icones por nivel: {assigned} no(s) atualizado(s).");
+    }
+
+    /// <summary>
+    /// Gives every level above the first its own icon, so the HUD and the menu can show how far a tree went:
+    /// level 2 = the tree's symbol inside a ring, level 3 and up = ring plus four studs. Only nodes that still
+    /// use the shared tree icon are changed, so art assigned by hand is never replaced. Returns how many changed.
+    /// </summary>
+    public static int BuildTierIcons(IEnumerable<UpgradeTree_SO> trees)
+    {
+        int assigned = 0;
+        foreach (UpgradeTree_SO tree in trees)
+        {
+            if (tree == null || tree.nodes == null || tree.nodes.Count == 0) continue;
+            if (!TierSymbol(tree, out string symbolName, out Func<Vector2, float> symbol)) continue;
+
+            foreach (KeyValuePair<UpgradeNode_SO, int> pair in tree.GetNodeDepths())
+            {
+                UpgradeNode_SO node = pair.Key;
+                if (pair.Value < 1) continue;
+                if (node.nodeIcon != null && node.nodeIcon != tree.treeIcon) continue;
+
+                int tier = Mathf.Min(pair.Value + 1, 3);
+                Sprite icon = GenerateSprite($"upgrade_icon_{symbolName}_{tier}", 128, p => TierIconAlpha(p, symbol, tier));
+                if (icon == null) continue;
+
+                Undo.RecordObject(node, "Set upgrade tier icon");
+                node.nodeIcon = icon;
+                EditorUtility.SetDirty(node);
+                assigned++;
+            }
+        }
+
+        return assigned;
+    }
+
+    // The tree's symbol comes from the stat of its first node, the same way BuildData picked its icon.
+    private static bool TierSymbol(UpgradeTree_SO tree, out string symbolName, out Func<Vector2, float> symbol)
+    {
+        UpgradeNode_SO first = tree.nodes.Find(n => n != null);
+        UpgradeStat stat = first != null ? first.stat : UpgradeStat.Damage;
+        (symbolName, symbol) = stat switch
+        {
+            UpgradeStat.Damage => ("damage", (Func<Vector2, float>)SwordSdf),
+            UpgradeStat.MaxHealth => ("life", HeartSdf),
+            UpgradeStat.MoveSpeed => ("speed", BoltSdf),
+            _ => (null, null)
+        };
+
+        if (symbol != null) return true;
+        Debug.LogWarning($"[Upgrades] Sem simbolo para o atributo {stat}; arvore '{tree.name}' mantem seus icones.", tree);
+        return false;
+    }
+
+    private static float TierIconAlpha(Vector2 pixel, Func<Vector2, float> symbol, int tier)
+    {
+        // Symbol shrunk so the ring (radius 55-60 px) fits around it inside the 128 px icon.
+        const float symbolScale = 58f * 0.72f;
+        float alpha = Fill(symbol(pixel / symbolScale) * symbolScale);
+        alpha = Mathf.Max(alpha, Ring(pixel.magnitude - 60f, 5f));
+
+        if (tier < 3) return alpha;
+
+        for (int i = 0; i < 4; i++)
+        {
+            float angle = (45f + 90f * i) * Mathf.Deg2Rad;
+            Vector2 offset = pixel - new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 57.5f;
+            float diamond = (Mathf.Abs(offset.x) + Mathf.Abs(offset.y) - 10f) * 0.7071f;
+            alpha = Mathf.Max(alpha, Fill(diamond));
+        }
+
+        return alpha;
     }
 
     // Signed distances: negative inside, in pixels. Alpha helpers give one pixel of antialiasing.

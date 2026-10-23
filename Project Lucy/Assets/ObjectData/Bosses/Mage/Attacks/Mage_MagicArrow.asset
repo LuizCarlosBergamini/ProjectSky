@@ -1,0 +1,128 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d971258493281744c9b6efbfa656cf01, type: 3}
+  m_Name: Mage_MagicArrow
+  m_EditorClassIdentifier: Assembly-CSharp::HierarchicalStateMachine.ProjectileAttackDefinition
+  displayName: Flecha Magica
+  animationState: Mage_MagicArrow
+  driveAnimation: 1
+  sourceFrameRate: 10
+  totalFrames: 6
+  bodyFrames:
+  - center: {x: -0.02, y: 1.26}
+    size: {x: 1.66, y: 2.62}
+  - center: {x: 0.06, y: 1.26}
+    size: {x: 1.98, y: 2.62}
+  - center: {x: 0.28, y: 1.3}
+    size: {x: 2.26, y: 2.7}
+  - center: {x: 0.28, y: 1.3}
+    size: {x: 2.26, y: 2.7}
+  - center: {x: 0.28, y: 1.3}
+    size: {x: 2.26, y: 2.7}
+  - center: {x: 0.28, y: 1.3}
+    size: {x: 2.26, y: 2.7}
+  segments:
+  - label: ergue o arco
+    kind: 0
+    firstFrame: 0
+    lastFrame: 1
+    duration: 0.3
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  - label: puxa a corda
+    kind: 0
+    firstFrame: 2
+    lastFrame: 5
+    duration: 0.55
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  - label: solta
+    kind: 1
+    firstFrame: 1
+    lastFrame: 1
+    duration: 0.12
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  - label: abaixa o arco
+    kind: 2
+    firstFrame: 0
+    lastFrame: 0
+    duration: 0.3
+    advanceDistance: 0
+    hitbox:
+      shape: 0
+      offset: {x: 1, y: 1}
+      size: {x: 2, y: 2}
+      coneRadius: 2
+      coneAngle: 100
+      damage: 10
+      knockback: 20
+      verticalKnockback: 0.5
+  minRange: 3.5
+  maxRange: 20
+  maxTargetHeight: 7
+  minTargetHeight: -3
+  requiresLineOfSight: 1
+  cooldown: 2
+  minPhase: 0
+  scoring:
+    weight: 1.2
+    enragedMultiplier: 1
+    targetAirborne: 1.2
+    targetAttacking: 1
+    targetRetreating: 1.3
+    targetGrappling: 1.4
+    targetPetrified: 1
+    targetFacing: 1
+    targetFacingAway: 1
+    lingerBonusPerSecond: 0
+    maxLingerMultiplier: 2
+  telegraphColor: {r: 0.6, g: 0.75, b: 1, a: 1}
+  exitForwardOffset: 0
+  settleIntoIdle: 1
+  recoveryHoldTime: 0.1
+  recoveryAnimationState: 
+  projectilePrefab: {fileID: 7988919051436063746, guid: c647c2198e12fea42b69ad926e2f6c80, type: 3}
+  speed: 15
+  damage: 28
+  knockback: 18
+  count: 1
+  extraProjectilesPerPhase: 2
+  spreadAngle: 16
+  aimAtTarget: 1
+  maxAimAngle: 35
+  useSpawnOffset: 1
+  spawnOffset: {x: 1.26, y: 1.56}

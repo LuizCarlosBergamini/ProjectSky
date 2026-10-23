@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Tools > Lucy > Build Boss Adaptation. Makes Medusa adapt to the bronze-row upgrades and adds the feedback UI:
 /// - Medusa_UpgradeScaling.asset: one response per upgrade paid in Engrenagem de Bronze, balanced by the
-///   "half the advantage" rule, linked on the Level1 boss data (Guardiao.asset).
+///   "half the advantage" rule, linked on the Level1 boss data (Medusa.asset).
 /// - HUD.prefab: an "Adaptada" panel under the boss bar, listing every active adaptation.
 /// - UpgradeCanvas.prefab: a warning line in the upgrade detail panel ("Medusa se adapta: +25% vida").
 /// Safe to run again: it only adds what is missing and never overwrites tuning. The two UI builders call the
@@ -17,7 +17,7 @@ using UnityEngine.UI;
 public static class BossAdaptationBuilder
 {
     private const string ScalingPath = "Assets/ObjectData/Bosses/Medusa/Medusa_UpgradeScaling.asset";
-    private const string BossDataPath = "Assets/ObjectData/Bosses/Guardiao.asset";
+    private const string BossDataPath = "Assets/ObjectData/Bosses/Medusa.asset";
     private const string HudPrefabPath = "Assets/Renan/Prefabs/UI/HUD.prefab";
     private const string UpgradeCanvasPrefabPath = "Assets/Renan/Prefabs/UpgradeCanvas.prefab";
     private const string BronzeItemId = "engrenagem_bronze";

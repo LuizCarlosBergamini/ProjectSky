@@ -261,10 +261,7 @@ namespace HierarchicalStateMachine
 
     public class Grappling : State
     {
-        // Hard floor for the reel-in, so the rope can never collapse to zero length and blow the
-        // spring up (MinRopeLength is left at 0 in the inspector by default).
-        private const float MinRopeLengthFloor = 0.25f;
-        private const float SwingDamping = 0.5f;
+        private const float RopeTautTolerance = 0.02f;
 
         private readonly PlayerContext ctx;
         private bool shouldExit;
@@ -319,6 +316,9 @@ namespace HierarchicalStateMachine
             ctx.RopeRestLengthFixed = Vector2.Distance(ctx.rb.position, ctx.GrapplePoint);
             ctx.RopeRestLength = ctx.RopeRestLengthFixed;
 
+            ctx.UpdateGrapplePose();
+            ctx.PlayAnimation?.Invoke("Player_Grapple");
+
             if (ctx.ropeRenderer != null)
             {
                 ctx.ropeRenderer.positionCount = 2;
@@ -329,7 +329,7 @@ namespace HierarchicalStateMachine
             if (ctx.ForceTarget != null)
             {
                 originalTargetDamping = ctx.ForceTarget.linearDamping;
-                ctx.ForceTarget.linearDamping = SwingDamping;
+                ctx.ForceTarget.linearDamping = ctx.SwingDamping;
                 dampingOverridden = true;
             }
         }
@@ -355,17 +355,21 @@ namespace HierarchicalStateMachine
                 ctx.GrapplePoint = ctx.GrappleTarget.GetAnchorPoint();
             }
 
-            if (ctx.playerActions.Fire.IsPressed())
+            // Hold-to-grapple: letting go of Fire drops the rope and keeps the swing momentum,
+            // without the upward boost that the Space release gives.
+            if (!ctx.playerActions.Fire.IsPressed())
             {
-                ctx.RopeRestLength -= ctx.ReelSpeed * deltaTime;
-                ctx.RopeRestLength = Mathf.Max(ctx.RopeRestLength, Mathf.Max(MinRopeLengthFloor, ctx.MinRopeLength));
+                shouldExit = true;
             }
-
-            if (ctx.playerActions.Release.WasPressedThisFrame())
+            else if (ctx.playerActions.Release.WasPressedThisFrame())
             {
                 if (ctx.ForceTarget.bodyType == RigidbodyType2D.Dynamic)
                 {
-                    ctx.ForceTarget.AddForce(Vector2.up * ctx.ReleaseJumpForce, ForceMode2D.Impulse);
+                    // Same as an upward impulse, but applied to the velocity right away so the
+                    // release speed can be capped together with the swing momentum it carries.
+                    Vector2 releaseVelocity = ctx.ForceTarget.linearVelocity
+                                              + Vector2.up * (ctx.ReleaseJumpForce / ctx.ForceTarget.mass);
+                    ctx.ForceTarget.linearVelocity = Vector2.ClampMagnitude(releaseVelocity, ctx.MaxReleaseSpeed);
                 }
 
                 // Release shares the Space binding with Jump, so the press also filled the jump
@@ -374,51 +378,84 @@ namespace HierarchicalStateMachine
                 shouldExit = true;
             }
 
+            ctx.UpdateGrapplePose();
             ctx.UpdateRopeVisuals();
         }
 
         protected override void OnFixedUpdate(float fixedDeltaTime)
         {
-            if (ctx.ForceTarget == null)
+            Rigidbody2D body = ctx.ForceTarget;
+            if (body == null)
             {
                 shouldExit = true;
                 return;
             }
 
-            Vector2 anchorPoint = ctx.GrapplePoint;
-            Vector2 currentPosition = ctx.ForceTarget.position;
+            Vector2 anchorPoint = ctx.PullTargetIsPlayer ? ctx.GrapplePoint : ctx.rb.position;
+            Vector2 toBody = body.position - anchorPoint;
+            float distance = toBody.magnitude;
+            if (distance < 0.001f) return;
 
-            if (!ctx.PullTargetIsPlayer)
+            if (body.bodyType != RigidbodyType2D.Dynamic)
             {
-                anchorPoint = ctx.rb.position;
+                if (distance > ctx.RopeRestLength) shouldExit = true;
+                return;
             }
 
-            Vector2 vectorToAnchor = currentPosition - anchorPoint;
-            float currentDistance = vectorToAnchor.magnitude;
+            // Small slack tolerance so float noise after the position correction below does not
+            // flicker the rope between taut and slack every step.
+            bool ropeTaut = distance >= ctx.RopeRestLength - RopeTautTolerance;
 
-            if (currentDistance > ctx.RopeRestLength && currentDistance > 0.001f)
+            Vector2 radial = toBody / distance;
+            Vector2 velocity = body.linearVelocity;
+
+            // Inextensible rope instead of a spring: a taut rope cancels any velocity that would
+            // stretch it. The old spring stored energy and gave it back as random jolts, and its
+            // damping acted on the whole velocity, which also ate the swing itself.
+            if (ropeTaut)
             {
-                if (ctx.ForceTarget.bodyType != RigidbodyType2D.Dynamic)
-                {
-                    shouldExit = true;
-                    return;
-                }
-
-                float displacementMagnitude = currentDistance - ctx.RopeRestLength;
-                Vector2 displacementVector = displacementMagnitude * vectorToAnchor.normalized;
-                Vector2 springForce = -ctx.SpringConstant * displacementVector;
-                Vector2 dampingForce = -ctx.DampingCoefficient * ctx.ForceTarget.linearVelocity;
-
-                ctx.ForceTarget.AddForce(springForce + dampingForce, ForceMode2D.Force);
+                float radialSpeed = Vector2.Dot(velocity, radial);
+                if (radialSpeed > 0f) velocity -= radial * radialSpeed;
             }
 
             float horizontalInput = ctx.playerActions.Swing.ReadValue<float>();
-            if (Mathf.Abs(horizontalInput) > 0.01f && vectorToAnchor.sqrMagnitude > 0.001f)
+            // Only pump while hanging below the anchor. Above it the old perpendicular force kept
+            // pushing along the circle, so holding D spun the player around the object forever.
+            if (ropeTaut && Mathf.Abs(horizontalInput) > 0.01f && radial.y < 0f)
             {
-                Vector2 perpendicularDirection = new Vector2(-vectorToAnchor.y, vectorToAnchor.x).normalized;
-                Vector2 swingForceVector = perpendicularDirection * ctx.SwingForce * horizontalInput;
-                ctx.ForceTarget.AddForce(swingForceVector, ForceMode2D.Force);
+                // Below the anchor this tangent always points right, so D always pushes right.
+                Vector2 tangent = new Vector2(-radial.y, radial.x);
+                float tangentSpeed = Vector2.Dot(velocity, tangent);
+                bool braking = tangentSpeed * horizontalInput < 0f;
+
+                if (braking || SwingEnergyBelowLimit(body, velocity, toBody.y))
+                {
+                    velocity += tangent * (horizontalInput * ctx.SwingAcceleration * fixedDeltaTime);
+                }
             }
+
+            body.linearVelocity = Vector2.ClampMagnitude(velocity, ctx.MaxSwingSpeed);
+
+            // Pull the body back onto the rope. The length is fixed at attach time: holding Fire
+            // keeps the grapple attached but does not reel the rope in.
+            if (distance > ctx.RopeRestLength)
+            {
+                body.position = anchorPoint + radial * ctx.RopeRestLength;
+            }
+        }
+
+        /// <summary>
+        /// True while the swing's energy is below what it takes to reach MaxSwingAngle, so input can
+        /// build the swing up to that angle and never past it (and never into a full loop).
+        /// </summary>
+        private bool SwingEnergyBelowLimit(Rigidbody2D body, Vector2 velocity, float heightBelowAnchor)
+        {
+            float gravity = Mathf.Abs(Physics2D.gravity.y * body.gravityScale);
+            float ropeLength = ctx.RopeRestLength;
+            float heightAboveLowestPoint = ropeLength + heightBelowAnchor;
+            float energy = 0.5f * velocity.sqrMagnitude + gravity * heightAboveLowestPoint;
+            float maxEnergy = gravity * ropeLength * (1f - Mathf.Cos(ctx.MaxSwingAngle * Mathf.Deg2Rad));
+            return energy < maxEnergy;
         }
 
         protected override void OnExit()

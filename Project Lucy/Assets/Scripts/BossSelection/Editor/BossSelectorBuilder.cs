@@ -15,7 +15,7 @@ using Scene = UnityEngine.SceneManagement.Scene;
 
 /// <summary>
 /// Generates everything the boss selector needs so nothing has to be wired by hand: placeholder sprites, the
-/// grayscale material, the boss data (extending the existing Guardiao asset), the UI prefabs, the Level2 and
+/// grayscale material, the boss data (extending the existing Medusa asset), the UI prefabs, the Level2 and
 /// Level3 scenes (copies of Level1), their Build Settings entries and the Hub setup (manager, canvas, the
 /// portal trigger and the two new reward tasks).
 /// Safe to run again: data, sprites, scenes and scene objects are only created when missing, so art swaps and
@@ -89,14 +89,16 @@ public static class BossSelectorBuilder
     {
         new()
         {
-            assetName = "Guardiao", displayName = "Guardião", taskId = Level1BossTaskId,
+            // The Level1 boss is the Medusa; its bossId stays "Guardiao" so existing saves keep the defeat.
+            assetName = "Medusa", displayName = "Medusa", taskId = Level1BossTaskId,
             scenePath = Level1ScenePath, backgroundVariant = "Normal BG", previewFile = "Background Castle .png",
             accent = new Color(0.86f, 0.56f, 0.3f, 1f), difficulty = 1
         },
         new()
         {
-            assetName = "Sentinela", displayName = "Sentinela", taskId = "missao-boss-2",
-            taskTitle = "Derrotar a Sentinela", taskDescription = "Derrote a Sentinela da arena do Level 2",
+            // The Level2 boss is the Kitsune (KitsuneBossBuilder); the asset keeps its placeholder name for saves.
+            assetName = "Sentinela", displayName = "Kitsune", taskId = "missao-boss-2",
+            taskTitle = "Derrotar a Kitsune", taskDescription = "Derrote a Kitsune da arena do Level 2",
             rewardItemPath = "Assets/ObjectData/Items/Engrenagem_Ouro.asset",
             scenePath = "Assets/Scenes/Level2.unity", backgroundVariant = "Autumn BG", previewFile = "Background Castle Autumn.png",
             accent = new Color(0.98f, 0.78f, 0.18f, 1f), bossTint = new Color(1f, 0.85f, 0.35f, 1f), bossX = 28f,
@@ -104,8 +106,9 @@ public static class BossSelectorBuilder
         },
         new()
         {
-            assetName = "Colosso", displayName = "Colosso", taskId = "missao-boss-3",
-            taskTitle = "Derrotar o Colosso", taskDescription = "Derrote o Colosso da arena do Level 3",
+            // The Level3 boss is the Mage (MageBossBuilder); the asset keeps its placeholder name for saves.
+            assetName = "Colosso", displayName = "O Mago", taskId = "missao-boss-3",
+            taskTitle = "Derrotar o Mago", taskDescription = "Derrote o Mago da arena do Level 3",
             rewardItemPath = "Assets/ObjectData/Items/Emerald.asset",
             scenePath = "Assets/Scenes/Level3.unity", backgroundVariant = "Winter BG", previewFile = "Background Castle  Winter.png",
             accent = new Color(0.3f, 0.85f, 0.5f, 1f), bossTint = new Color(0.5f, 1f, 0.65f, 1f), bossX = 20f,
@@ -361,8 +364,8 @@ public static class BossSelectorBuilder
 
     private static void BuildBossData(Sprites sprites)
     {
-        Entity_SO guardian = AssetDatabase.LoadAssetAtPath<Entity_SO>($"{EntityFolder}/Guardiao.asset");
-        Sprite placeholderPortrait = guardian != null ? guardian.entitySprite : null;
+        Entity_SO medusa = AssetDatabase.LoadAssetAtPath<Entity_SO>($"{EntityFolder}/Medusa.asset");
+        Sprite placeholderPortrait = medusa != null ? medusa.entitySprite : null;
 
         foreach (BossSpec spec in Specs)
         {
@@ -372,7 +375,7 @@ public static class BossSelectorBuilder
             {
                 entity = ScriptableObject.CreateInstance<Entity_SO>();
                 entity.entityName = spec.displayName;
-                // Placeholder portrait: the Guardiao's sprite, until the boss has art of its own.
+                // Placeholder portrait: the Medusa's sprite, until the boss has art of its own.
                 entity.entitySprite = placeholderPortrait;
                 AssetDatabase.CreateAsset(entity, entityPath);
             }
