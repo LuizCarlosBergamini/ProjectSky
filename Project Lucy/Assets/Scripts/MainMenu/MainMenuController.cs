@@ -136,8 +136,7 @@ public class MainMenuController : MonoBehaviour
     {
         if (_loading || IsOptionsOpen || !CanContinue) return;
 
-        // TODO(save-system): SaveSystem.TryLoadMostRecent is a placeholder that always fails. Once it restores the
-        // managers and returns the saved scene, this path is complete and needs no other change.
+        // SaveSystem reads the save and returns its scene; the data reaches the managers once that scene loads.
         if (!SaveSystem.TryLoadMostRecent(out string sceneName) || string.IsNullOrEmpty(sceneName))
         {
             Debug.LogWarning("Nao foi possivel carregar o save mais recente.", this);

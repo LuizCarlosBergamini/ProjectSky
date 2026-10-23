@@ -166,6 +166,53 @@ public class InventoryManager : MonoBehaviour
 
     #endregion
 
+    #region Persistence Hooks
+
+    /// <summary>
+    /// Quantity owned per itemId, for the save. With <paramref name="excludeRunPickups"/>, what was picked up in the
+    /// current run is left out, since dying would take it back anyway.
+    /// </summary>
+    public Dictionary<string, int> GetSavedQuantities(bool excludeRunPickups)
+    {
+        Dictionary<string, int> quantities = new();
+        foreach (KeyValuePair<string, InventorySlot> entry in _inventory)
+        {
+            int quantity = entry.Value.quantity;
+            if (excludeRunPickups && _runPickups.TryGetValue(entry.Key, out int picked)) quantity -= picked;
+            if (quantity > 0) quantities[entry.Key] = quantity;
+        }
+
+        return quantities;
+    }
+
+    /// <summary>Replaces the whole inventory (a loaded save). Starts with an empty run ledger.</summary>
+    public void LoadInventory(IEnumerable<InventorySlot> slots)
+    {
+        _inventory.Clear();
+        _runPickups.Clear();
+
+        if (slots != null)
+        {
+            foreach (InventorySlot slot in slots)
+            {
+                if (slot == null || slot.item == null || slot.quantity <= 0) continue;
+                if (_inventory.TryGetValue(slot.item.itemId, out InventorySlot existing))
+                    existing.quantity += slot.quantity;
+                else
+                    _inventory.Add(slot.item.itemId, new InventorySlot { item = slot.item, quantity = slot.quantity });
+            }
+        }
+
+        if (TaskManager.instance != null)
+        {
+            TaskManager.instance.RefreshTasksProgress();
+        }
+
+        RaiseChanged();
+    }
+
+    #endregion
+
     private void RaiseChanged()
     {
 #if UNITY_EDITOR
