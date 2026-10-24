@@ -1,40 +1,7 @@
 fileFormatVersion: 2
 guid: 3396055c5ce850e4496dc6f68c1c1352
 TextureImporter:
-  internalIDToNameTable:
-  - first:
-      213: 7982529604382452484
-    second: GandalfHardcore Portal sheet_0
-  - first:
-      213: 3112881697293573092
-    second: GandalfHardcore Portal sheet_1
-  - first:
-      213: 6391050010181652356
-    second: GandalfHardcore Portal sheet_2
-  - first:
-      213: -3695036991864030299
-    second: GandalfHardcore Portal sheet_3
-  - first:
-      213: -6725342436241469424
-    second: GandalfHardcore Portal sheet_4
-  - first:
-      213: 8270057224887732137
-    second: GandalfHardcore Portal sheet_5
-  - first:
-      213: -4570235268861209988
-    second: GandalfHardcore Portal sheet_6
-  - first:
-      213: -3650382923859178628
-    second: GandalfHardcore Portal sheet_7
-  - first:
-      213: -7365833549939247313
-    second: GandalfHardcore Portal sheet_8
-  - first:
-      213: 1487052690359454931
-    second: GandalfHardcore Portal sheet_9
-  - first:
-      213: 3508036071605046642
-    second: GandalfHardcore Portal sheet_10
+  internalIDToNameTable: []
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -67,7 +34,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -81,7 +48,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -143,243 +110,221 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_0
+      name: Portal_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 65
-        height: 54
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 40b6146c164a7ce60800000000000000
-      internalID: 7982529604382452484
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_1
-      rect:
-        serializedVersion: 2
-        x: 64
-        y: 0
-        width: 64
-        height: 55
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 4eb9ff2396d233b20800000000000000
-      internalID: 3112881697293573092
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_2
-      rect:
-        serializedVersion: 2
-        x: 128
-        y: 0
-        width: 63
-        height: 56
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 48f42ae7f1291b850800000000000000
-      internalID: 6391050010181652356
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_3
-      rect:
-        serializedVersion: 2
-        x: 192
-        y: 0
-        width: 62
-        height: 56
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 5ab340cde6798bcc0800000000000000
-      internalID: -3695036991864030299
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_4
-      rect:
-        serializedVersion: 2
-        x: 256
+        x: 1
         y: 0
         width: 63
         height: 57
-      alignment: 0
-      pivot: {x: 0, y: 0}
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 01097f6cfa8caa2a0800000000000000
-      internalID: -6725342436241469424
+      spriteID: 44f568669385b97a0800000000000000
+      internalID: -6369400244428972220
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_5
+      name: Portal_1
       rect:
         serializedVersion: 2
-        x: 320
+        x: 65
         y: 0
-        width: 64
-        height: 58
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 63
+        height: 57
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9a70699ba3525c270800000000000000
-      internalID: 8270057224887732137
+      spriteID: 6f1ca77664c159900800000000000000
+      internalID: 690489206580625910
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_6
+      name: Portal_2
       rect:
         serializedVersion: 2
-        x: 384
+        x: 129
         y: 0
-        width: 64
-        height: 53
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 63
+        height: 57
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c72d093bc334390c0800000000000000
-      internalID: -4570235268861209988
+      spriteID: e354e3cedbba62040800000000000000
+      internalID: 4622570899743065406
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_7
+      name: Portal_3
       rect:
         serializedVersion: 2
-        x: 448
+        x: 193
         y: 0
-        width: 65
-        height: 53
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 63
+        height: 57
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c7bc831421c375dc0800000000000000
-      internalID: -3650382923859178628
+      spriteID: 27bdba6383d8f0900800000000000000
+      internalID: 652895743566928754
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_8
+      name: Portal_4
       rect:
         serializedVersion: 2
-        x: 471
-        y: 45
-        width: 8
-        height: 6
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: f277735896d47c990800000000000000
-      internalID: -7365833549939247313
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_9
-      rect:
-        serializedVersion: 2
-        x: 512
+        x: 257
         y: 0
-        width: 65
-        height: 54
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 63
+        height: 57
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3dc0a2b0b8213a410800000000000000
-      internalID: 1487052690359454931
+      spriteID: b247b59ada4057560800000000000000
+      internalID: 7310754714023064619
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: GandalfHardcore Portal sheet_10
+      name: Portal_5
       rect:
         serializedVersion: 2
-        x: 576
+        x: 321
         y: 0
-        width: 64
-        height: 53
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 63
+        height: 57
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 27d8643883c0fa030800000000000000
-      internalID: 3508036071605046642
+      spriteID: e36f052724d49d9c0800000000000000
+      internalID: -3902002654358735298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Portal_6
+      rect:
+        serializedVersion: 2
+        x: 385
+        y: 0
+        width: 63
+        height: 57
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9e2b5b892599d5690800000000000000
+      internalID: -7611759215157857559
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Portal_7
+      rect:
+        serializedVersion: 2
+        x: 449
+        y: 0
+        width: 63
+        height: 57
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8445c23b44f812b40800000000000000
+      internalID: 5413765752302621768
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Portal_8
+      rect:
+        serializedVersion: 2
+        x: 513
+        y: 0
+        width: 63
+        height: 57
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8f9dafa3f6c0bc0d0800000000000000
+      internalID: -3401611421677856264
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Portal_9
+      rect:
+        serializedVersion: 2
+        x: 577
+        y: 0
+        width: 63
+        height: 57
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f1bd336ab6ae85370800000000000000
+      internalID: 8311650860383066911
       vertices: []
       indices: 
       edges: []
@@ -398,17 +343,16 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      GandalfHardcore Portal sheet_0: 7982529604382452484
-      GandalfHardcore Portal sheet_1: 3112881697293573092
-      GandalfHardcore Portal sheet_10: 3508036071605046642
-      GandalfHardcore Portal sheet_2: 6391050010181652356
-      GandalfHardcore Portal sheet_3: -3695036991864030299
-      GandalfHardcore Portal sheet_4: -6725342436241469424
-      GandalfHardcore Portal sheet_5: 8270057224887732137
-      GandalfHardcore Portal sheet_6: -4570235268861209988
-      GandalfHardcore Portal sheet_7: -3650382923859178628
-      GandalfHardcore Portal sheet_8: -7365833549939247313
-      GandalfHardcore Portal sheet_9: 1487052690359454931
+      Portal_0: -6369400244428972220
+      Portal_1: 690489206580625910
+      Portal_2: 4622570899743065406
+      Portal_3: 652895743566928754
+      Portal_4: 7310754714023064619
+      Portal_5: -3902002654358735298
+      Portal_6: -7611759215157857559
+      Portal_7: 5413765752302621768
+      Portal_8: -3401611421677856264
+      Portal_9: 8311650860383066911
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
