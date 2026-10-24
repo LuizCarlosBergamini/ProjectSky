@@ -117,11 +117,12 @@ public static class SaveSystem
     }
 
     /// <summary>
-    /// Called by New Game. Starts a session on the active slot. The old file is not deleted here, but the first save
-    /// of the new game (the autosave on reaching the Hub) overwrites it.
+    /// Called by New Game (after the player confirmed, when a save existed). Deletes the active slot's save and
+    /// starts a session on it, so Continue never brings back the game that was just replaced.
     /// </summary>
     public static void CreateNewSave()
     {
+        DeleteSave(ActiveSlot);
         _pending = null;
         _lastSafeScene = null;
         IsSessionActive = true;
@@ -162,7 +163,14 @@ public static class SaveSystem
     /// <summary>Removes the slot's save and its backup.</summary>
     public static void DeleteSave(int slot = DefaultSlot)
     {
-        Store.Delete(slot);
+        try
+        {
+            Store.Delete(slot);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Erro ao apagar o save: {e}");
+        }
     }
 
     private static SaveData Capture()
