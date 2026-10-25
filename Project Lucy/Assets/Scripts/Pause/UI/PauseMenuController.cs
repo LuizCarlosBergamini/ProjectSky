@@ -11,8 +11,6 @@ using UnityEngine.UI;
 /// </summary>
 public class PauseMenuController : MonoBehaviour
 {
-    private const string OptionsResourcePath = "OptionsMenu";
-
     [Header("Referencias")]
     [Tooltip("Tudo que aparece com o pause aberto. Este objeto fica sempre ativo.")]
     [SerializeField] private GameObject _root;
@@ -144,15 +142,9 @@ public class PauseMenuController : MonoBehaviour
 
         if (_options == null)
         {
-            // The OptionsMenu prefab is generated locally and not committed, so the reference can be lost (prefab
-            // regenerated, moved or deleted). Resources/OptionsMenu is where the options builder keeps it.
-            if (_optionsMenuPrefab == null) _optionsMenuPrefab = Resources.Load<OptionsMenuController>(OptionsResourcePath);
-            if (_optionsMenuPrefab == null)
-            {
-                Debug.LogError("Prefab OptionsMenu nao encontrado: rode Tools > Lucy > Build Options Menu e depois " +
-                    "Tools > Lucy > Rebuild Pause Menu Prefab.", this);
-                return;
-            }
+            // A lost reference (prefab regenerated or moved) falls back to Resources/OptionsMenu.
+            if (_optionsMenuPrefab == null) _optionsMenuPrefab = OptionsMenuController.LoadPrefab();
+            if (_optionsMenuPrefab == null) return;
 
             // Sibling of the pause canvas, so it keeps its own root canvas and survives scene loads with it.
             _options = Instantiate(_optionsMenuPrefab, transform.parent);
@@ -161,9 +153,8 @@ public class PauseMenuController : MonoBehaviour
 
         SetButtonsInteractable(false);
 
-        // TODO(integracao): trocar por _options.Open(OptionsMenuMode.Pause, HandleOptionsClosed) quando a branch do
-        // menu de configuracoes (que cria OptionsMenuMode) estiver na main. Assim o menu mostra Salvar em vez do Guia.
-        _options.Open(HandleOptionsClosed);
+        // Pause mode: volume and the save button instead of the guide.
+        _options.Open(OptionsMenuMode.Pause, HandleOptionsClosed);
     }
 
     public void ReturnToMainMenu()
