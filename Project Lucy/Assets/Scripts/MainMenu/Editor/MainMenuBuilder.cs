@@ -29,6 +29,7 @@ public static class MainMenuBuilder
 
     private static readonly string BackgroundSpritePath = $"{SpriteFolder}/MainMenu_Background_Placeholder.png";
     private static readonly string LogoSpritePath = $"{SpriteFolder}/MainMenu_Logo_Placeholder.png";
+    private static readonly string StarSpritePath = $"{SpriteFolder}/MainMenu_Star.png";
     private static readonly string ButtonSpritePath = $"{SpriteFolder}/MainMenu_Button.png";
 
     // Same palette as the boss selector and upgrade screens.
@@ -82,6 +83,7 @@ public static class MainMenuBuilder
             Sprite background = GenerateSprite(BackgroundSpritePath, 1920, 1080, BackgroundPixel);
             Sprite logo = GenerateSprite(LogoSpritePath, 1024, 384, LogoPixel);
             Sprite button = GenerateSprite(ButtonSpritePath, 64, 64, ButtonPixel, sliceBorder: 20);
+            Sprite star = GenerateSprite(StarSpritePath, 256, 256, StarPixel);
 
             // Built before the scene opens: building a prefab may create temporary objects in the active scene.
             OptionsMenuController optionsPrefab = BuildOptionsPrefab();
@@ -95,7 +97,7 @@ public static class MainMenuBuilder
             else
             {
                 scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-                BuildScene(scene, background, logo, button);
+                BuildScene(scene, background, logo, star, button);
             }
 
             LinkScene(scene, optionsPrefab);
@@ -127,7 +129,7 @@ public static class MainMenuBuilder
 
     #region Scene
 
-    private static void BuildScene(Scene scene, Sprite background, Sprite logo, Sprite buttonSprite)
+    private static void BuildScene(Scene scene, Sprite background, Sprite logo, Sprite star, Sprite buttonSprite)
     {
         // Camera: the canvas is Screen Space Overlay, the camera only clears the screen behind it.
         GameObject cameraObject = new("Main Camera") { tag = "MainCamera" };
@@ -174,6 +176,15 @@ public static class MainMenuBuilder
         SetAnchors(logoImage.rectTransform, new Vector2(0.2f, 0.62f), new Vector2(0.8f, 1f));
         // Hidden until the final logo art arrives: the game's name is written as text in the same area meanwhile.
         logoImage.gameObject.SetActive(false);
+
+        // The star from the placeholder logo, a little bigger and lighter than "STARS", behind the title.
+        Image starImage = CreateImage("StarImage", content, star, new Color(1f, 0.835f, 0.5f, 1f));
+        starImage.preserveAspect = true;
+        RectTransform starRect = starImage.rectTransform;
+        starRect.anchorMin = starRect.anchorMax = new Vector2(0.5f, 0.81f);
+        starRect.pivot = new Vector2(0.5f, 0.5f);
+        starRect.sizeDelta = new Vector2(190f, 190f);
+        starRect.anchoredPosition = Vector2.zero;
 
         TextMeshProUGUI titleText = CreateText("TitleText", content,
             "LUCY FROM THE\n<size=160%><color=#F2B84D>STARS</color></size>", 64f, TextColor, TextAlignmentOptions.Center);
@@ -390,6 +401,15 @@ public static class MainMenuBuilder
         float alpha = Mathf.Max(frameAlpha * 0.6f, starAlpha);
         Color color = Color.Lerp(TextColor, AccentColor, starAlpha);
         return new Color(color.r, color.g, color.b, alpha);
+    }
+
+    /// <summary>White four-point star (astroid) filling the square; the Image colour tints it.</summary>
+    private static Color32 StarPixel(int x, int y, int width, int height)
+    {
+        Vector2 p = new(x + 0.5f - width * 0.5f, y + 0.5f - height * 0.5f);
+        float r = width * 0.49f;
+        float star = Mathf.Sqrt(Mathf.Abs(p.x) / r) + Mathf.Sqrt(Mathf.Abs(p.y) / r);
+        return new Color(1f, 1f, 1f, Mathf.Clamp01((1f - star) * r * 0.25f));
     }
 
     private static Color32 ButtonPixel(int x, int y, int width, int height)
