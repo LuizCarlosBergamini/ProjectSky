@@ -11,6 +11,8 @@ using UnityEngine.UI;
 /// </summary>
 public class PauseMenuController : MonoBehaviour
 {
+    private const string OptionsResourcePath = "OptionsMenu";
+
     [Header("Referencias")]
     [Tooltip("Tudo que aparece com o pause aberto. Este objeto fica sempre ativo.")]
     [SerializeField] private GameObject _root;
@@ -142,9 +144,13 @@ public class PauseMenuController : MonoBehaviour
 
         if (_options == null)
         {
+            // The OptionsMenu prefab is generated locally and not committed, so the reference can be lost (prefab
+            // regenerated, moved or deleted). Resources/OptionsMenu is where the options builder keeps it.
+            if (_optionsMenuPrefab == null) _optionsMenuPrefab = Resources.Load<OptionsMenuController>(OptionsResourcePath);
             if (_optionsMenuPrefab == null)
             {
-                Debug.LogWarning("Prefab OptionsMenu nao atribuido no PauseMenuController.", this);
+                Debug.LogError("Prefab OptionsMenu nao encontrado: rode Tools > Lucy > Build Options Menu e depois " +
+                    "Tools > Lucy > Rebuild Pause Menu Prefab.", this);
                 return;
             }
 
@@ -157,7 +163,6 @@ public class PauseMenuController : MonoBehaviour
 
         // TODO(integracao): trocar por _options.Open(OptionsMenuMode.Pause, HandleOptionsClosed) quando a branch do
         // menu de configuracoes (que cria OptionsMenuMode) estiver na main. Assim o menu mostra Salvar em vez do Guia.
-        // Na mesma integracao, usar OptionsMenuController.LoadPrefab() quando _optionsMenuPrefab estiver vazio.
         _options.Open(HandleOptionsClosed);
     }
 
