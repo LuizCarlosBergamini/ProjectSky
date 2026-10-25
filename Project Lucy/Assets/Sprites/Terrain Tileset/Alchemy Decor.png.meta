@@ -1,22 +1,7 @@
 fileFormatVersion: 2
 guid: 31e38c4ee83a4314d9a5cf7ecdb37a7a
 TextureImporter:
-  internalIDToNameTable:
-  - first:
-      213: 7951140097178453894
-    second: Alchemy Decor_0
-  - first:
-      213: 6115166205713499596
-    second: Alchemy Decor_1
-  - first:
-      213: 1867163419911724808
-    second: Alchemy Decor_2
-  - first:
-      213: 8851585646845204395
-    second: Alchemy Decor_3
-  - first:
-      213: 8132022982595529003
-    second: Alchemy Decor_4
+  internalIDToNameTable: []
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -49,7 +34,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -63,7 +48,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -125,111 +110,89 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Alchemy Decor_0
+      name: Alchemy_HerbsHanging
       rect:
         serializedVersion: 2
-        x: 0
-        y: 37
-        width: 63
-        height: 27
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 1
+        y: 38
+        width: 61
+        height: 26
+      alignment: 2
+      pivot: {x: 0.5, y: 1}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 687cfab9acf185e60800000000000000
-      internalID: 7951140097178453894
+      spriteID: 49b03764c405584a0800000000000000
+      internalID: -6591774191057171564
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Alchemy Decor_1
+      name: Alchemy_Desk
       rect:
         serializedVersion: 2
-        x: 78
+        x: 79
         y: 0
-        width: 39
-        height: 39
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 37
+        height: 38
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: cc5c60ab34f6dd450800000000000000
-      internalID: 6115166205713499596
+      spriteID: a188404b3821a0b00800000000000000
+      internalID: 795468641054525466
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Alchemy Decor_2
+      name: Alchemy_CrystalStand
       rect:
         serializedVersion: 2
-        x: 3
-        y: 5
-        width: 27
-        height: 28
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 80f117ddc3f79e910800000000000000
-      internalID: 1867163419911724808
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Alchemy Decor_3
-      rect:
-        serializedVersion: 2
-        x: 34
+        x: 137
         y: 0
-        width: 28
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 14
+        height: 18
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ba797238f3627da70800000000000000
-      internalID: 8851585646845204395
+      spriteID: 83c8d47ac289601c0800000000000000
+      internalID: -4537772256976335816
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Alchemy Decor_4
+      name: Alchemy_Table
       rect:
         serializedVersion: 2
-        x: 136
+        x: 35
         y: 0
-        width: 16
-        height: 19
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 26
+        height: 22
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b294bee31dfbad070800000000000000
-      internalID: 8132022982595529003
+      spriteID: 877c33774099de130800000000000000
+      internalID: 3597699921797695352
       vertices: []
       indices: 
       edges: []
@@ -248,11 +211,10 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Alchemy Decor_0: 7951140097178453894
-      Alchemy Decor_1: 6115166205713499596
-      Alchemy Decor_2: 1867163419911724808
-      Alchemy Decor_3: 8851585646845204395
-      Alchemy Decor_4: 8132022982595529003
+      Alchemy_CrystalStand: -4537772256976335816
+      Alchemy_Desk: 795468641054525466
+      Alchemy_HerbsHanging: -6591774191057171564
+      Alchemy_Table: 3597699921797695352
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
