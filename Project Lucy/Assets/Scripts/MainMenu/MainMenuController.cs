@@ -255,6 +255,11 @@ public class MainMenuController : MonoBehaviour
     {
         if (UpgradeManager.instance != null) UpgradeManager.instance.ResetUpgrades();
         if (BossProgressionManager.instance != null) BossProgressionManager.instance.ResetProgression();
+
+        // Reachable now that the pause menu can return here: the items and tasks of the game just left would
+        // otherwise carry over. Both start empty in a fresh game.
+        if (TaskManager.instance != null) TaskManager.instance.LoadTaskState(null, null);
+        if (InventoryManager.instance != null) InventoryManager.instance.LoadInventory(null);
     }
 
     private void LoadScene(string sceneName)
