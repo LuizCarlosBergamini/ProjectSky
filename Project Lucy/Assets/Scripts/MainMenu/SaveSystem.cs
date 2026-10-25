@@ -78,6 +78,10 @@ public static class SaveSystem
         SceneManager.sceneLoaded += HandleSceneLoaded;
         BossProgressionManager.OnProgressionChanged += HandleProgressMade;
         UpgradeManager.OnUpgradesChanged += HandleProgressMade;
+
+        // The pause menu's "Salvar jogo" button. The menu clears this event in SubsystemRegistration, so it is
+        // attached here (BeforeSceneLoad) on every play session.
+        OptionsMenuController.SaveRequested += Save;
     }
 
     private static void Unsubscribe()
@@ -85,6 +89,7 @@ public static class SaveSystem
         SceneManager.sceneLoaded -= HandleSceneLoaded;
         BossProgressionManager.OnProgressionChanged -= HandleProgressMade;
         UpgradeManager.OnUpgradesChanged -= HandleProgressMade;
+        OptionsMenuController.SaveRequested -= Save;
     }
 
     private static SaveFileStore Store =>
