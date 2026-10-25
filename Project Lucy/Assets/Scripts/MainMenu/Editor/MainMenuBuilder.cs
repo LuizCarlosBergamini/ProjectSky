@@ -172,6 +172,16 @@ public static class MainMenuBuilder
         Image logoImage = CreateImage("LogoImage", content, logo, Color.white);
         logoImage.preserveAspect = true;
         SetAnchors(logoImage.rectTransform, new Vector2(0.2f, 0.62f), new Vector2(0.8f, 1f));
+        // Hidden until the final logo art arrives: the game's name is written as text in the same area meanwhile.
+        logoImage.gameObject.SetActive(false);
+
+        TextMeshProUGUI titleText = CreateText("TitleText", content,
+            "LUCY FROM THE\n<size=160%><color=#F2B84D>STARS</color></size>", 64f, TextColor, TextAlignmentOptions.Center);
+        SetAnchors(titleText.rectTransform, new Vector2(0.2f, 0.62f), new Vector2(0.8f, 1f));
+        titleText.richText = true;
+        titleText.enableAutoSizing = true;
+        titleText.fontSizeMin = 24f;
+        titleText.fontSizeMax = 64f;
 
         RectTransform stack = CreateRect("ButtonStack", content);
         stack.anchorMin = new Vector2(0.5f, 0.06f);
