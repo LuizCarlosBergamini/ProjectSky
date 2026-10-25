@@ -157,6 +157,7 @@ public class PauseMenuController : MonoBehaviour
 
         // TODO(integracao): trocar por _options.Open(OptionsMenuMode.Pause, HandleOptionsClosed) quando a branch do
         // menu de configuracoes (que cria OptionsMenuMode) estiver na main. Assim o menu mostra Salvar em vez do Guia.
+        // Na mesma integracao, usar OptionsMenuController.LoadPrefab() quando _optionsMenuPrefab estiver vazio.
         _options.Open(HandleOptionsClosed);
     }
 
