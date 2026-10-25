@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -13,8 +15,8 @@ using Scene = UnityEngine.SceneManagement.Scene;
 
 /// <summary>
 /// Generates the MainMenu scene so nothing has to be wired by hand: placeholder art, the canvas hierarchy, the
-/// MainMenuController references, the LevelManager (fade) and EventSystem, the Options prefab link, and registers
-/// the scene as build index 0.
+/// MainMenuController references, the EventSystem, the Options prefab link, and registers the scene as build index 0.
+/// The LevelManager (fade) is not placed here: it creates itself from Resources before the first scene loads.
 /// Safe to run again: placeholder sprites are only written when missing (final art dropped over them is kept) and
 /// an existing scene is only re-linked and re-registered. "Rebuild Main Menu Scene" is the only command that
 /// recreates the scene, and it asks first.
@@ -25,11 +27,14 @@ public static class MainMenuBuilder
 
     private const string SpriteFolder = "Assets/Sprites/UI/MainMenu";
     private const string HubScenePath = "Assets/Scenes/Hub.unity";
-    private const string LevelManagerPrefabPath = "Assets/Renan/Prefabs/LevelManager.prefab";
     private const string FontPath = "Assets/Renan/Fonts/Jersey10-Regular SDF 1.asset";
+
+    // Input System's DefaultInputActions, the asset the scenes' EventSystem uses (UI/Cancel = Esc, gamepad B).
+    private const string DefaultInputActionsGuid = "ca9f5fa95ffab41fb9a615ab714db018";
 
     private static readonly string BackgroundSpritePath = $"{SpriteFolder}/MainMenu_Background_Placeholder.png";
     private static readonly string LogoSpritePath = $"{SpriteFolder}/MainMenu_Logo_Placeholder.png";
+    private static readonly string StarSpritePath = $"{SpriteFolder}/MainMenu_Star.png";
     private static readonly string ButtonSpritePath = $"{SpriteFolder}/MainMenu_Button.png";
 
     // Same palette as the boss selector and upgrade screens.
@@ -41,6 +46,8 @@ public static class MainMenuBuilder
     private static readonly Color ButtonSelected = new(0.36f, 0.27f, 0.12f, 1f);
     private static readonly Color ButtonPressed = new(0.95f, 0.72f, 0.3f, 1f);
     private static readonly Color ButtonDisabled = new(0.07f, 0.07f, 0.08f, 0.45f);
+    private static readonly Color OverlayColor = new(0f, 0f, 0f, 0.7f);
+    private static readonly Color PanelColor = new(0.035f, 0.035f, 0.04f, 0.98f);
 
     private const int UILayer = 5;
     private const float ReferenceWidth = 1280f;
@@ -83,6 +90,7 @@ public static class MainMenuBuilder
             Sprite background = GenerateSprite(BackgroundSpritePath, 1920, 1080, BackgroundPixel);
             Sprite logo = GenerateSprite(LogoSpritePath, 1024, 384, LogoPixel);
             Sprite button = GenerateSprite(ButtonSpritePath, 64, 64, ButtonPixel, sliceBorder: 20);
+            Sprite star = GenerateSprite(StarSpritePath, 256, 256, StarPixel);
 
             // Built before the scene opens: building a prefab may create temporary objects in the active scene.
             OptionsMenuController optionsPrefab = BuildOptionsPrefab();
@@ -96,10 +104,11 @@ public static class MainMenuBuilder
             else
             {
                 scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-                BuildScene(scene, background, logo, button);
+                BuildScene(scene, background, logo, star, button);
             }
 
             LinkScene(scene, optionsPrefab);
+            EnsureConfirmDialog(scene, button);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -128,7 +137,7 @@ public static class MainMenuBuilder
 
     #region Scene
 
-    private static void BuildScene(Scene scene, Sprite background, Sprite logo, Sprite buttonSprite)
+    private static void BuildScene(Scene scene, Sprite background, Sprite logo, Sprite star, Sprite buttonSprite)
     {
         // Camera: the canvas is Screen Space Overlay, the camera only clears the screen behind it.
         GameObject cameraObject = new("Main Camera") { tag = "MainCamera" };
@@ -146,11 +155,6 @@ public static class MainMenuBuilder
         InputSystemUIInputModule module = eventSystemObject.AddComponent<InputSystemUIInputModule>();
         module.AssignDefaultActions();
         eventSystemObject.AddComponent<SingleEventSystem>();
-
-        // The persistent scene loader with the fade. Living here, it exists from the first frame of the game.
-        GameObject levelManagerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(LevelManagerPrefabPath);
-        if (levelManagerPrefab != null) PrefabUtility.InstantiatePrefab(levelManagerPrefab, scene);
-        else Debug.LogWarning($"[Menu] {LevelManagerPrefabPath} nao encontrado: as cenas vao carregar sem fade.");
 
         // Canvas
         GameObject canvasObject = new("MainMenuCanvas", typeof(RectTransform)) { layer = UILayer };
@@ -178,6 +182,25 @@ public static class MainMenuBuilder
         Image logoImage = CreateImage("LogoImage", content, logo, Color.white);
         logoImage.preserveAspect = true;
         SetAnchors(logoImage.rectTransform, new Vector2(0.2f, 0.62f), new Vector2(0.8f, 1f));
+        // Hidden until the final logo art arrives: the game's name is written as text in the same area meanwhile.
+        logoImage.gameObject.SetActive(false);
+
+        // The star from the placeholder logo, a little bigger and lighter than "STARS", behind the title.
+        Image starImage = CreateImage("StarImage", content, star, new Color(1f, 0.835f, 0.5f, 1f));
+        starImage.preserveAspect = true;
+        RectTransform starRect = starImage.rectTransform;
+        starRect.anchorMin = starRect.anchorMax = new Vector2(0.5f, 0.81f);
+        starRect.pivot = new Vector2(0.5f, 0.5f);
+        starRect.sizeDelta = new Vector2(190f, 190f);
+        starRect.anchoredPosition = Vector2.zero;
+
+        TextMeshProUGUI titleText = CreateText("TitleText", content,
+            "LUCY FROM THE\n<size=160%><color=#F2B84D>STARS</color></size>", 64f, TextColor, TextAlignmentOptions.Center);
+        SetAnchors(titleText.rectTransform, new Vector2(0.2f, 0.62f), new Vector2(0.8f, 1f));
+        titleText.richText = true;
+        titleText.enableAutoSizing = true;
+        titleText.fontSizeMin = 24f;
+        titleText.fontSizeMax = 64f;
 
         RectTransform stack = CreateRect("ButtonStack", content);
         stack.anchorMin = new Vector2(0.5f, 0.06f);
@@ -241,6 +264,87 @@ public static class MainMenuBuilder
             options.objectReferenceValue = optionsPrefab;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
+    }
+
+    /// <summary>
+    /// Adds the New Game confirmation ("a save already exists") to a scene that has none, as the last child of the
+    /// menu canvas so it draws over everything, and links it to the MainMenuController. Existing dialogs are kept.
+    /// </summary>
+    private static void EnsureConfirmDialog(Scene scene, Sprite buttonSprite)
+    {
+        MainMenuController controller = FindInScene<MainMenuController>(scene);
+        if (controller == null) return;
+
+        SerializedObject so = new(controller);
+        SerializedProperty dialogProperty = so.FindProperty("_confirmDialog");
+        if (dialogProperty.objectReferenceValue != null) return;
+
+        ConfirmDialog dialog = FindInScene<ConfirmDialog>(scene);
+        if (dialog == null) dialog = BuildConfirmDialog(controller.transform, buttonSprite);
+
+        dialogProperty.objectReferenceValue = dialog;
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static ConfirmDialog BuildConfirmDialog(Transform canvas, Sprite buttonSprite)
+    {
+        RectTransform dialogRect = CreateRect("ConfirmDialog", canvas);
+        Stretch(dialogRect);
+        dialogRect.SetAsLastSibling();
+        ConfirmDialog dialog = dialogRect.gameObject.AddComponent<ConfirmDialog>();
+
+        // Dims the menu and swallows clicks so nothing behind the question can be pressed.
+        Image overlay = CreateImage("Root", dialogRect, null, OverlayColor, raycast: true);
+        Stretch(overlay.rectTransform);
+
+        Image panel = CreateImage("Panel", overlay.rectTransform, buttonSprite, PanelColor, Image.Type.Sliced);
+        RectTransform panelRect = panel.rectTransform;
+        panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.sizeDelta = new Vector2(620f, 300f);
+        panelRect.anchoredPosition = Vector2.zero;
+
+        TextMeshProUGUI message = CreateText("Message", panelRect, "", 32f, TextColor, TextAlignmentOptions.Center);
+        message.textWrappingMode = TextWrappingModes.Normal;
+        Stretch(message.rectTransform, 36f, 36f, 32f, 110f);
+
+        RectTransform row = CreateRect("Buttons", panelRect);
+        row.anchorMin = new Vector2(0f, 0f);
+        row.anchorMax = new Vector2(1f, 0f);
+        row.pivot = new Vector2(0.5f, 0f);
+        row.sizeDelta = new Vector2(-72f, 58f);
+        row.anchoredPosition = new Vector2(0f, 32f);
+        HorizontalLayoutGroup layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 20f;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = true;
+
+        Button cancel = CreateMenuButton("CancelButton", row, buttonSprite, "VOLTAR");
+        Button confirm = CreateMenuButton("ConfirmButton", row, buttonSprite, "NOVO JOGO");
+        cancel.navigation = new Navigation { mode = Navigation.Mode.Horizontal };
+        confirm.navigation = new Navigation { mode = Navigation.Mode.Horizontal };
+
+        InputActionReference cancelAction = AssetDatabase
+            .LoadAllAssetsAtPath(AssetDatabase.GUIDToAssetPath(DefaultInputActionsGuid))
+            .OfType<InputActionReference>()
+            .FirstOrDefault(reference => reference.action != null
+                && reference.action.actionMap != null
+                && reference.action.actionMap.name == "UI"
+                && reference.action.name == "Cancel");
+        if (cancelAction == null) Debug.LogWarning("[Menu] UI/Cancel nao encontrado: Esc/B nao vao fechar a confirmacao.");
+
+        SetRefs(dialog,
+            ("_root", overlay.gameObject),
+            ("_messageLabel", message),
+            ("_confirmButton", confirm),
+            ("_confirmLabel", confirm.GetComponentInChildren<TextMeshProUGUI>()),
+            ("_cancelButton", cancel),
+            ("_cancelLabel", cancel.GetComponentInChildren<TextMeshProUGUI>()),
+            ("_cancelAction", cancelAction));
+
+        overlay.gameObject.SetActive(false);
+        return dialog;
     }
 
     private static Button CreateMenuButton(string name, Transform parent, Sprite sprite, string label)
@@ -386,6 +490,15 @@ public static class MainMenuBuilder
         float alpha = Mathf.Max(frameAlpha * 0.6f, starAlpha);
         Color color = Color.Lerp(TextColor, AccentColor, starAlpha);
         return new Color(color.r, color.g, color.b, alpha);
+    }
+
+    /// <summary>White four-point star (astroid) filling the square; the Image colour tints it.</summary>
+    private static Color32 StarPixel(int x, int y, int width, int height)
+    {
+        Vector2 p = new(x + 0.5f - width * 0.5f, y + 0.5f - height * 0.5f);
+        float r = width * 0.49f;
+        float star = Mathf.Sqrt(Mathf.Abs(p.x) / r) + Mathf.Sqrt(Mathf.Abs(p.y) / r);
+        return new Color(1f, 1f, 1f, Mathf.Clamp01((1f - star) * r * 0.25f));
     }
 
     private static Color32 ButtonPixel(int x, int y, int width, int height)

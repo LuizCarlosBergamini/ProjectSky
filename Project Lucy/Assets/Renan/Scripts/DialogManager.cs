@@ -89,6 +89,9 @@ public class DialogManager : MonoBehaviour
 
     private void Update()
     {
+        // Jump also confirms on the pause panel; it must not advance the dialog behind it.
+        if (PauseManager.IsGamePaused) return;
+
         if (_actualDialog != null && _jumpAction != null && _jumpAction.action.WasPressedThisFrame())
         {
             if (_typing.Count > 0)

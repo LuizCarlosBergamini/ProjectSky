@@ -1,14 +1,13 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
 /// The main menu of the MainMenu scene (build index 0, the game's entry point). Scene-specific: owns the New Game,
-/// Continue, Options and Quit buttons and the art slots. Scenes load through LevelManager (the fade), falling back to
-/// SceneManager like the rest of the project. Options are a separate reusable prefab: this menu only opens it and
-/// decides what happens when it closes. Save data is only reached through SaveSystem.
+/// Continue, Options and Quit buttons and the art slots. Scenes load through LevelManager.Load (the fade). Options
+/// are a separate reusable prefab: this menu only opens it and decides what happens when it closes. Save data is
+/// only reached through SaveSystem.
 /// </summary>
 public class MainMenuController : MonoBehaviour
 {
@@ -46,6 +45,13 @@ public class MainMenuController : MonoBehaviour
     [Tooltip("Prefab reutilizavel do menu de opcoes. E instanciado na primeira vez que for aberto.")]
     [SerializeField] private OptionsMenuController _optionsMenuPrefab;
 
+    [Header("Confirmacao")]
+    [Tooltip("Pergunta mostrada antes do Novo Jogo apagar um save existente. Vazio = comeca sem perguntar.")]
+    [SerializeField] private ConfirmDialog _confirmDialog;
+
+    private const string OverwriteSaveMessage =
+        "Já existe um jogo salvo.\nComeçar um novo jogo apaga esse progresso. Deseja continuar?";
+
     private OptionsMenuController _optionsMenu;
     private bool _loading;
 
@@ -57,6 +63,8 @@ public class MainMenuController : MonoBehaviour
     public bool IsLoading => _loading;
 
     public bool IsOptionsOpen => _optionsMenu != null && _optionsMenu.IsOpen;
+
+    public bool IsConfirmOpen => _confirmDialog != null && _confirmDialog.IsOpen;
 
     private void Awake()
     {
@@ -97,7 +105,7 @@ public class MainMenuController : MonoBehaviour
 
     private void Update()
     {
-        if (_loading || IsOptionsOpen) return;
+        if (_loading || IsOptionsOpen || IsConfirmOpen) return;
 
         // Clicking empty space clears the EventSystem selection; give keyboard/gamepad a button back.
         EventSystem eventSystem = EventSystem.current;
@@ -112,10 +120,28 @@ public class MainMenuController : MonoBehaviour
 
     #region Buttons
 
-    /// <summary>Fresh run: resets the persistent run state, opens a new save slot and loads the first gameplay scene.</summary>
+    /// <summary>
+    /// Fresh run: resets the persistent run state, opens a new save slot and loads the first gameplay scene. When a
+    /// save already exists, asks first (it is deleted on confirm).
+    /// </summary>
     public void NewGame()
     {
-        if (_loading || IsOptionsOpen) return;
+        if (_loading || IsOptionsOpen || IsConfirmOpen) return;
+
+        if (_confirmDialog != null && SaveSystem.HasSave())
+        {
+            SetButtonsInteractable(false);
+            _confirmDialog.Open(OverwriteSaveMessage, StartNewGame, HandleConfirmCancelled, "NOVO JOGO", "VOLTAR");
+            return;
+        }
+
+        StartNewGame();
+    }
+
+    private void StartNewGame()
+    {
+        if (_loading) return;
+        SetButtonsInteractable(true);
 
         string sceneName = _newGameScene != null ? _newGameScene.SceneName : "";
         if (string.IsNullOrEmpty(sceneName))
@@ -135,10 +161,9 @@ public class MainMenuController : MonoBehaviour
     /// <summary>Loads the most recent save. Does nothing (and stays disabled) while no save exists.</summary>
     public void Continue()
     {
-        if (_loading || IsOptionsOpen || !CanContinue) return;
+        if (_loading || IsOptionsOpen || IsConfirmOpen || !CanContinue) return;
 
-        // TODO(save-system): SaveSystem.TryLoadMostRecent is a placeholder that always fails. Once it restores the
-        // managers and returns the saved scene, this path is complete and needs no other change.
+        // SaveSystem reads the save and returns its scene; the data reaches the managers once that scene loads.
         if (!SaveSystem.TryLoadMostRecent(out string sceneName) || string.IsNullOrEmpty(sceneName))
         {
             Debug.LogWarning("Nao foi possivel carregar o save mais recente.", this);
@@ -152,7 +177,7 @@ public class MainMenuController : MonoBehaviour
     /// <summary>Opens the reusable Options menu over this one; focus comes back to the Options button on close.</summary>
     public void OpenOptions()
     {
-        if (_loading || IsOptionsOpen) return;
+        if (_loading || IsOptionsOpen || IsConfirmOpen) return;
 
         OptionsMenuController options = GetOptionsMenu();
         if (options == null)
@@ -162,7 +187,7 @@ public class MainMenuController : MonoBehaviour
         }
 
         SetButtonsInteractable(false);
-        options.Open();
+        options.Open(OptionsMenuMode.MainMenu);
     }
 
     public void QuitGame()
@@ -204,9 +229,16 @@ public class MainMenuController : MonoBehaviour
         if (eventSystem != null && _optionsButton != null) eventSystem.SetSelectedGameObject(_optionsButton.gameObject);
     }
 
+    private void HandleConfirmCancelled()
+    {
+        SetButtonsInteractable(true);
+        RefreshButtons();
+    }
+
     private OptionsMenuController GetOptionsMenu()
     {
         if (_optionsMenu != null) return _optionsMenu;
+        if (_optionsMenuPrefab == null) _optionsMenuPrefab = OptionsMenuController.LoadPrefab();
         if (_optionsMenuPrefab == null) return null;
 
         // Its own canvas and sort order: it needs no parent and draws above this menu wherever it lives.
@@ -223,6 +255,11 @@ public class MainMenuController : MonoBehaviour
     {
         if (UpgradeManager.instance != null) UpgradeManager.instance.ResetUpgrades();
         if (BossProgressionManager.instance != null) BossProgressionManager.instance.ResetProgression();
+
+        // Reachable now that the pause menu can return here: the items and tasks of the game just left would
+        // otherwise carry over. Both start empty in a fresh game.
+        if (TaskManager.instance != null) TaskManager.instance.LoadTaskState(null, null);
+        if (InventoryManager.instance != null) InventoryManager.instance.LoadInventory(null);
     }
 
     private void LoadScene(string sceneName)
@@ -231,13 +268,7 @@ public class MainMenuController : MonoBehaviour
         _loading = true;
         SetButtonsInteractable(false);
 
-        if (LevelManager.instance != null)
-        {
-            LevelManager.instance.LoadScene(sceneName);
-            return;
-        }
-
-        SceneManager.LoadScene(sceneName);
+        LevelManager.Load(sceneName);
     }
 
     private void SetButtonsInteractable(bool interactable)

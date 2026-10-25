@@ -955,6 +955,7 @@ public static class KitsuneBossBuilder
         try
         {
             root.layer = LayerMask.NameToLayer("AttackableLayer"); // what the player's attack hits
+            root.tag = "Inimigo"; // the player slides off anything with this tag instead of standing on it
 
             var body = GetOrAdd<Rigidbody2D>(root);
             if (!exists)

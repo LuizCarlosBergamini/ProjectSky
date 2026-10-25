@@ -104,6 +104,14 @@ public class TaskManager : MonoBehaviour
         EventManager.instance?.Call(taskData.onStartEventTrigger);
         Debug.Log($"Task '{taskId}' iniciada!");
 
+        CreateTaskCard(taskId, taskData, true);
+
+        OnTaskStateChanged?.Invoke();
+        ValidateIfTaskCompleted();
+    }
+
+    private void CreateTaskCard(string taskId, TasksItem taskData, bool animate)
+    {
         if (taskItems.TryGetValue(taskId, out TaskItem previous))
         {
             if (previous != null) Destroy(previous.gameObject);
@@ -117,14 +125,11 @@ public class TaskManager : MonoBehaviour
             clone.ApplyProgress(GetProgressText(taskData));
             clone.SetTitleOnly(fightLayoutActive);
             taskItems.Add(taskId, clone);
-            if (clone.TryGetComponent(out Animator animator))
+            if (animate && clone.TryGetComponent(out Animator animator))
             {
                 animator.Play("ShowTask");
             }
         }
-
-        OnTaskStateChanged?.Invoke();
-        ValidateIfTaskCompleted();
     }
 
     public void CompleteTask(string taskId)
@@ -239,12 +244,19 @@ public class TaskManager : MonoBehaviour
         {
             baseTopPadding ??= layout.padding.top;
             layout.padding.top = baseTopPadding.Value + (active ? Mathf.RoundToInt(extraTopPadding) : 0);
-            LayoutRebuilder.MarkLayoutForRebuild((RectTransform)taskItemContainer.transform);
         }
 
         foreach (TaskItem card in taskItems.Values)
         {
             if (card != null) card.SetTitleOnly(active);
+        }
+
+        // Rebuild now, not at the end of the frame: the boss's reward task completes in the same frame the
+        // fight ends, and its HideTask animation sets ignoreLayout, which would freeze the card where it was
+        // during the fight and slide it out from the middle of the screen.
+        if (taskItemContainer != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)taskItemContainer.transform);
         }
     }
 
@@ -322,6 +334,69 @@ public class TaskManager : MonoBehaviour
         }
 
         return builder.ToString();
+    }
+
+    #endregion
+
+    #region Persistence Hooks
+
+    public List<string> GetStartedTaskIds()
+    {
+        return new List<string>(startedTasks);
+    }
+
+    public List<string> GetFinishedTaskIds()
+    {
+        return new List<string>(finishedTasks);
+    }
+
+    /// <summary>
+    /// Replaces the task state with a loaded save. Rebuilds the cards of started tasks without their show
+    /// animation, and fires no start/finish events or rewards: those already happened when the save was made.
+    /// Ids that no longer exist are ignored.
+    /// </summary>
+    public void LoadTaskState(IEnumerable<string> started, IEnumerable<string> finished)
+    {
+        // A completion still running belongs to the state being replaced.
+        StopAllCoroutines();
+        completingTasks.Clear();
+
+        foreach (TaskItem card in taskItems.Values)
+        {
+            if (card != null) Destroy(card.gameObject);
+        }
+        taskItems.Clear();
+        startedTasks.Clear();
+        finishedTasks.Clear();
+
+        if (finished != null)
+        {
+            foreach (string taskId in finished)
+            {
+                if (IsKnownTask(taskId) && !finishedTasks.Contains(taskId)) finishedTasks.Add(taskId);
+            }
+        }
+
+        if (started != null)
+        {
+            foreach (string taskId in started)
+            {
+                if (!IsKnownTask(taskId) || finishedTasks.Contains(taskId) || startedTasks.Contains(taskId)) continue;
+                startedTasks.Add(taskId);
+                CreateTaskCard(taskId, GetTask(taskId), false);
+            }
+        }
+
+        OnTaskStateChanged?.Invoke();
+    }
+
+    private bool IsKnownTask(string taskId)
+    {
+        if (string.IsNullOrWhiteSpace(taskId)) return false;
+        if (GetTask(taskId) != null) return true;
+
+        Debug.LogWarning($"Task '{taskId}' salva nao existe mais e foi ignorada.", this);
+        return false;
     }
 
     #endregion

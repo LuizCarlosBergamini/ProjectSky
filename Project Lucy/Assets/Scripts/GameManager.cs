@@ -34,7 +34,7 @@ public class GameManager : MonoBehaviour
         // Restarting always means losing whatever was gathered in the current attempt.
         if (InventoryManager.instance != null) InventoryManager.instance.RollbackRun();
 
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        LevelManager.Load(SceneManager.GetActiveScene().name);
     }
 
     public void QuitGame()
