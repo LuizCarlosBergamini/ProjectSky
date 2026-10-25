@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -27,6 +29,9 @@ public static class MainMenuBuilder
     private const string HubScenePath = "Assets/Scenes/Hub.unity";
     private const string FontPath = "Assets/Renan/Fonts/Jersey10-Regular SDF 1.asset";
 
+    // Input System's DefaultInputActions, the asset the scenes' EventSystem uses (UI/Cancel = Esc, gamepad B).
+    private const string DefaultInputActionsGuid = "ca9f5fa95ffab41fb9a615ab714db018";
+
     private static readonly string BackgroundSpritePath = $"{SpriteFolder}/MainMenu_Background_Placeholder.png";
     private static readonly string LogoSpritePath = $"{SpriteFolder}/MainMenu_Logo_Placeholder.png";
     private static readonly string StarSpritePath = $"{SpriteFolder}/MainMenu_Star.png";
@@ -41,6 +46,8 @@ public static class MainMenuBuilder
     private static readonly Color ButtonSelected = new(0.36f, 0.27f, 0.12f, 1f);
     private static readonly Color ButtonPressed = new(0.95f, 0.72f, 0.3f, 1f);
     private static readonly Color ButtonDisabled = new(0.07f, 0.07f, 0.08f, 0.45f);
+    private static readonly Color OverlayColor = new(0f, 0f, 0f, 0.7f);
+    private static readonly Color PanelColor = new(0.035f, 0.035f, 0.04f, 0.98f);
 
     private const int UILayer = 5;
     private const float ReferenceWidth = 1280f;
@@ -101,6 +108,7 @@ public static class MainMenuBuilder
             }
 
             LinkScene(scene, optionsPrefab);
+            EnsureConfirmDialog(scene, button);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -256,6 +264,87 @@ public static class MainMenuBuilder
             options.objectReferenceValue = optionsPrefab;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
+    }
+
+    /// <summary>
+    /// Adds the New Game confirmation ("a save already exists") to a scene that has none, as the last child of the
+    /// menu canvas so it draws over everything, and links it to the MainMenuController. Existing dialogs are kept.
+    /// </summary>
+    private static void EnsureConfirmDialog(Scene scene, Sprite buttonSprite)
+    {
+        MainMenuController controller = FindInScene<MainMenuController>(scene);
+        if (controller == null) return;
+
+        SerializedObject so = new(controller);
+        SerializedProperty dialogProperty = so.FindProperty("_confirmDialog");
+        if (dialogProperty.objectReferenceValue != null) return;
+
+        ConfirmDialog dialog = FindInScene<ConfirmDialog>(scene);
+        if (dialog == null) dialog = BuildConfirmDialog(controller.transform, buttonSprite);
+
+        dialogProperty.objectReferenceValue = dialog;
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static ConfirmDialog BuildConfirmDialog(Transform canvas, Sprite buttonSprite)
+    {
+        RectTransform dialogRect = CreateRect("ConfirmDialog", canvas);
+        Stretch(dialogRect);
+        dialogRect.SetAsLastSibling();
+        ConfirmDialog dialog = dialogRect.gameObject.AddComponent<ConfirmDialog>();
+
+        // Dims the menu and swallows clicks so nothing behind the question can be pressed.
+        Image overlay = CreateImage("Root", dialogRect, null, OverlayColor, raycast: true);
+        Stretch(overlay.rectTransform);
+
+        Image panel = CreateImage("Panel", overlay.rectTransform, buttonSprite, PanelColor, Image.Type.Sliced);
+        RectTransform panelRect = panel.rectTransform;
+        panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.sizeDelta = new Vector2(620f, 300f);
+        panelRect.anchoredPosition = Vector2.zero;
+
+        TextMeshProUGUI message = CreateText("Message", panelRect, "", 32f, TextColor, TextAlignmentOptions.Center);
+        message.textWrappingMode = TextWrappingModes.Normal;
+        Stretch(message.rectTransform, 36f, 36f, 32f, 110f);
+
+        RectTransform row = CreateRect("Buttons", panelRect);
+        row.anchorMin = new Vector2(0f, 0f);
+        row.anchorMax = new Vector2(1f, 0f);
+        row.pivot = new Vector2(0.5f, 0f);
+        row.sizeDelta = new Vector2(-72f, 58f);
+        row.anchoredPosition = new Vector2(0f, 32f);
+        HorizontalLayoutGroup layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 20f;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = true;
+
+        Button cancel = CreateMenuButton("CancelButton", row, buttonSprite, "VOLTAR");
+        Button confirm = CreateMenuButton("ConfirmButton", row, buttonSprite, "NOVO JOGO");
+        cancel.navigation = new Navigation { mode = Navigation.Mode.Horizontal };
+        confirm.navigation = new Navigation { mode = Navigation.Mode.Horizontal };
+
+        InputActionReference cancelAction = AssetDatabase
+            .LoadAllAssetsAtPath(AssetDatabase.GUIDToAssetPath(DefaultInputActionsGuid))
+            .OfType<InputActionReference>()
+            .FirstOrDefault(reference => reference.action != null
+                && reference.action.actionMap != null
+                && reference.action.actionMap.name == "UI"
+                && reference.action.name == "Cancel");
+        if (cancelAction == null) Debug.LogWarning("[Menu] UI/Cancel nao encontrado: Esc/B nao vao fechar a confirmacao.");
+
+        SetRefs(dialog,
+            ("_root", overlay.gameObject),
+            ("_messageLabel", message),
+            ("_confirmButton", confirm),
+            ("_confirmLabel", confirm.GetComponentInChildren<TextMeshProUGUI>()),
+            ("_cancelButton", cancel),
+            ("_cancelLabel", cancel.GetComponentInChildren<TextMeshProUGUI>()),
+            ("_cancelAction", cancelAction));
+
+        overlay.gameObject.SetActive(false);
+        return dialog;
     }
 
     private static Button CreateMenuButton(string name, Transform parent, Sprite sprite, string label)
