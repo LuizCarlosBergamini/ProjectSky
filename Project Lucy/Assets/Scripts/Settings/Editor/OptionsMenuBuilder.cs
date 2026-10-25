@@ -18,7 +18,11 @@ using Object = UnityEngine.Object;
 /// </summary>
 public static class OptionsMenuBuilder
 {
-    public const string PrefabPath = "Assets/Renan/Prefabs/OptionsMenu.prefab";
+    // In Resources so callers with an empty prefab field can still load it (OptionsMenuController.LoadPrefab).
+    public const string PrefabPath = "Assets/Resources/" + OptionsMenuController.ResourcePath + ".prefab";
+
+    // Where the prefab lived before it moved to Resources; an existing one is moved, keeping its GUID and references.
+    private const string LegacyPrefabPath = "Assets/Renan/Prefabs/OptionsMenu.prefab";
     public const string SettingsManagerPrefabPath = "Assets/Resources/" + SettingsManager.ResourcePath + ".prefab";
     public const string MixerPath = "Assets/Main.mixer";
 
@@ -39,9 +43,40 @@ public static class OptionsMenuBuilder
 
     private const int UILayer = 5;
     private const float RowHeight = 40f;
-    private const float PlaceholderRowHeight = 34f;
     private const float HeaderHeight = 30f;
     private const float LabelWidth = 250f;
+    private const float ModeButtonWidth = 300f;
+
+    // Default text of the "Como jogar" panel (TMP rich text). Edit it in the prefab afterwards; only "Rebuild
+    // Options Menu Prefab" writes it again.
+    private const string Accent = "#F2B84D";
+    private const string GuideText =
+        "<size=34><color=" + Accent + ">CONTROLES</color></size>\n" +
+        "<b>A / D</b>: andar\n" +
+        "<b>W</b> ou <b>Espaço</b>: pular\n" +
+        "<b>Mouse</b>: mirar\n" +
+        "<b>Clique esquerdo</b>: atacar (clique de novo durante o golpe para emendar o combo)\n" +
+        "<b>F</b>: lançar o gancho no ponto de agarrar mais perto da mira\n" +
+        "<b>A / D</b> pendurada no gancho: balançar\n" +
+        "<b>Espaço</b> pendurada no gancho: soltar e ganhar impulso\n" +
+        "<b>E</b>: conversar e interagir\n" +
+        "<b>Espaço</b> ou <b>clique</b>: avançar o diálogo\n" +
+        "<b>Esc</b> ou <b>P</b>: pausar\n\n" +
+        "<size=34><color=" + Accent + ">O HUB</color></size>\n" +
+        "O Hub é a base da Lucy. Converse com os personagens para receber missões e entre no portal para " +
+        "abrir a seleção de chefes.\n\n" +
+        "<size=34><color=" + Accent + ">CHEFES</color></size>\n" +
+        "Cada chefe tem a sua fase. Chefes bloqueados aparecem em cinza: derrote os chefes liberados para " +
+        "abrir os próximos. A arena se fecha quando você entra e só abre de novo quando o chefe cai.\n" +
+        "Cuidado com o olhar da Medusa: ele transforma a Lucy em pedra por alguns segundos.\n\n" +
+        "<size=34><color=" + Accent + ">ITENS E UPGRADES</color></size>\n" +
+        "Vencer um chefe dá itens de recompensa. Se a Lucy morrer, a fase recomeça e os itens coletados " +
+        "naquela tentativa são perdidos; ao vencer, você volta ao Hub com tudo.\n" +
+        "Depois do primeiro chefe derrotado, o vendedor de upgrades aparece no Hub. Troque seus itens por " +
+        "melhorias: cada fileira da árvore custa um tipo de item.\n\n" +
+        "<size=34><color=" + Accent + ">DICAS</color></size>\n" +
+        "Solte o gancho no ponto mais alto do balanço para ir mais longe.\n" +
+        "Ajuste o volume da música e dos efeitos aqui nas opções, no menu principal ou com o jogo pausado.";
 
     private class Sprites
     {
@@ -76,6 +111,8 @@ public static class OptionsMenuBuilder
     /// <summary>The OptionsMenu prefab asset, built first when missing (or always, with <paramref name="overwrite"/>).</summary>
     public static OptionsMenuController BuildPrefab(bool overwrite = false)
     {
+        MoveLegacyPrefab();
+
         if (!overwrite)
         {
             GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
@@ -98,6 +135,21 @@ public static class OptionsMenuBuilder
         {
             _font = null;
         }
+    }
+
+    private static void MoveLegacyPrefab()
+    {
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(LegacyPrefabPath) == null) return;
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) != null)
+        {
+            Debug.LogWarning($"[Opcoes] Existem {LegacyPrefabPath} e {PrefabPath}; o antigo nao e mais usado e pode ser apagado.");
+            return;
+        }
+
+        EnsureFolder(Path.GetDirectoryName(PrefabPath)?.Replace('\\', '/'));
+        string error = AssetDatabase.MoveAsset(LegacyPrefabPath, PrefabPath);
+        if (string.IsNullOrEmpty(error)) Debug.Log($"[Opcoes] Prefab movido de {LegacyPrefabPath} para {PrefabPath}.");
+        else Debug.LogError($"[Opcoes] Nao consegui mover {LegacyPrefabPath} para {PrefabPath}: {error}");
     }
 
     /// <summary>Resources/SettingsManager with Main.mixer assigned. Created only when missing.</summary>
@@ -237,7 +289,11 @@ public static class OptionsMenuBuilder
         TextMeshProUGUI title = CreateText("Title", titleBar, "OPÇÕES", 48f, TextColor, TextAlignmentOptions.Center);
         Stretch(title.rectTransform);
 
-        RectTransform content = CreateRect("Content", frameRect);
+        // Everything of the options proper; hidden while the guide panel takes its place.
+        RectTransform optionsPanel = CreateRect("OptionsPanel", frameRect);
+        Stretch(optionsPanel);
+
+        RectTransform content = CreateRect("Content", optionsPanel);
         Stretch(content, 48f, 48f, 76f, 76f);
         VerticalLayoutGroup contentLayout = content.gameObject.AddComponent<VerticalLayoutGroup>();
         contentLayout.spacing = 14f;
@@ -246,23 +302,30 @@ public static class OptionsMenuBuilder
         contentLayout.childForceExpandWidth = true;
         contentLayout.childForceExpandHeight = false;
 
-        // Audio: the only working section.
         RectTransform audio = CreateSection("Section_Audio", content, "ÁUDIO");
         Slider master = CreateVolumeRow("Row_MasterVolume", audio, "VOLUME GERAL", VolumeChannel.Master, sprites);
         Slider music = CreateVolumeRow("Row_MusicVolume", audio, "MÚSICA", VolumeChannel.Music, sprites);
         Slider sfx = CreateVolumeRow("Row_SfxVolume", audio, "EFEITOS", VolumeChannel.Sfx, sprites);
 
-        // PLACEHOLDER sections: laid out for the final menu, not implemented. Faded and not selectable.
-        RectTransform display = CreatePlaceholderSection("Placeholder_Display", content, "VÍDEO");
-        CreatePlaceholderRow(display, "RESOLUÇÃO");
-        CreatePlaceholderRow(display, "TELA CHEIA");
-        RectTransform keys = CreatePlaceholderSection("Placeholder_KeyBindings", content, "CONTROLES");
-        CreatePlaceholderRow(keys, "MAPEAMENTO DE TECLAS");
-        RectTransform language = CreatePlaceholderSection("Placeholder_Language", content, "IDIOMA");
-        CreatePlaceholderRow(language, "IDIOMA DO JOGO");
+        // The mode's button: the guide on the main menu, saving in the pause menu. Only one is shown at a time.
+        RectTransform modeRow = CreateRect("Row_ModeButtons", content);
+        SetLayout(modeRow.gameObject, minHeight: 64f, preferredHeight: 64f);
+        HorizontalLayoutGroup modeLayout = modeRow.gameObject.AddComponent<HorizontalLayoutGroup>();
+        modeLayout.childAlignment = TextAnchor.LowerCenter;
+        modeLayout.childControlWidth = modeLayout.childControlHeight = true;
+        modeLayout.childForceExpandWidth = modeLayout.childForceExpandHeight = false;
+
+        Button guideButton = CreateButton("GuideButton", modeRow, sprites.panel, ButtonColor, "COMO JOGAR", 28f, TextColor);
+        SetLayout(guideButton.gameObject, preferredWidth: ModeButtonWidth, minHeight: 48f, preferredHeight: 48f);
+        Button saveButton = CreateButton("SaveButton", modeRow, sprites.panel, ButtonColor, "SALVAR JOGO", 28f, TextColor);
+        SetLayout(saveButton.gameObject, preferredWidth: ModeButtonWidth, minHeight: 48f, preferredHeight: 48f);
+        saveButton.gameObject.SetActive(false);
+
+        TextMeshProUGUI saveStatus = CreateText("SaveStatus", content, string.Empty, 26f, AccentColor, TextAlignmentOptions.Center);
+        SetLayout(saveStatus.gameObject, minHeight: 30f, preferredHeight: 30f);
 
         // Bottom bar: back button in the middle, input hint on the right.
-        RectTransform bottomBar = CreateRect("BottomBar", frameRect);
+        RectTransform bottomBar = CreateRect("BottomBar", optionsPanel);
         bottomBar.anchorMin = new Vector2(0f, 0f);
         bottomBar.anchorMax = new Vector2(1f, 0f);
         bottomBar.pivot = new Vector2(0.5f, 0f);
@@ -283,13 +346,18 @@ public static class OptionsMenuBuilder
         hint.fontSizeMin = 12f;
         hint.fontSizeMax = 20f;
 
-        // Vertical navigation runs sliders top to bottom, then Back; left/right stays on the slider to change it.
-        LinkVertical(master, music, sfx, backButton);
+        GuidePanel guide = CreateGuidePanel(frameRect, sprites);
 
+        // Vertical navigation (sliders, the mode's button, Back) is linked by the controller on Open, since it
+        // depends on the mode.
         OptionsMenuController controller = canvasRect.gameObject.AddComponent<OptionsMenuController>();
         SetRefs(controller,
-            ("_root", root.gameObject), ("_canvas", canvas), ("_backButton", backButton),
-            ("_firstSelected", master), ("_cancelAction", cancelAction), ("_closeAction", closeAction));
+            ("_root", root.gameObject), ("_canvas", canvas), ("_backButton", backButton), ("_title", title),
+            ("_firstSelected", master), ("_cancelAction", cancelAction), ("_closeAction", closeAction),
+            ("_guideButton", guideButton), ("_guidePanel", guide.panel), ("_optionsPanel", optionsPanel.gameObject),
+            ("_guideBackButton", guide.backButton), ("_guideFirstSelected", guide.scrollbar), ("_guideScroll", guide.scroll),
+            ("_saveButton", saveButton), ("_saveStatusLabel", saveStatus));
+        SetRefArray(controller, "_volumeSliders", master, music, sfx);
 
         root.gameObject.SetActive(false);
         return controller;
@@ -309,16 +377,6 @@ public static class OptionsMenuBuilder
         return section;
     }
 
-    private static RectTransform CreatePlaceholderSection(string name, Transform parent, string header)
-    {
-        RectTransform section = CreateSection(name, parent, header);
-        CanvasGroup group = section.gameObject.AddComponent<CanvasGroup>();
-        group.alpha = 0.45f;
-        group.interactable = false;
-        group.blocksRaycasts = false;
-        return section;
-    }
-
     private static RectTransform CreateRow(string name, Transform parent, string label, float height)
     {
         RectTransform row = CreateRect(name, parent);
@@ -332,13 +390,6 @@ public static class OptionsMenuBuilder
         TextMeshProUGUI labelText = CreateText("Label", row, label, 28f, TextColor, TextAlignmentOptions.MidlineLeft);
         SetLayout(labelText.gameObject, preferredWidth: LabelWidth, flexibleHeight: 1f);
         return row;
-    }
-
-    private static void CreatePlaceholderRow(Transform section, string label)
-    {
-        RectTransform row = CreateRow($"Row_{label.Replace(' ', '_')}", section, label, PlaceholderRowHeight);
-        TextMeshProUGUI soon = CreateText("Soon", row, "EM BREVE", 24f, MutedTextColor, TextAlignmentOptions.MidlineRight);
-        SetLayout(soon.gameObject, flexibleWidth: 1f, flexibleHeight: 1f);
     }
 
     private static Slider CreateVolumeRow(string name, Transform section, string label, VolumeChannel channel, Sprites sprites)
@@ -392,18 +443,109 @@ public static class OptionsMenuBuilder
         return slider;
     }
 
-    private static void LinkVertical(params Selectable[] chain)
+    private class GuidePanel
     {
-        for (int i = 0; i < chain.Length; i++)
-        {
-            Navigation navigation = chain[i].navigation;
-            navigation.mode = Navigation.Mode.Explicit;
-            navigation.selectOnUp = i > 0 ? chain[i - 1] : chain[^1];
-            navigation.selectOnDown = i < chain.Length - 1 ? chain[i + 1] : chain[0];
-            navigation.selectOnLeft = null;
-            navigation.selectOnRight = null;
-            chain[i].navigation = navigation;
-        }
+        public GameObject panel;
+        public ScrollRect scroll;
+        public Scrollbar scrollbar;
+        public Button backButton;
+    }
+
+    /// <summary>
+    /// The "Como jogar" panel: scrolling text over the same area as the options, with its own Back button.
+    /// Mouse wheel scrolls the text; with keyboard/gamepad the scrollbar takes the focus and up/down scrolls.
+    /// </summary>
+    private static GuidePanel CreateGuidePanel(RectTransform frame, Sprites sprites)
+    {
+        RectTransform panel = CreateRect("GuidePanel", frame);
+        Stretch(panel);
+
+        RectTransform scrollRect = CreateRect("GuideScroll", panel);
+        Stretch(scrollRect, 48f, 48f, 76f, 76f);
+        ScrollRect scroll = scrollRect.gameObject.AddComponent<ScrollRect>();
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+        scroll.scrollSensitivity = 30f;
+
+        RectTransform viewport = CreateRect("Viewport", scrollRect);
+        Stretch(viewport, 0f, 28f, 0f, 0f);
+        viewport.gameObject.AddComponent<RectMask2D>();
+        // Transparent but raycastable, so the wheel and drags over the text reach the ScrollRect.
+        Image viewportHit = viewport.gameObject.AddComponent<Image>();
+        viewportHit.color = new Color(0f, 0f, 0f, 0f);
+
+        RectTransform textContent = CreateRect("Content", viewport);
+        textContent.anchorMin = new Vector2(0f, 1f);
+        textContent.anchorMax = new Vector2(1f, 1f);
+        textContent.pivot = new Vector2(0.5f, 1f);
+        textContent.offsetMin = textContent.offsetMax = Vector2.zero;
+        VerticalLayoutGroup textLayout = textContent.gameObject.AddComponent<VerticalLayoutGroup>();
+        textLayout.padding = new RectOffset(4, 12, 4, 16);
+        textLayout.childControlWidth = textLayout.childControlHeight = true;
+        textLayout.childForceExpandWidth = true;
+        textLayout.childForceExpandHeight = false;
+        ContentSizeFitter fitter = textContent.gameObject.AddComponent<ContentSizeFitter>();
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        TextMeshProUGUI text = CreateText("GuideText", textContent, GuideText, 26f, TextColor, TextAlignmentOptions.TopLeft);
+        text.textWrappingMode = TextWrappingModes.Normal;
+        text.richText = true;
+        text.lineSpacing = 8f;
+        text.paragraphSpacing = 4f;
+
+        Image scrollbarTrack = CreateImage("Scrollbar", scrollRect, sprites.panel, TrackColor, Image.Type.Sliced, raycast: true);
+        RectTransform scrollbarRect = scrollbarTrack.rectTransform;
+        scrollbarRect.anchorMin = new Vector2(1f, 0f);
+        scrollbarRect.anchorMax = new Vector2(1f, 1f);
+        scrollbarRect.pivot = new Vector2(1f, 0.5f);
+        scrollbarRect.offsetMin = new Vector2(-12f, 0f);
+        scrollbarRect.offsetMax = Vector2.zero;
+        RectTransform slidingArea = CreateRect("Sliding Area", scrollbarRect);
+        Stretch(slidingArea);
+        Image handle = CreateImage("Handle", slidingArea, sprites.panel, Color.white, Image.Type.Sliced, raycast: true);
+        handle.rectTransform.offsetMin = handle.rectTransform.offsetMax = Vector2.zero;
+
+        Scrollbar scrollbar = scrollbarTrack.gameObject.AddComponent<Scrollbar>();
+        scrollbar.handleRect = handle.rectTransform;
+        scrollbar.targetGraphic = handle;
+        scrollbar.direction = Scrollbar.Direction.BottomToTop;
+        // Selected is the accent colour, like the sliders, so the focus is visible with keyboard or gamepad.
+        scrollbar.colors = MakeColors(selected: AccentColor);
+
+        scroll.content = textContent;
+        scroll.viewport = viewport;
+        scroll.verticalScrollbar = scrollbar;
+        scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+
+        RectTransform bottomBar = CreateRect("BottomBar", panel);
+        bottomBar.anchorMin = new Vector2(0f, 0f);
+        bottomBar.anchorMax = new Vector2(1f, 0f);
+        bottomBar.pivot = new Vector2(0.5f, 0f);
+        bottomBar.offsetMin = new Vector2(20f, 14f);
+        bottomBar.offsetMax = new Vector2(-20f, 66f);
+
+        Button backButton = CreateButton("GuideBackButton", bottomBar, sprites.panel, ButtonColor, "VOLTAR", 28f, TextColor);
+        RectTransform backRect = (RectTransform)backButton.transform;
+        backRect.anchorMin = backRect.anchorMax = new Vector2(0.5f, 0.5f);
+        backRect.pivot = new Vector2(0.5f, 0.5f);
+        backRect.sizeDelta = new Vector2(200f, 48f);
+
+        TextMeshProUGUI hint = CreateText("Hint", bottomBar, "[Cima / Baixo] Rolar   [Esc / B] Voltar", 20f, MutedTextColor, TextAlignmentOptions.MidlineRight);
+        Stretch(hint.rectTransform, 480f, 8f, 0f, 0f);
+        hint.enableAutoSizing = true;
+        hint.fontSizeMin = 12f;
+        hint.fontSizeMax = 20f;
+
+        // Up/down on the scrollbar scrolls (a Scrollbar only moves its value when there is nothing to navigate
+        // to in that direction); left/right goes to Back, and up from Back returns to the scrollbar.
+        Navigation scrollbarNavigation = new() { mode = Navigation.Mode.Explicit, selectOnLeft = backButton, selectOnRight = backButton };
+        scrollbar.navigation = scrollbarNavigation;
+        Navigation backNavigation = new() { mode = Navigation.Mode.Explicit, selectOnUp = scrollbar };
+        backButton.navigation = backNavigation;
+
+        panel.gameObject.SetActive(false);
+        return new GuidePanel { panel = panel.gameObject, scroll = scroll, scrollbar = scrollbar, backButton = backButton };
     }
 
     #endregion
@@ -526,6 +668,21 @@ public static class OptionsMenuBuilder
             property.objectReferenceValue = value;
         }
 
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void SetRefArray(Object target, string field, params Object[] values)
+    {
+        SerializedObject so = new(target);
+        SerializedProperty property = so.FindProperty(field);
+        if (property == null || !property.isArray)
+        {
+            Debug.LogError($"[Opcoes] Campo '{field}' nao existe em {target.GetType().Name}.");
+            return;
+        }
+
+        property.arraySize = values.Length;
+        for (int i = 0; i < values.Length; i++) property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
         so.ApplyModifiedPropertiesWithoutUndo();
     }
 
