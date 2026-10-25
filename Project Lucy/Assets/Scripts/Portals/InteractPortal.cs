@@ -10,8 +10,8 @@ using UnityEngine.UI;
 /// A portal the player uses on purpose: standing inside the trigger shows a label with the action key (the same
 /// "E" box as the NPCs) and only pressing that key fires the portal. What it does is up to whoever listens:
 /// the UnityEvent for scene wiring (back to the Hub) or <see cref="Interacted"/> from code (boss selector).
-/// Until the art exists a purple placeholder stands in, sized to Lucy; the label sits a fixed distance above
-/// her head, measured from the ground under the portal, so every portal shows it at the same height.
+/// The portal art is the animated sprite in <see cref="_visual"/> (the Hub's portal, copied by Build Portals); it is
+/// stood on the ground under the trigger and the label sits just above it.
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class InteractPortal : MonoBehaviour
@@ -31,19 +31,22 @@ public class InteractPortal : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _keyText;
     [Tooltip("Caixa da tecla; a largura acompanha o nome da tecla, como nos NPCs.")]
     [SerializeField] private LayoutElement _keyBox;
+    [Tooltip("Cor da letra da tecla. Preta como nos NPCs: a caixa e clara, entao letra branca some.")]
+    [SerializeField] private Color _keyTextColor = Color.black;
 
-    [Header("Posicao")]
-    [Tooltip("Distancia entre o topo da cabeca da Lucy e a label, em unidades.")]
+    [Header("Visual")]
+    [Tooltip("Sprite animado do portal. A label fica logo acima dele.")]
+    [SerializeField] private SpriteRenderer _visual;
+    [Tooltip("Apoia o sprite no chao embaixo do portal ao iniciar. Desligue se ele ja esta posicionado a mao.")]
+    [SerializeField] private bool _snapVisualToGround = true;
+    [Tooltip("Distancia entre o topo do sprite do portal e a label, em unidades.")]
+    [SerializeField] private float _labelAboveVisual = 0.5f;
+
+    [Header("Sem visual")]
+    [Tooltip("Sem sprite, a label fica esta distancia acima da cabeca da Lucy.")]
     [SerializeField] private float _labelAboveHead = 1f;
     [Tooltip("Altura usada quando a Lucy (ou o collider dela) nao e encontrada na cena.")]
     [SerializeField] private float _fallbackPlayerHeight = 2f;
-
-    [Header("Placeholder")]
-    [Tooltip("Visual provisorio do portal. Troque o sprite aqui quando a arte existir.")]
-    [SerializeField] private SpriteRenderer _placeholder;
-    [Tooltip("Ajusta o placeholder para a altura da Lucy, apoiado no chao. Desligue ao colocar a arte final.")]
-    [SerializeField] private bool _fitPlaceholderToPlayer = true;
-    [SerializeField] private float _placeholderWidth = 1.5f;
 
     [Header("Events")]
     [SerializeField] private UnityEvent _onInteract;
@@ -66,6 +69,8 @@ public class InteractPortal : MonoBehaviour
     private void Start()
     {
         PlaceVisuals();
+
+        if (_keyText != null) _keyText.color = _keyTextColor;
 
         if (_interactAction == null || _interactAction.action == null || _keyText == null) return;
         if (_interactAction.action.bindings.Count == 0) return;
@@ -120,32 +125,32 @@ public class InteractPortal : MonoBehaviour
         return true;
     }
 
-    /// <summary>Puts the placeholder on the ground and the label one Lucy-height plus the gap above it.</summary>
+    /// <summary>Stands the portal sprite on the ground and puts the label just above it.</summary>
     private void PlaceVisuals()
     {
         GameObject player = GameObject.FindWithTag(_playerTag);
-        float height = PlayerHeight(player);
         float ground = GroundBelow(player);
+        float labelBottom = ground + PlayerHeight(player) + _labelAboveHead;
 
-        if (_prompt != null)
+        if (_visual != null)
         {
-            // The prompt's pivot is its centre; lift it by half the key box so its bottom edge is the reference.
-            float halfPrompt = _keyBox != null ? _keyBox.preferredHeight * _prompt.transform.lossyScale.y * 0.5f : 0f;
-            Vector3 position = _prompt.transform.position;
-            _prompt.transform.position = new Vector3(transform.position.x, ground + height + _labelAboveHead + halfPrompt, position.z);
+            if (_snapVisualToGround)
+            {
+                Transform visual = _visual.transform;
+                visual.position = new Vector3(transform.position.x, visual.position.y + ground - _visual.bounds.min.y,
+                    visual.position.z);
+            }
+
+            labelBottom = _visual.bounds.max.y + _labelAboveVisual;
         }
 
-        if (_placeholder == null || !_fitPlaceholderToPlayer) return;
+        if (_prompt == null) return;
 
-        Transform placeholder = _placeholder.transform;
-        placeholder.position = new Vector3(transform.position.x, ground + height * 0.5f, placeholder.position.z);
-
-        Vector2 spriteSize = _placeholder.sprite != null ? (Vector2)_placeholder.sprite.bounds.size : Vector2.one;
-        Vector3 parentScale = placeholder.parent != null ? placeholder.parent.lossyScale : Vector3.one;
-        placeholder.localScale = new Vector3(
-            _placeholderWidth / Mathf.Max(spriteSize.x * Mathf.Abs(parentScale.x), 0.0001f),
-            height / Mathf.Max(spriteSize.y * Mathf.Abs(parentScale.y), 0.0001f),
-            1f);
+        // The prompt's pivot is its centre; lift it by half the key box so its bottom edge is the reference.
+        float halfPrompt = _keyBox != null ? _keyBox.preferredHeight * _prompt.transform.lossyScale.y * 0.5f : 0f;
+        Vector3 position = _prompt.transform.position;
+        float x = _visual != null ? _visual.bounds.center.x : transform.position.x;
+        _prompt.transform.position = new Vector3(x, labelBottom + halfPrompt, position.z);
     }
 
     /// <summary>

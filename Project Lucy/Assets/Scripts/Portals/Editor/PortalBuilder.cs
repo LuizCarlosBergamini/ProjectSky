@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using HierarchicalStateMachine;
 using TMPro;
 using UnityEditor;
@@ -17,9 +16,10 @@ using Object = UnityEngine.Object;
 /// - Level1-3: a "DeathPortal" behind the start point (back to the Hub, only shown after a death) and the
 ///   boss's HubReturnTrigger turned from walk-in into press-E.
 /// - Hub: the boss selector portal opens on press-E with "Escolha a fase".
-/// Every portal gets a purple placeholder until its art exists.
+/// The art is the Hub's animated portal (the "Portal" SpriteFlipbook): it is saved once as the PortalVisual prefab
+/// and every level portal gets a copy; the Hub portal uses the original.
 /// Safe to run again: anything that already has an InteractPortal is left alone, so the DeathPortal can be moved
-/// by hand in each level without being reset; only a missing placeholder is added.
+/// by hand in each level without being reset; only a missing visual is added (and the old purple placeholder removed).
 /// </summary>
 public static class PortalBuilder
 {
@@ -35,7 +35,9 @@ public static class PortalBuilder
     private const string InputActionsPath = "Assets/InputS/PlayerInputs.inputactions";
     private const string NpcPrefabPath = "Assets/Renan/Prefabs/NPC.prefab";
     private const string InteractActionName = "Dialog/Interact";
-    private const string PlaceholderSpritePath = "Assets/Sprites/Portals/portal_placeholder.png";
+    private const string VisualPrefabPath = "Assets/Prefabs/Portals/PortalVisual.prefab";
+    private const string HubVisualName = "Portal";
+    private const string OldPlaceholderName = "Placeholder";
 
     private const string DeathPortalName = "DeathPortal";
     private const string BossPortalName = "HubReturnTrigger";
@@ -54,9 +56,8 @@ public static class PortalBuilder
     private const float PromptGap = 0.5f;
     private const int PromptSortingOrder = 20;
 
-    // Behind Lucy (10), in front of the tilemaps (0).
-    private const int PlaceholderSortingOrder = 5;
-    private static readonly Color PlaceholderColor = new(0.55f, 0.25f, 0.85f, 0.7f);
+    // In the levels: behind Lucy (10), in front of the tilemaps and decoration (0 and below).
+    private const int LevelVisualSortingOrder = 5;
 
     private class PortalAssets
     {
@@ -64,7 +65,7 @@ public static class PortalBuilder
         public InputActionReference interact;
         public Sprite keySprite;
         public Image.Type keySpriteType;
-        public Sprite placeholder;
+        public GameObject visualPrefab;
     }
 
     [MenuItem("Tools/Lucy/Build Portals")]
@@ -80,16 +81,17 @@ public static class PortalBuilder
         PortalAssets assets = LoadAssets();
         List<string> changes = new();
 
+        // The Hub first: its portal art becomes the prefab the levels use.
+        Scene hub = EditorSceneManager.OpenScene(HubScenePath, OpenSceneMode.Single);
+        BuildHub(hub, assets, changes);
+        EditorSceneManager.SaveScene(hub);
+
         foreach (string path in LevelScenePaths)
         {
             Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
             BuildLevel(scene, assets, changes);
             EditorSceneManager.SaveScene(scene);
         }
-
-        Scene hub = EditorSceneManager.OpenScene(HubScenePath, OpenSceneMode.Single);
-        BuildHub(hub, assets, changes);
-        EditorSceneManager.SaveScene(hub);
 
         if (!string.IsNullOrEmpty(previousScene) && previousScene != HubScenePath)
         {
@@ -114,7 +116,7 @@ public static class PortalBuilder
 
         BuildDeathPortal(scene, runManager, assets, changes);
         ConvertBossPortal(scene, runManager, assets, changes);
-        AddPlaceholders(scene, assets, changes);
+        AddVisuals(scene, assets, changes);
         EditorSceneManager.MarkSceneDirty(scene);
     }
 
@@ -206,31 +208,98 @@ public static class PortalBuilder
             changes.Add($"Hub: {trigger.name} com tecla de acao");
         }
 
-        AddPlaceholders(scene, assets, changes);
+        AssignHubVisual(scene, triggers, assets, changes);
+        RemoveOldPlaceholders(scene, changes);
         EditorSceneManager.MarkSceneDirty(scene);
     }
 
-    /// <summary>Purple stand-in for the portal art; InteractPortal sizes it to Lucy and puts it on the ground.</summary>
-    private static void AddPlaceholders(Scene scene, PortalAssets assets, List<string> changes)
+    /// <summary>
+    /// The Hub's portal art already stands by the selector trigger: the trigger points at it and it stays where it
+    /// was placed. It is also saved as the PortalVisual prefab (once) for the level portals.
+    /// </summary>
+    private static void AssignHubVisual(Scene scene, List<BossSelectorTrigger> triggers, PortalAssets assets, List<string> changes)
     {
+        SpriteFlipbook hubVisual = null;
+        foreach (SpriteFlipbook flipbook in FindAllInScene<SpriteFlipbook>(scene))
+        {
+            if (flipbook.name != HubVisualName) continue;
+            hubVisual = flipbook;
+            break;
+        }
+
+        if (hubVisual == null)
+        {
+            Debug.LogWarning($"[Portais] Hub: objeto '{HubVisualName}' com SpriteFlipbook nao encontrado; os portais ficam sem sprite.");
+            return;
+        }
+
+        if (assets.visualPrefab == null)
+        {
+            EnsureFolder(System.IO.Path.GetDirectoryName(VisualPrefabPath)?.Replace('\\', '/'));
+            GameObject copy = Object.Instantiate(hubVisual.gameObject);
+            copy.name = "PortalVisual";
+            copy.transform.localPosition = Vector3.zero;
+            copy.transform.localRotation = Quaternion.identity;
+            assets.visualPrefab = PrefabUtility.SaveAsPrefabAsset(copy, VisualPrefabPath);
+            Object.DestroyImmediate(copy);
+            changes.Add($"prefab {VisualPrefabPath}");
+        }
+
+        SpriteRenderer renderer = hubVisual.GetComponent<SpriteRenderer>();
+        foreach (BossSelectorTrigger trigger in triggers)
+        {
+            if (!trigger.TryGetComponent(out InteractPortal portal)) continue;
+
+            SerializedObject so = new(portal);
+            SerializedProperty visual = so.FindProperty("_visual");
+            if (visual.objectReferenceValue != null) continue;
+
+            visual.objectReferenceValue = renderer;
+            so.FindProperty("_snapVisualToGround").boolValue = false;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            changes.Add($"Hub: {trigger.name} usa o sprite '{HubVisualName}'");
+        }
+    }
+
+    /// <summary>Every level portal without art gets a copy of the Hub's portal, stood on the ground at runtime.</summary>
+    private static void AddVisuals(Scene scene, PortalAssets assets, List<string> changes)
+    {
+        RemoveOldPlaceholders(scene, changes);
+
+        if (assets.visualPrefab == null)
+        {
+            Debug.LogWarning($"[Portais] {scene.name}: prefab {VisualPrefabPath} nao existe; os portais ficam sem sprite.");
+            return;
+        }
+
         foreach (InteractPortal portal in FindAllInScene<InteractPortal>(scene))
         {
             SerializedObject so = new(portal);
-            SerializedProperty placeholderProperty = so.FindProperty("_placeholder");
-            if (placeholderProperty.objectReferenceValue != null) continue;
+            SerializedProperty visual = so.FindProperty("_visual");
+            if (visual.objectReferenceValue != null) continue;
 
-            GameObject placeholder = new("Placeholder");
-            placeholder.transform.SetParent(portal.transform, false);
-            placeholder.layer = portal.gameObject.layer;
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(assets.visualPrefab, portal.transform);
+            instance.transform.localPosition = Vector3.zero;
+            SpriteRenderer renderer = instance.GetComponent<SpriteRenderer>();
+            renderer.sortingOrder = LevelVisualSortingOrder;
 
-            SpriteRenderer renderer = placeholder.AddComponent<SpriteRenderer>();
-            renderer.sprite = assets.placeholder;
-            renderer.color = PlaceholderColor;
-            renderer.sortingOrder = PlaceholderSortingOrder;
-
-            placeholderProperty.objectReferenceValue = renderer;
+            visual.objectReferenceValue = renderer;
+            so.FindProperty("_snapVisualToGround").boolValue = true;
             so.ApplyModifiedPropertiesWithoutUndo();
-            changes.Add($"{scene.name}: placeholder em {portal.name}");
+            changes.Add($"{scene.name}: sprite do portal em {portal.name}");
+        }
+    }
+
+    /// <summary>The purple placeholder from the previous version of this builder.</summary>
+    private static void RemoveOldPlaceholders(Scene scene, List<string> changes)
+    {
+        foreach (InteractPortal portal in FindAllInScene<InteractPortal>(scene))
+        {
+            Transform placeholder = portal.transform.Find(OldPlaceholderName);
+            if (placeholder == null) continue;
+
+            Object.DestroyImmediate(placeholder.gameObject);
+            changes.Add($"{scene.name}: placeholder roxo removido de {portal.name}");
         }
     }
 
@@ -325,6 +394,8 @@ public static class PortalBuilder
         keyBox.preferredHeight = KeyBoxSize;
 
         TextMeshProUGUI keyText = CreateText("Text", keyObject.transform, "E", assets.font);
+        // Black like the NPCs' key: the box is light, a white letter disappears on it.
+        keyText.color = Color.black;
         keyText.alignment = TextAlignmentOptions.Center;
         RectTransform keyTextRect = keyText.rectTransform;
         keyTextRect.anchorMin = Vector2.zero;
@@ -392,45 +463,22 @@ public static class PortalBuilder
 
         if (assets.keySprite == null) Debug.LogWarning("[Portais] Caixa da tecla do NPC nao encontrada; a tecla fica sem fundo.");
 
-        assets.placeholder = LoadPlaceholderSprite();
+        assets.visualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(VisualPrefabPath);
         return assets;
-    }
-
-    /// <summary>A plain white square (one unit), tinted purple on each portal. Generated once, then left alone.</summary>
-    private static Sprite LoadPlaceholderSprite()
-    {
-        string fullPath = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? string.Empty, PlaceholderSpritePath);
-        if (!File.Exists(fullPath))
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? string.Empty);
-
-            const int size = 4;
-            Texture2D texture = new(size, size, TextureFormat.RGBA32, false);
-            Color32[] pixels = new Color32[size * size];
-            for (int i = 0; i < pixels.Length; i++) pixels[i] = new Color32(255, 255, 255, 255);
-            texture.SetPixels32(pixels);
-            File.WriteAllBytes(fullPath, texture.EncodeToPNG());
-            Object.DestroyImmediate(texture);
-
-            AssetDatabase.ImportAsset(PlaceholderSpritePath, ImportAssetOptions.ForceSynchronousImport);
-            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(PlaceholderSpritePath);
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = size;
-            importer.filterMode = FilterMode.Point;
-            importer.mipmapEnabled = false;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.SaveAndReimport();
-        }
-
-        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(PlaceholderSpritePath);
-        if (sprite == null) Debug.LogWarning($"[Portais] Sprite do placeholder nao encontrado em {PlaceholderSpritePath}.");
-        return sprite;
     }
 
     #endregion
 
     #region Helpers
+
+    private static void EnsureFolder(string path)
+    {
+        if (string.IsNullOrEmpty(path) || AssetDatabase.IsValidFolder(path)) return;
+
+        string parent = System.IO.Path.GetDirectoryName(path)?.Replace('\\', '/');
+        EnsureFolder(parent);
+        AssetDatabase.CreateFolder(parent, System.IO.Path.GetFileName(path));
+    }
 
     private static T FindInScene<T>(Scene scene) where T : Component
     {
