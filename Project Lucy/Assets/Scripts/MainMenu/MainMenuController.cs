@@ -187,7 +187,7 @@ public class MainMenuController : MonoBehaviour
         }
 
         SetButtonsInteractable(false);
-        options.Open();
+        options.Open(OptionsMenuMode.MainMenu);
     }
 
     public void QuitGame()
@@ -238,6 +238,7 @@ public class MainMenuController : MonoBehaviour
     private OptionsMenuController GetOptionsMenu()
     {
         if (_optionsMenu != null) return _optionsMenu;
+        if (_optionsMenuPrefab == null) _optionsMenuPrefab = OptionsMenuController.LoadPrefab();
         if (_optionsMenuPrefab == null) return null;
 
         // Its own canvas and sort order: it needs no parent and draws above this menu wherever it lives.
