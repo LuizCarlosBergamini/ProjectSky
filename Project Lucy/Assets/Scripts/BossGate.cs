@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HierarchicalStateMachine;
 using UnityEngine;
 using UnityEngine.Events;
@@ -8,6 +9,8 @@ using UnityEngine.Events;
 /// The barrier starts open so the player can walk in, closes behind them on the way in,
 /// and reopens for good once the boss dies. Losing the boss reference (destroyed, or never
 /// assigned) always resolves to "open", so the player can never be sealed in by a bug.
+/// A boss beaten during this visit stays beaten when a player death reloads the scene: the gate removes it and
+/// replays onBossAlreadyDefeated instead of the fight. Only entering again from the Hub brings it back.
 /// </summary>
 public class BossGate : MonoBehaviour
 {
@@ -27,6 +30,10 @@ public class BossGate : MonoBehaviour
     [SerializeField] private UnityEvent onFightStarted;
     [SerializeField] private UnityEvent onBossDefeated;
 
+    [Tooltip("Chamado ao recarregar a cena depois de o chefe ja ter sido derrotado nesta visita (ex: o jogador morreu "
+             + "junto com ele). Deve deixar a cena como apos a vitoria, sem entregar a recompensa de novo.")]
+    [SerializeField] private UnityEvent onBossAlreadyDefeated;
+
     /// <summary>
     /// Raised the frame the barrier closes behind the player. Code-side hook for UI that lives
     /// outside the scene and cannot be wired into the UnityEvents above.
@@ -45,24 +52,61 @@ public class BossGate : MonoBehaviour
     /// </summary>
     public static event Action<EnemyStateDriver> OnBossFightWon;
 
+    private static readonly List<BossGate> activeGates = new();
+
+    /// <summary>
+    /// True while a boss already took its killing blow but has not finished dying (Died not raised yet). A player
+    /// who dies in that window waits for it before the level reloads, so the win still counts.
+    /// </summary>
+    public static bool IsAnyBossDying
+    {
+        get
+        {
+            foreach (BossGate gate in activeGates)
+            {
+                if (gate != null && gate.IsBossDying) return true;
+            }
+
+            return false;
+        }
+    }
+
     private bool fightStarted;
     private bool bossDefeated;
     private bool fightAnnounced;
 
+    private bool IsBossDying => !bossDefeated && boss != null && !boss.IsAlive();
+
     private void Awake()
     {
         SetBarrierClosed(false);
+        RestoreDefeatFromThisVisit();
     }
 
     private void OnEnable()
     {
+        activeGates.Add(this);
         if (boss != null) boss.Died += HandleBossDied;
     }
 
     private void OnDisable()
     {
+        activeGates.Remove(this);
         if (boss != null) boss.Died -= HandleBossDied;
         AnnounceFightEnded();
+    }
+
+    // Reload after a player death with the boss already beaten in this visit: no boss, gate open, the scene as
+    // it was after the win. Its reward was paid when it died, so onBossDefeated is not replayed.
+    private void RestoreDefeatFromThisVisit()
+    {
+        if (boss == null || BossProgressionManager.instance == null) return;
+        if (!BossProgressionManager.instance.WasDefeatedThisVisit(boss.BossData)) return;
+
+        bossDefeated = true;
+        boss.gameObject.SetActive(false);
+        Destroy(boss.gameObject);
+        onBossAlreadyDefeated?.Invoke();
     }
 
     /// <summary>Wire this to the arena entrance trigger. Safe to call repeatedly.</summary>

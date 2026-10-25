@@ -42,6 +42,8 @@ namespace HierarchicalStateMachine
         [SerializeField] private float hitAnimationTime = 0.25f;
         [Tooltip("Espera minima apos a morte antes de reiniciar a fase (usado quando nao ha GameManager na cena). Se a animacao de morte for mais longa, espera ela terminar.")]
         [SerializeField] private float deathRestartDelay = 1.5f;
+        [Tooltip("Tempo maximo que a fase espera um chefe terminar de morrer quando o jogador morre junto com ele.")]
+        [SerializeField] private float maxBossDeathWait = 5f;
         private const string DeathAnimationState = "Player_Death";
 
         [Header("Attack")]
@@ -473,6 +475,15 @@ namespace HierarchicalStateMachine
             }
 
             yield return new WaitForSeconds(delay);
+
+            // Died together with the boss: let its death animation finish so the win (and its reward) is recorded
+            // before the reload, which then keeps the boss beaten. Capped so a stuck boss never blocks the retry.
+            float waitedForBoss = 0f;
+            while (BossGate.IsAnyBossDying && waitedForBoss < maxBossDeathWait)
+            {
+                waitedForBoss += Time.unscaledDeltaTime;
+                yield return null;
+            }
 
             if (LevelRunManager.instance != null) LevelRunManager.instance.HandlePlayerDeath();
         }
