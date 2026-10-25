@@ -205,6 +205,14 @@ namespace HierarchicalStateMachine
             ctx.LastPressedAttackTime = 0f;
         }
 
+        /// <summary>
+        /// Whether gameplay input is on right now. A menu that blocks input over something else that may have
+        /// blocked it already (the pause over a dialog) reads this first, so closing it restores the same state.
+        /// </summary>
+        public bool IsInputEnabled => ctx.playerActions.enabled;
+
+        public bool IsDead => ctx.isDead;
+
         private void RefreshUpgradeBonuses()
         {
             float previousMaxHealth = MaxHealth;
