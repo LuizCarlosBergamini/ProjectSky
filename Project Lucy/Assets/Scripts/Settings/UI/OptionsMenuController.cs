@@ -24,6 +24,24 @@ public enum OptionsMenuMode
 /// </summary>
 public class OptionsMenuController : MonoBehaviour
 {
+    /// <summary>Resources path of the OptionsMenu prefab (Assets/Resources/OptionsMenu.prefab).</summary>
+    public const string ResourcePath = "OptionsMenu";
+
+    /// <summary>
+    /// The OptionsMenu prefab from Resources, for callers whose own prefab field is empty (a scene built before the
+    /// prefab existed, or a lost reference). Null, with an error, when the prefab was never generated.
+    /// </summary>
+    public static OptionsMenuController LoadPrefab()
+    {
+        OptionsMenuController prefab = Resources.Load<OptionsMenuController>(ResourcePath);
+        if (prefab == null)
+        {
+            Debug.LogError($"Prefab do menu de opcoes nao encontrado em Resources/{ResourcePath}: rode Tools > Lucy > Build Options Menu e commite o prefab.");
+        }
+
+        return prefab;
+    }
+
     [Header("Referencias")]
     [Tooltip("Tudo que aparece com o menu aberto. Este objeto fica sempre ativo.")]
     [SerializeField] private GameObject _root;

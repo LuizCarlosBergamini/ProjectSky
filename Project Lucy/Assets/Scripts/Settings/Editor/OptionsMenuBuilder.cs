@@ -18,7 +18,11 @@ using Object = UnityEngine.Object;
 /// </summary>
 public static class OptionsMenuBuilder
 {
-    public const string PrefabPath = "Assets/Renan/Prefabs/OptionsMenu.prefab";
+    // In Resources so callers with an empty prefab field can still load it (OptionsMenuController.LoadPrefab).
+    public const string PrefabPath = "Assets/Resources/" + OptionsMenuController.ResourcePath + ".prefab";
+
+    // Where the prefab lived before it moved to Resources; an existing one is moved, keeping its GUID and references.
+    private const string LegacyPrefabPath = "Assets/Renan/Prefabs/OptionsMenu.prefab";
     public const string SettingsManagerPrefabPath = "Assets/Resources/" + SettingsManager.ResourcePath + ".prefab";
     public const string MixerPath = "Assets/Main.mixer";
 
@@ -107,6 +111,8 @@ public static class OptionsMenuBuilder
     /// <summary>The OptionsMenu prefab asset, built first when missing (or always, with <paramref name="overwrite"/>).</summary>
     public static OptionsMenuController BuildPrefab(bool overwrite = false)
     {
+        MoveLegacyPrefab();
+
         if (!overwrite)
         {
             GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
@@ -129,6 +135,21 @@ public static class OptionsMenuBuilder
         {
             _font = null;
         }
+    }
+
+    private static void MoveLegacyPrefab()
+    {
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(LegacyPrefabPath) == null) return;
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) != null)
+        {
+            Debug.LogWarning($"[Opcoes] Existem {LegacyPrefabPath} e {PrefabPath}; o antigo nao e mais usado e pode ser apagado.");
+            return;
+        }
+
+        EnsureFolder(Path.GetDirectoryName(PrefabPath)?.Replace('\\', '/'));
+        string error = AssetDatabase.MoveAsset(LegacyPrefabPath, PrefabPath);
+        if (string.IsNullOrEmpty(error)) Debug.Log($"[Opcoes] Prefab movido de {LegacyPrefabPath} para {PrefabPath}.");
+        else Debug.LogError($"[Opcoes] Nao consegui mover {LegacyPrefabPath} para {PrefabPath}: {error}");
     }
 
     /// <summary>Resources/SettingsManager with Main.mixer assigned. Created only when missing.</summary>
