@@ -45,6 +45,12 @@ public class BossProgressionManager : MonoBehaviour
     // boss scene, so the boss itself cannot remember how many times it was faced.
     private readonly Dictionary<string, int> _attempts = new();
 
+    // Bosses beaten during the current visit to their scene, and that scene. A player death reloads the same
+    // scene and the boss must stay beaten; loading any other scene (back to the Hub) ends the visit, so coming
+    // back from the Hub fights the boss again.
+    private readonly HashSet<string> _defeatedThisVisit = new();
+    private string _visitSceneName;
+
     // Set while a boss scene is loading, cleared when any scene finishes loading.
     private bool _entering;
 
@@ -87,6 +93,15 @@ public class BossProgressionManager : MonoBehaviour
     public bool IsDefeated(BossData_SO boss)
     {
         return boss != null && !string.IsNullOrWhiteSpace(boss.bossId) && _defeatedBossIds.Contains(boss.bossId);
+    }
+
+    /// <summary>
+    /// True when this boss was beaten since its scene was entered, so a reload after a player death must not
+    /// bring it back. BossGate reads it when the arena loads.
+    /// </summary>
+    public bool WasDefeatedThisVisit(BossData_SO boss)
+    {
+        return boss != null && !string.IsNullOrWhiteSpace(boss.bossId) && _defeatedThisVisit.Contains(boss.bossId);
     }
 
     /// <summary>True once any boss was beaten, whichever it was. Follows the saved defeats, so it persists with them.</summary>
@@ -204,6 +219,12 @@ public class BossProgressionManager : MonoBehaviour
             return;
         }
 
+        if (!string.IsNullOrWhiteSpace(data.bossId))
+        {
+            _defeatedThisVisit.Add(data.bossId);
+            _visitSceneName = boss.gameObject.scene.name;
+        }
+
         RecordDefeat(data);
     }
 
@@ -247,6 +268,8 @@ public class BossProgressionManager : MonoBehaviour
         }
 
         _entering = true;
+        // Entering from the selector is always a fresh fight, even straight back into the same scene.
+        ClearVisit();
         LoadScene(boss.scene.SceneName);
         return BossEnterResult.Success;
     }
@@ -259,6 +282,15 @@ public class BossProgressionManager : MonoBehaviour
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         _entering = false;
+
+        // Runs after the new scene's Awake/OnEnable, so a reloaded arena has already read the visit by now.
+        if (mode == LoadSceneMode.Single && scene.name != _visitSceneName) ClearVisit();
+    }
+
+    private void ClearVisit()
+    {
+        _defeatedThisVisit.Clear();
+        _visitSceneName = null;
     }
 
     #endregion
@@ -314,6 +346,7 @@ public class BossProgressionManager : MonoBehaviour
     {
         _defeatedBossIds.Clear();
         _attempts.Clear();
+        ClearVisit();
         RaiseChanged();
     }
 

@@ -101,6 +101,12 @@ namespace HierarchicalStateMachine
         [Tooltip("Pulsos por segundo da cor de telegrafo.")]
         [SerializeField] private float telegraphPulseRate = 6f;
 
+        [Header("Audio")]
+        [Tooltip("Ritmo do som de passo (AudioManager > EnemyWalk) enquanto anda; correndo os passos ficam mais rapidos.")]
+        [SerializeField] private FootstepTimer footsteps = new FootstepTimer { interval = 0.4f };
+        [Tooltip("Abaixo desta velocidade horizontal (m/s) o inimigo nao conta como andando.")]
+        [SerializeField, Min(0f)] private float footstepMinSpeed = 0.3f;
+
         [Header("Events")]
         [Tooltip("Disparado quando a animacao de morte termina, logo antes do objeto ser destruido.")]
         [SerializeField] private UnityEvent onDeath;
@@ -303,6 +309,7 @@ namespace HierarchicalStateMachine
             if (hitAnimationTimer > 0f) hitAnimationTimer -= deltaTime;
 
             sm.Tick(deltaTime);
+            UpdateFootsteps(deltaTime);
             if (ctx.IsDead) FitBodyToDeathFrame();
             TurnCheck();
             UpdateTint(deltaTime);
@@ -619,6 +626,18 @@ namespace HierarchicalStateMachine
                 ? ctx.ForcedVelocityX
                 : ctx.MoveDirection * ctx.MoveSpeed * ctx.MoveSpeedMultiplier;
             rb.linearVelocity = new Vector2(speed, rb.linearVelocityY);
+        }
+
+        // Only Chase walks: MoveDirection is what it asks for, and a dash (forced velocity) slides or
+        // teleports instead of stepping.
+        private void UpdateFootsteps(float deltaTime)
+        {
+            bool walking = !ctx.IsDead && ctx.IsGrounded && !ctx.HasForcedVelocity
+                           && !Mathf.Approximately(ctx.MoveDirection, 0f)
+                           && Mathf.Abs(rb.linearVelocityX) > footstepMinSpeed;
+
+            if (footsteps.Tick(walking, deltaTime, ctx.MoveSpeedMultiplier))
+                AudioManager.PlayAt(SoundEffect.EnemyWalk, transform.position);
         }
 
         private void TurnCheck()
@@ -1086,6 +1105,7 @@ namespace HierarchicalStateMachine
             invulnerabilityTimer = invulnerabilityTime;
             ctx.Health -= amount;
             HealthChanged?.Invoke(ctx.Health, MaxHealth);
+            AudioManager.PlayAt(SoundEffect.Hit, transform.position);
 
             // rb.AddForce(knockback, ForceMode2D.Impulse);
             // Hits never interrupt the state machine. With super armor an attack keeps its clip and

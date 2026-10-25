@@ -42,6 +42,8 @@ namespace HierarchicalStateMachine
         [SerializeField] private float hitAnimationTime = 0.25f;
         [Tooltip("Espera minima apos a morte antes de reiniciar a fase (usado quando nao ha GameManager na cena). Se a animacao de morte for mais longa, espera ela terminar.")]
         [SerializeField] private float deathRestartDelay = 1.5f;
+        [Tooltip("Tempo maximo que a fase espera um chefe terminar de morrer quando o jogador morre junto com ele.")]
+        [SerializeField] private float maxBossDeathWait = 5f;
         private const string DeathAnimationState = "Player_Death";
 
         [Header("Attack")]
@@ -55,7 +57,6 @@ namespace HierarchicalStateMachine
         [Header("Grappling")]
         [SerializeField] private LineRenderer ropeRenderer;
         [SerializeField] private LayerMask grappleableLayer = 1 << 6;
-        [SerializeField] private AudioClip grapplingAudioClip;
         [SerializeField] private float maxGrappleDistance = 5f;
         [SerializeField] private float playerGrappleRadius = 5f;
         [Tooltip("Aceleracao tangencial (m/s^2) aplicada ao segurar A/D durante o balanco. Independe da massa.")]
@@ -69,6 +70,12 @@ namespace HierarchicalStateMachine
         [SerializeField] private float releaseJumpForce = 30f;
         [Tooltip("Velocidade maxima (m/s) logo apos soltar a corda, ja contando o impulso de releaseJumpForce.")]
         [SerializeField, Min(0f)] private float maxReleaseSpeed = 35f;
+
+        [Header("Audio")]
+        [Tooltip("Ritmo do som de passo (AudioManager > PlayerWalk) enquanto anda no chao.")]
+        [SerializeField] private FootstepTimer footsteps = new FootstepTimer();
+        [Tooltip("Abaixo desta velocidade horizontal (m/s) o player nao conta como andando.")]
+        [SerializeField, Min(0f)] private float footstepMinSpeed = 0.5f;
         
         private string lastPath;
         private float invulnerabilityTimer;
@@ -136,7 +143,6 @@ namespace HierarchicalStateMachine
             ctx.playerTransform = transform;
             ctx.ropeRenderer = ropeRenderer;
             ctx.grappleableLayer = grappleableLayer;
-            ctx.grapplingAudioClip = grapplingAudioClip;
             ctx.MaxGrappleDistance = maxGrappleDistance;
             ctx.PlayerGrappleRadius = playerGrappleRadius;
             ctx.SwingAcceleration = swingAcceleration;
@@ -271,6 +277,7 @@ namespace HierarchicalStateMachine
             else ctx.LastOnGroundTime -= Time.deltaTime;
             
             sm.Tick(Time.deltaTime);
+            UpdateFootsteps(Time.deltaTime);
 
             var path = StatePath(sm.Root.Leaf());
             if (path != lastPath)
@@ -346,7 +353,20 @@ namespace HierarchicalStateMachine
                 force -= ctx.rb.linearVelocityY;
         
             PlayStateAnimation("Player_Jump");
+            AudioManager.Play(SoundEffect.Jump);
             ctx.rb.AddForce(Vector2.up * force, ForceMode2D.Impulse);
+        }
+
+        // Walking = on the ground, moving because of the player's input, and not swinging, attacking
+        // or sliding off an enemy (those move the body without the legs).
+        private void UpdateFootsteps(float deltaTime)
+        {
+            bool walking = ctx.IsGrounded && ctx.canWalk && !ctx.isDead && !ctx.IsAttacking && !ctx.IsGrappling
+                           && slideEnemy == null
+                           && Mathf.Abs(ctx.MovementInput.x) > 0.01f
+                           && Mathf.Abs(rb.linearVelocityX) > footstepMinSpeed;
+
+            if (footsteps.Tick(walking, deltaTime)) AudioManager.Play(SoundEffect.PlayerWalk);
         }
 
         public void JumpCut()
@@ -394,6 +414,7 @@ namespace HierarchicalStateMachine
 
             Debug.Log("health " + ctx.health);
             RaiseHealthChanged();
+            AudioManager.Play(SoundEffect.Hit);
 
             rb.AddForce(knockback, ForceMode2D.Impulse);
             CancelAttack();
@@ -462,6 +483,15 @@ namespace HierarchicalStateMachine
             }
 
             yield return new WaitForSeconds(delay);
+
+            // Died together with the boss: let its death animation finish so the win (and its reward) is recorded
+            // before the reload, which then keeps the boss beaten. Capped so a stuck boss never blocks the retry.
+            float waitedForBoss = 0f;
+            while (BossGate.IsAnyBossDying && waitedForBoss < maxBossDeathWait)
+            {
+                waitedForBoss += Time.unscaledDeltaTime;
+                yield return null;
+            }
 
             if (LevelRunManager.instance != null) LevelRunManager.instance.HandlePlayerDeath();
         }
@@ -914,7 +944,6 @@ namespace HierarchicalStateMachine
         public Transform playerTransform;
         public LineRenderer ropeRenderer;
         public LayerMask grappleableLayer;
-        public AudioClip grapplingAudioClip;
         public float MaxGrappleDistance;
         public float PlayerGrappleRadius;
         public float SwingAcceleration;

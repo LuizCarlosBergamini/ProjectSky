@@ -288,10 +288,7 @@ namespace HierarchicalStateMachine
             // grapple owns horizontal movement and gravity while it is active.
             ctx.canWalk = false;
 
-            if (ctx.grapplingAudioClip != null && global::AudioManager.instance != null)
-            {
-                global::AudioManager.instance.PlayWithVariation(ctx.grapplingAudioClip);
-            }
+            global::AudioManager.Play(SoundEffect.Grapple);
 
             Rigidbody2D grappledRigidbody = ctx.GrappledObject.GetComponent<Rigidbody2D>();
             if (grappledRigidbody == null) grappledRigidbody = ctx.GrappledObject.GetComponentInParent<Rigidbody2D>();
