@@ -96,6 +96,11 @@ namespace HierarchicalStateMachine
         public bool IsGrounded => ctx.IsGrounded;
         public bool IsAttacking => ctx.IsAttacking;
         public bool IsGrappling => ctx.IsGrappling;
+        public bool IsDead => ctx.isDead;
+        // Same reach TryFindGrappleTarget uses, read by GrappleRangeIndicator to draw it.
+        public float GrappleReach => Mathf.Min(playerGrappleRadius, maxGrappleDistance);
+        public LayerMask GrappleableLayer => grappleableLayer;
+        public LineRenderer RopeRenderer => ropeRenderer;
         // Rotation y = 0 is the art's right-facing pose, and the attack point sits in front of it.
         public bool IsFacingRight => Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, 0f)) < 90f;
 
@@ -156,6 +161,9 @@ namespace HierarchicalStateMachine
                 ctx.ropeRenderer.useWorldSpace = true;
                 ctx.ropeRenderer.enabled = false;
             }
+
+            // The in-game range circles need no scene setup, so every player gets them.
+            if (GetComponent<GrappleRangeIndicator>() == null) gameObject.AddComponent<GrappleRangeIndicator>();
             
             
             // Initialize state machine
