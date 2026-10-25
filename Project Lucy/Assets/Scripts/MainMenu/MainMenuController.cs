@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// The main menu of the MainMenu scene (build index 0, the game's entry point). Scene-specific: owns the New Game,
-/// Continue, Options and Quit buttons and the art slots. Scenes load through LevelManager.Load (the fade). Options
+/// Continue, Options, Credits and Quit buttons and the art slots. Scenes load through LevelManager.Load (the fade). Options
 /// are a separate reusable prefab: this menu only opens it and decides what happens when it closes. Save data is
 /// only reached through SaveSystem.
 /// </summary>
@@ -15,10 +15,11 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Button _newGameButton;
     [SerializeField] private Button _continueButton;
     [SerializeField] private Button _optionsButton;
+    [SerializeField] private Button _creditsButton;
     [Tooltip("Opcional. Escondido em builds WebGL, onde sair do jogo nao faz sentido.")]
     [SerializeField] private Button _quitButton;
 
-    [Tooltip("Grupo dos botoes: fica nao-interativo enquanto as opcoes estao abertas ou uma cena carrega.")]
+    [Tooltip("Grupo dos botoes: fica nao-interativo enquanto as opcoes ou os creditos estao abertos ou uma cena carrega.")]
     [SerializeField] private CanvasGroup _buttonsGroup;
 
     [Header("Arte")]
@@ -45,6 +46,10 @@ public class MainMenuController : MonoBehaviour
     [Tooltip("Prefab reutilizavel do menu de opcoes. E instanciado na primeira vez que for aberto.")]
     [SerializeField] private OptionsMenuController _optionsMenuPrefab;
 
+    [Header("Creditos")]
+    [Tooltip("Tela de creditos da cena. Vazio = o botao Creditos nao abre nada.")]
+    [SerializeField] private CreditsScreen _creditsScreen;
+
     [Header("Confirmacao")]
     [Tooltip("Pergunta mostrada antes do Novo Jogo apagar um save existente. Vazio = comeca sem perguntar.")]
     [SerializeField] private ConfirmDialog _confirmDialog;
@@ -66,6 +71,11 @@ public class MainMenuController : MonoBehaviour
 
     public bool IsConfirmOpen => _confirmDialog != null && _confirmDialog.IsOpen;
 
+    public bool IsCreditsOpen => _creditsScreen != null && _creditsScreen.IsOpen;
+
+    /// <summary>Anything over the buttons that owns the focus: Options, Credits or the New Game question.</summary>
+    private bool IsOverlayOpen => IsOptionsOpen || IsCreditsOpen || IsConfirmOpen;
+
     private void Awake()
     {
         // Coming back from a paused game must never leave the menu frozen.
@@ -76,6 +86,8 @@ public class MainMenuController : MonoBehaviour
         if (_newGameButton != null) _newGameButton.onClick.AddListener(NewGame);
         if (_continueButton != null) _continueButton.onClick.AddListener(Continue);
         if (_optionsButton != null) _optionsButton.onClick.AddListener(OpenOptions);
+        if (_creditsButton != null) _creditsButton.onClick.AddListener(OpenCredits);
+        if (_creditsScreen != null) _creditsScreen.Closed += HandleCreditsClosed;
         if (_quitButton != null)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -99,13 +111,15 @@ public class MainMenuController : MonoBehaviour
         if (_newGameButton != null) _newGameButton.onClick.RemoveListener(NewGame);
         if (_continueButton != null) _continueButton.onClick.RemoveListener(Continue);
         if (_optionsButton != null) _optionsButton.onClick.RemoveListener(OpenOptions);
+        if (_creditsButton != null) _creditsButton.onClick.RemoveListener(OpenCredits);
+        if (_creditsScreen != null) _creditsScreen.Closed -= HandleCreditsClosed;
         if (_quitButton != null) _quitButton.onClick.RemoveListener(QuitGame);
         if (_optionsMenu != null) _optionsMenu.Closed -= HandleOptionsClosed;
     }
 
     private void Update()
     {
-        if (_loading || IsOptionsOpen || IsConfirmOpen) return;
+        if (_loading || IsOverlayOpen) return;
 
         // Clicking empty space clears the EventSystem selection; give keyboard/gamepad a button back.
         EventSystem eventSystem = EventSystem.current;
@@ -126,7 +140,7 @@ public class MainMenuController : MonoBehaviour
     /// </summary>
     public void NewGame()
     {
-        if (_loading || IsOptionsOpen || IsConfirmOpen) return;
+        if (_loading || IsOverlayOpen) return;
 
         if (_confirmDialog != null && SaveSystem.HasSave())
         {
@@ -161,7 +175,7 @@ public class MainMenuController : MonoBehaviour
     /// <summary>Loads the most recent save. Does nothing (and stays disabled) while no save exists.</summary>
     public void Continue()
     {
-        if (_loading || IsOptionsOpen || IsConfirmOpen || !CanContinue) return;
+        if (_loading || IsOverlayOpen || !CanContinue) return;
 
         // SaveSystem reads the save and returns its scene; the data reaches the managers once that scene loads.
         if (!SaveSystem.TryLoadMostRecent(out string sceneName) || string.IsNullOrEmpty(sceneName))
@@ -177,7 +191,7 @@ public class MainMenuController : MonoBehaviour
     /// <summary>Opens the reusable Options menu over this one; focus comes back to the Options button on close.</summary>
     public void OpenOptions()
     {
-        if (_loading || IsOptionsOpen || IsConfirmOpen) return;
+        if (_loading || IsOverlayOpen) return;
 
         OptionsMenuController options = GetOptionsMenu();
         if (options == null)
@@ -188,6 +202,21 @@ public class MainMenuController : MonoBehaviour
 
         SetButtonsInteractable(false);
         options.Open(OptionsMenuMode.MainMenu);
+    }
+
+    /// <summary>Shows the credits over this menu; focus comes back to the Credits button on close.</summary>
+    public void OpenCredits()
+    {
+        if (_loading || IsOverlayOpen) return;
+
+        if (_creditsScreen == null)
+        {
+            Debug.LogWarning("Tela de creditos nao configurada no MainMenuController.", this);
+            return;
+        }
+
+        SetButtonsInteractable(false);
+        _creditsScreen.Open();
     }
 
     public void QuitGame()
@@ -227,6 +256,14 @@ public class MainMenuController : MonoBehaviour
 
         EventSystem eventSystem = EventSystem.current;
         if (eventSystem != null && _optionsButton != null) eventSystem.SetSelectedGameObject(_optionsButton.gameObject);
+    }
+
+    private void HandleCreditsClosed()
+    {
+        SetButtonsInteractable(true);
+
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem != null && _creditsButton != null) eventSystem.SetSelectedGameObject(_creditsButton.gameObject);
     }
 
     private void HandleConfirmCancelled()
