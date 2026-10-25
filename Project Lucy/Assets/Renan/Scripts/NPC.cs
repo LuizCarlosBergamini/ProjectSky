@@ -118,6 +118,8 @@ public class NPC : MonoBehaviour
 
     private void Update()
     {
+        if (PauseManager.IsGamePaused) return;
+
         if (_inCollider && _dialog != null && _dialogAction != null && _dialogAction.action.WasPressedThisFrame()
             && DialogManager.instance != null)
         {
