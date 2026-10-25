@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using HierarchicalStateMachine;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem.Controls;
@@ -9,6 +11,13 @@ public class CameraManager : MonoBehaviour
 
     [SerializeField] private CinemachineCamera[] allVirtualCameras;
     private CinemachineCamera currentCamera;
+
+    [Tooltip("Camera que segue a Lucy. Vazio usa o primeiro slot de allVirtualCameras.")]
+    [SerializeField] private CinemachineCamera playerCamera;
+
+    // Cameras switched off for the rest of this scene load (the arena camera once its boss is dead).
+    // Lives on this instance, so leaving to the hub and coming back reloads the level with a clean set.
+    private readonly HashSet<CinemachineCamera> retiredCameras = new HashSet<CinemachineCamera>();
 
     [Header("Controls for lerping the Y Damping during player jump/fall")]
     [SerializeField] private float fallPanAmount = 0.25f;
@@ -65,6 +74,11 @@ public class CameraManager : MonoBehaviour
             }
         }
 
+        if (playerCamera == null && allVirtualCameras.Length > 0)
+        {
+            playerCamera = allVirtualCameras[0];
+        }
+
         if (currentCamera != null)
         {
             positionComposer = currentCamera.GetComponent<CinemachinePositionComposer>();
@@ -80,6 +94,16 @@ public class CameraManager : MonoBehaviour
 
         // set the starting posiution of the tracked object offset to be used as a reference for panning the camera up and down
         startingTrackedObjectOffset = positionComposer.TargetOffset;
+    }
+
+    private void OnEnable()
+    {
+        BossGate.OnBossFightWon += HandleBossFightWon;
+    }
+
+    private void OnDisable()
+    {
+        BossGate.OnBossFightWon -= HandleBossFightWon;
     }
 
     #region Lerp the Y Damping
@@ -235,25 +259,55 @@ public class CameraManager : MonoBehaviour
     {
         if (currentCamera == cameraFromLeft && triggerExitDirection.x < 0f)
         {
-            cameraFromRight.enabled = true;
-
-            cameraFromLeft.enabled = false;
-
-            currentCamera = cameraFromRight;
-
-            positionComposer = currentCamera.GetComponent<CinemachinePositionComposer>();
+            ActivateCamera(cameraFromRight);
         }
 
         else if (currentCamera == cameraFromRight && triggerExitDirection.x > 0f)
         {
-            cameraFromLeft.enabled = true;
-
-            cameraFromRight.enabled = false;
-
-            currentCamera = cameraFromLeft;
-
-            positionComposer = currentCamera.GetComponent<CinemachinePositionComposer>();
+            ActivateCamera(cameraFromLeft);
         }
+    }
+
+    /// <summary>
+    /// Turns a camera off until the scene reloads: if it is live the view falls back to the player camera,
+    /// and swap triggers can no longer bring it back.
+    /// </summary>
+    public void RetireCamera(CinemachineCamera cam)
+    {
+        if (cam == null || cam == playerCamera) return;
+
+        retiredCameras.Add(cam);
+        cam.enabled = false;
+
+        if (currentCamera == cam)
+        {
+            ActivateCamera(playerCamera);
+        }
+    }
+
+    // A dead boss leaves the arena with only Lucy's follow camera: every other camera in the level is retired.
+    private void HandleBossFightWon(EnemyStateDriver boss)
+    {
+        for (int i = 0; i < allVirtualCameras.Length; i++)
+        {
+            RetireCamera(allVirtualCameras[i]);
+        }
+    }
+
+    private void ActivateCamera(CinemachineCamera next)
+    {
+        if (next == null || next == currentCamera || retiredCameras.Contains(next)) return;
+
+        next.enabled = true;
+
+        if (currentCamera != null)
+        {
+            currentCamera.enabled = false;
+        }
+
+        currentCamera = next;
+
+        positionComposer = currentCamera.GetComponent<CinemachinePositionComposer>();
     }
 
     #endregion
