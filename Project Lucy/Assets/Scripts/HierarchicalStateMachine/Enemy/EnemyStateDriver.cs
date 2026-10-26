@@ -83,6 +83,22 @@ namespace HierarchicalStateMachine
                  "animacao do golpe. O ataque nunca e interrompido, com ou sem esta opcao.")]
         [SerializeField] private bool superArmorWhileAttacking;
 
+        [Header("Contact Damage")]
+        [Tooltip("Chefes: encostar no corpo do chefe tira esta fracao do dano do ataque mais fraco dele (0.25 = 25%; " +
+                 "a adaptacao aos upgrades vale aqui tambem). 0 = sem dano de contato. Inimigos sem Boss Data nunca " +
+                 "causam dano de contato.")]
+        [SerializeField, Range(0f, 1f)] private float contactDamageFraction = 0.25f;
+        [Tooltip("Dano de contato fixo no lugar da fracao acima. 0 = usa a fracao.")]
+        [SerializeField, Min(0f)] private float contactDamageOverride;
+        [SerializeField, Min(0f)] private float contactKnockback = 12f;
+        [Tooltip("Componente vertical do empurrao do contato (0 = so horizontal).")]
+        [SerializeField] private float contactVerticalKnockback = 0.5f;
+        [Tooltip("Distancia (unidades) em que o jogador ja conta como encostado: os corpos param um no outro sem se sobrepor.")]
+        [SerializeField, Min(0f)] private float contactSkin = 0.05f;
+        [Tooltip("Chefes: no gancho a Lucy atravessa o corpo do chefe sem colidir e sem dano de contato, ate sair de " +
+                 "dentro dele. Os ataques do chefe continuam acertando.")]
+        [SerializeField] private bool passThroughWhileGrappling = true;
+
         [Header("Evasive Dash")]
         [Tooltip("Inimigos de longe: depois de levar alguns golpes, dao um dash para tras sem deixar de olhar o jogador.")]
         [SerializeField] private EnemyDashSettings dash = new EnemyDashSettings();
@@ -122,6 +138,7 @@ namespace HierarchicalStateMachine
         private readonly Collider2D[] overlapHits = new Collider2D[8];
         private Rigidbody2D rb;
         private Collider2D bodyCollider;
+        private readonly List<Collider2D> solidColliders = new(); // this enemy's non-trigger colliders
         private StateMachine sm;
         private State root;
         private EnemyAttackSet runtimeSet; // legacy set built in Awake, destroyed with this enemy
@@ -138,6 +155,8 @@ namespace HierarchicalStateMachine
         private Rigidbody2D targetBody;
         private IDamageable targetDamageable;
         private PlayerStateDriver targetPlayer;
+        private Collider2D[] targetSolidColliders = Array.Empty<Collider2D>();
+        private bool passingThrough; // collisions between this boss and the player are off (grapple)
 
         private Vector2 hurtboxRestOffset;
         private Vector2 hurtboxRestSize;
@@ -199,6 +218,10 @@ namespace HierarchicalStateMachine
         {
             rb = GetComponent<Rigidbody2D>();
             bodyCollider = GetComponent<Collider2D>();
+            foreach (Collider2D own in GetComponentsInChildren<Collider2D>(true))
+            {
+                if (!own.isTrigger) solidColliders.Add(own);
+            }
             animator = ResolveAnimator();
             if (tintRenderer == null && animator != null) tintRenderer = animator.GetComponent<SpriteRenderer>();
             if (tintRenderer != null) baseTint = tintRenderer.color;
@@ -296,6 +319,8 @@ namespace HierarchicalStateMachine
             ctx.Clock += deltaTime;
             ctx.LogDecisions = logAttackDecisions; // toggleable during Play Mode
             UpdateAwareness(deltaTime);
+            UpdatePassThrough();
+            UpdateContactDamage();
             UpdatePhase();
             ctx.IsGrounded = CheckGrounded();
             ctx.AttackCooldown = Mathf.Max(0f, ctx.AttackCooldown - deltaTime);
@@ -552,6 +577,10 @@ namespace HierarchicalStateMachine
             targetBody = found != null ? found.GetComponent<Rigidbody2D>() : null;
             targetDamageable = found != null ? found.GetComponent<IDamageable>() : null;
             targetPlayer = found != null ? found.GetComponent<PlayerStateDriver>() : null;
+            targetSolidColliders = found != null
+                ? found.GetComponentsInChildren<Collider2D>().Where(c => !c.isTrigger).ToArray()
+                : Array.Empty<Collider2D>();
+            passingThrough = false; // a new player object starts with collisions on
         }
 
         private Vector2 TargetCenter()
@@ -850,6 +879,112 @@ namespace HierarchicalStateMachine
             }
 
             return free;
+        }
+
+        #endregion
+
+        #region Contact damage
+
+        private bool IsBoss => bossData != null;
+
+        // On the grapple Lucy swings through the boss: its body stops blocking her while she hangs on the rope,
+        // and keeps not blocking her after she lets go until she is out of it, so the collision never shoves
+        // her out sideways. Only the bodies are affected; the attacks test their own shapes and still land.
+        private void UpdatePassThrough()
+        {
+            bool wanted = IsBoss && passThroughWhileGrappling && targetPlayer != null
+                          && (targetPlayer.IsGrappling || (passingThrough && TouchesTarget(0f)));
+            if (wanted == passingThrough) return;
+
+            passingThrough = wanted;
+            foreach (Collider2D own in solidColliders)
+            {
+                if (own == null) continue;
+                foreach (Collider2D other in targetSolidColliders)
+                {
+                    if (other != null) Physics2D.IgnoreCollision(own, other, wanted);
+                }
+            }
+        }
+
+        // Bosses hurt on touch, lightly. The player's own invulnerability window paces the ticks, and the
+        // knockback pushes them off the body.
+        private void UpdateContactDamage()
+        {
+            if (!IsBoss || passingThrough || target == null || targetDamageable == null) return;
+            if (ctx.IsDead || !ctx.Activated || introRunning || ctx.Dashing) return;
+            if (!targetDamageable.IsAlive() || targetDamageable.HasTakenDamage) return;
+            // A melee swing already hits whoever stands against the body. Touch damage first would spend the
+            // player's invulnerability window and swallow the real hit.
+            if (sm.Root.Leaf() is EnemyMeleeAttack) return;
+
+            float damage = ContactDamage();
+            if (damage <= 0f || !TouchesTarget(contactSkin)) return;
+
+            float away = target.position.x >= transform.position.x ? 1f : -1f;
+            Vector2 direction = new Vector2(away, Mathf.Abs(contactVerticalKnockback)).normalized;
+            targetDamageable.TakeDamage(damage, direction * contactKnockback);
+        }
+
+        /// <summary>Damage of touching this boss: a fraction of its weakest attack, adapted like the attacks.</summary>
+        public float ContactDamage()
+        {
+            float baseDamage = contactDamageOverride > 0f
+                ? contactDamageOverride
+                : WeakestAttackDamage() * contactDamageFraction;
+            return baseDamage * damageScale;
+        }
+
+        // Read from the attack set every time, so tuning an attack in Play Mode moves the touch damage with it.
+        private float WeakestAttackDamage()
+        {
+            float weakest = float.MaxValue;
+            if (ctx.AttackSet != null)
+            {
+                foreach (EnemyAttackDefinition attack in ctx.AttackSet.attacks)
+                {
+                    float damage = AttackDamage(attack);
+                    if (damage > 0f && damage < weakest) weakest = damage;
+                }
+            }
+            return weakest == float.MaxValue ? 0f : weakest;
+        }
+
+        // Projectiles and the gaze carry one number; a melee attack hits once per Active segment, so its
+        // weakest hit counts.
+        private static float AttackDamage(EnemyAttackDefinition attack)
+        {
+            switch (attack)
+            {
+                case null: return 0f;
+                case ProjectileAttackDefinition projectile: return projectile.damage;
+                case GazeAttackDefinition gaze: return gaze.damage;
+            }
+
+            float weakest = 0f;
+            foreach (AttackSegment segment in attack.segments)
+            {
+                if (segment == null || segment.kind != AttackSegmentKind.Active || segment.hitbox == null) continue;
+                float damage = segment.hitbox.damage;
+                if (damage > 0f && (weakest <= 0f || damage < weakest)) weakest = damage;
+            }
+            return weakest;
+        }
+
+        // Body against body, at most skin apart (negative distance = overlapping).
+        private bool TouchesTarget(float skin)
+        {
+            foreach (Collider2D own in solidColliders)
+            {
+                if (own == null || !own.isActiveAndEnabled) continue;
+                foreach (Collider2D other in targetSolidColliders)
+                {
+                    if (other == null || !other.isActiveAndEnabled) continue;
+                    ColliderDistance2D gap = Physics2D.Distance(own, other);
+                    if (gap.isValid && gap.distance <= skin) return true;
+                }
+            }
+            return false;
         }
 
         #endregion
