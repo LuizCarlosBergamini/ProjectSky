@@ -94,7 +94,7 @@ public static class MovementTutorialBuilder
         },
         new()
         {
-            name = "Agarrar", icon = IconKind.Key, keyLabel = "F", keyWidth = 0.8f,
+            name = "Agarrar", icon = IconKind.MouseRight,
             title = "AGARRAR", description = "SEGURE PARA FICAR PRESO\nA/D PARA BALANÇAR",
             iconCenter = new Vector2(20.5f, 5.975f), titleCenter = new Vector2(20.5f, 5.08f),
             descriptionCenter = new Vector2(20.5f, 4.15f),
@@ -107,7 +107,7 @@ public static class MovementTutorialBuilder
         new()
         {
             name = "Soltar", icon = IconKind.Key, keyLabel = "ESPAÇO", keyWidth = 1.8f,
-            title = "SOLTAR", description = "OU SOLTE O F\nESPAÇO DÁ IMPULSO PRA CIMA",
+            title = "SOLTAR", description = "OU SOLTE O BOTÃO DIREITO\nESPAÇO DÁ IMPULSO PRA CIMA",
             iconCenter = new Vector2(25.3f, 1.175f), titleCenter = new Vector2(25.3f, 0.28f),
             descriptionCenter = new Vector2(25.3f, -0.65f),
             arrows = new[] { new ArrowSpec(new Vector2(25.95f, 1.2f), new Vector2(28.3f, 2.7f), new Vector2(28.7f, -1f)) }

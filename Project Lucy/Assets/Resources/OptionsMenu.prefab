@@ -4365,7 +4365,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: "<size=34><color=#F2B84D>CONTROLES</color></size>\n<b>A / D</b>: andar\n<b>W</b>
     ou <b>Espa\xE7o</b>: pular\n<b>Mouse</b>: mirar\n<b>Clique esquerdo</b>: atacar
-    (clique de novo durante o golpe para emendar o combo)\n<b>F</b>: lan\xE7ar o
+    (clique de novo durante o golpe para emendar o combo)\n<b>Clique direito</b> (segure): lan\xE7ar o
     gancho no ponto de agarrar mais perto da mira\n<b>A / D</b> pendurada no gancho:
     balan\xE7ar\n<b>Espa\xE7o</b> pendurada no gancho: soltar e ganhar impulso\n<b>E</b>:
     conversar e interagir\n<b>Espa\xE7o</b> ou <b>clique</b>: avan\xE7ar o di\xE1logo\n<b>Esc</b>
