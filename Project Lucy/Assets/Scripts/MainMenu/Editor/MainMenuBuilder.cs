@@ -15,7 +15,7 @@ using Scene = UnityEngine.SceneManagement.Scene;
 
 /// <summary>
 /// Generates the MainMenu scene so nothing has to be wired by hand: placeholder art, the canvas hierarchy, the
-/// MainMenuController references, the EventSystem, the Options prefab link, and registers the scene as build index 0.
+/// MainMenuController references, the EventSystem, the Options prefab link, the Credits screen, and registers the scene as build index 0.
 /// The LevelManager (fade) is not placed here: it creates itself from Resources before the first scene loads.
 /// Safe to run again: placeholder sprites are only written when missing (final art dropped over them is kept) and
 /// an existing scene is only re-linked and re-registered. "Rebuild Main Menu Scene" is the only command that
@@ -108,6 +108,7 @@ public static class MainMenuBuilder
             }
 
             LinkScene(scene, optionsPrefab);
+            EnsureCredits(scene, button);
             EnsureConfirmDialog(scene, button);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -220,6 +221,7 @@ public static class MainMenuBuilder
         Button newGame = CreateMenuButton("NewGameButton", stack, buttonSprite, "NOVO JOGO");
         Button continueButton = CreateMenuButton("ContinueButton", stack, buttonSprite, "CONTINUAR");
         Button options = CreateMenuButton("OptionsButton", stack, buttonSprite, "OPÇÕES");
+        Button credits = CreateMenuButton("CreditsButton", stack, buttonSprite, "CRÉDITOS");
         Button quit = CreateMenuButton("QuitButton", stack, buttonSprite, "SAIR");
 
         TextMeshProUGUI version = CreateText("VersionLabel", content, "v" + Application.version, 22f, MutedTextColor,
@@ -233,6 +235,7 @@ public static class MainMenuBuilder
             ("_newGameButton", newGame),
             ("_continueButton", continueButton),
             ("_optionsButton", options),
+            ("_creditsButton", credits),
             ("_quitButton", quit),
             ("_buttonsGroup", buttonsGroup),
             ("_backgroundImage", backgroundImage),
@@ -286,6 +289,150 @@ public static class MainMenuBuilder
         so.ApplyModifiedPropertiesWithoutUndo();
     }
 
+    /// <summary>
+    /// Adds what the credits need to a scene that lacks it: the Credits button (between Options and Quit) and the
+    /// credits screen, then links both to the MainMenuController. Whatever already exists is kept.
+    /// </summary>
+    private static void EnsureCredits(Scene scene, Sprite buttonSprite)
+    {
+        MainMenuController controller = FindInScene<MainMenuController>(scene);
+        if (controller == null) return;
+
+        SerializedObject so = new(controller);
+        SerializedProperty buttonProperty = so.FindProperty("_creditsButton");
+        SerializedProperty screenProperty = so.FindProperty("_creditsScreen");
+
+        if (buttonProperty.objectReferenceValue == null)
+        {
+            Button credits = FindCreditsButton(controller, so) ?? CreateCreditsButton(controller, so, buttonSprite);
+            buttonProperty.objectReferenceValue = credits;
+        }
+
+        if (screenProperty.objectReferenceValue == null)
+        {
+            CreditsScreen screen = FindInScene<CreditsScreen>(scene);
+            if (screen == null) screen = BuildCreditsScreen(controller.transform, buttonSprite);
+            screenProperty.objectReferenceValue = screen;
+        }
+
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static Button FindCreditsButton(MainMenuController controller, SerializedObject so)
+    {
+        Transform stack = FindButtonStack(controller, so);
+        Transform existing = stack != null ? stack.Find("CreditsButton") : null;
+        return existing != null ? existing.GetComponent<Button>() : null;
+    }
+
+    private static Button CreateCreditsButton(MainMenuController controller, SerializedObject so, Sprite buttonSprite)
+    {
+        Transform stack = FindButtonStack(controller, so);
+        if (stack == null)
+        {
+            Debug.LogWarning("[Menu] ButtonStack nao encontrado: o botao Creditos nao foi criado. Use Rebuild Main Menu Scene.");
+            return null;
+        }
+
+        Button credits = CreateMenuButton("CreditsButton", stack, buttonSprite, "CRÉDITOS");
+
+        // Right below Options, so Quit stays last.
+        Object options = so.FindProperty("_optionsButton").objectReferenceValue;
+        Transform anchor = options is Button optionsButton && optionsButton.transform.parent == stack
+            ? optionsButton.transform
+            : null;
+        if (anchor != null) credits.transform.SetSiblingIndex(anchor.GetSiblingIndex() + 1);
+        return credits;
+    }
+
+    /// <summary>The parent of the existing menu buttons; falls back to the object named ButtonStack.</summary>
+    private static Transform FindButtonStack(MainMenuController controller, SerializedObject so)
+    {
+        foreach (string field in new[] { "_optionsButton", "_newGameButton", "_quitButton" })
+        {
+            if (so.FindProperty(field).objectReferenceValue is Button button && button.transform.parent != null)
+            {
+                return button.transform.parent;
+            }
+        }
+
+        return controller.transform
+            .GetComponentsInChildren<RectTransform>(true)
+            .FirstOrDefault(rect => rect.name == "ButtonStack");
+    }
+
+    private static CreditsScreen BuildCreditsScreen(Transform canvas, Sprite buttonSprite)
+    {
+        RectTransform screenRect = CreateRect("CreditsScreen", canvas);
+        Stretch(screenRect);
+
+        // Over the menu, under the New Game question if the scene already has one.
+        ConfirmDialog dialog = canvas.GetComponentInChildren<ConfirmDialog>(true);
+        if (dialog != null && dialog.transform.parent == canvas) screenRect.SetSiblingIndex(dialog.transform.GetSiblingIndex());
+        else screenRect.SetAsLastSibling();
+
+        CreditsScreen screen = screenRect.gameObject.AddComponent<CreditsScreen>();
+
+        // Dims the menu and swallows clicks so nothing behind the credits can be pressed.
+        Image overlay = CreateImage("Root", screenRect, null, OverlayColor, raycast: true);
+        Stretch(overlay.rectTransform);
+
+        Image panel = CreateImage("Panel", overlay.rectTransform, buttonSprite, PanelColor, Image.Type.Sliced);
+        RectTransform panelRect = panel.rectTransform;
+        panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.sizeDelta = new Vector2(720f, 620f);
+        panelRect.anchoredPosition = Vector2.zero;
+
+        // Same title as the menu, smaller.
+        TextMeshProUGUI title = CreateText("TitleText", panelRect,
+            "LUCY FROM THE\n<size=160%><color=#F2B84D>STARS</color></size>", 44f, TextColor, TextAlignmentOptions.Center);
+        title.richText = true;
+        RectTransform titleRect = title.rectTransform;
+        titleRect.anchorMin = new Vector2(0f, 1f);
+        titleRect.anchorMax = new Vector2(1f, 1f);
+        titleRect.pivot = new Vector2(0.5f, 1f);
+        titleRect.sizeDelta = new Vector2(-72f, 150f);
+        titleRect.anchoredPosition = new Vector2(0f, -28f);
+
+        TextMeshProUGUI heading = CreateText("HeadingText", panelRect, "CRÉDITOS", 30f, MutedTextColor, TextAlignmentOptions.Center);
+        RectTransform headingRect = heading.rectTransform;
+        headingRect.anchorMin = new Vector2(0f, 1f);
+        headingRect.anchorMax = new Vector2(1f, 1f);
+        headingRect.pivot = new Vector2(0.5f, 1f);
+        headingRect.sizeDelta = new Vector2(-72f, 40f);
+        headingRect.anchoredPosition = new Vector2(0f, -186f);
+
+        // Filled by CreditsScreen from its Inspector list.
+        TextMeshProUGUI entries = CreateText("EntriesText", panelRect, "", 34f, TextColor, TextAlignmentOptions.Top);
+        entries.richText = true;
+        entries.textWrappingMode = TextWrappingModes.Normal;
+        entries.enableAutoSizing = true;
+        entries.fontSizeMin = 18f;
+        entries.fontSizeMax = 34f;
+        Stretch(entries.rectTransform, 36f, 36f, 240f, 110f);
+
+        Button back = CreateMenuButton("BackButton", panelRect, buttonSprite, "VOLTAR");
+        back.navigation = new Navigation { mode = Navigation.Mode.None };
+        RectTransform backRect = (RectTransform)back.transform;
+        backRect.anchorMin = backRect.anchorMax = backRect.pivot = new Vector2(0.5f, 0f);
+        backRect.sizeDelta = new Vector2(280f, 58f);
+        backRect.anchoredPosition = new Vector2(0f, 32f);
+
+        InputActionReference cancelAction = FindCancelAction();
+        if (cancelAction == null) Debug.LogWarning("[Menu] UI/Cancel nao encontrado: Esc/B nao vao fechar os creditos.");
+
+        SetRefs(screen,
+            ("_root", overlay.gameObject),
+            ("_entriesLabel", entries),
+            ("_backButton", back),
+            ("_cancelAction", cancelAction));
+
+        // Fills the label now, so the list already shows in the saved scene.
+        screen.RefreshEntries();
+        overlay.gameObject.SetActive(false);
+        return screen;
+    }
+
     private static ConfirmDialog BuildConfirmDialog(Transform canvas, Sprite buttonSprite)
     {
         RectTransform dialogRect = CreateRect("ConfirmDialog", canvas);
@@ -325,13 +472,7 @@ public static class MainMenuBuilder
         cancel.navigation = new Navigation { mode = Navigation.Mode.Horizontal };
         confirm.navigation = new Navigation { mode = Navigation.Mode.Horizontal };
 
-        InputActionReference cancelAction = AssetDatabase
-            .LoadAllAssetsAtPath(AssetDatabase.GUIDToAssetPath(DefaultInputActionsGuid))
-            .OfType<InputActionReference>()
-            .FirstOrDefault(reference => reference.action != null
-                && reference.action.actionMap != null
-                && reference.action.actionMap.name == "UI"
-                && reference.action.name == "Cancel");
+        InputActionReference cancelAction = FindCancelAction();
         if (cancelAction == null) Debug.LogWarning("[Menu] UI/Cancel nao encontrado: Esc/B nao vao fechar a confirmacao.");
 
         SetRefs(dialog,
@@ -518,6 +659,18 @@ public static class MainMenuBuilder
     #endregion
 
     #region Helpers
+
+    /// <summary>UI/Cancel from the Input System's DefaultInputActions (Esc, gamepad B).</summary>
+    private static InputActionReference FindCancelAction()
+    {
+        return AssetDatabase
+            .LoadAllAssetsAtPath(AssetDatabase.GUIDToAssetPath(DefaultInputActionsGuid))
+            .OfType<InputActionReference>()
+            .FirstOrDefault(reference => reference.action != null
+                && reference.action.actionMap != null
+                && reference.action.actionMap.name == "UI"
+                && reference.action.name == "Cancel");
+    }
 
     private static T FindInScene<T>(Scene scene) where T : Component
     {
