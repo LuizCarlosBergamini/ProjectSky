@@ -79,8 +79,16 @@ public class DialogManager : MonoBehaviour
     {
         if (instance != null)
         {
-            Destroy(gameObject);
-            return;
+            // Awake order between objects differs between the Editor and a build, so a copy without its UI
+            // must never win over a configured one; otherwise Init throws and the dialog never shows.
+            if (instance.HasUI() || !HasUI())
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            Debug.LogWarning($"DialogManager sem UI em '{instance.gameObject.name}' substituido por '{gameObject.name}'.");
+            Destroy(instance.gameObject);
         }
 
         instance = this;
@@ -139,6 +147,11 @@ public class DialogManager : MonoBehaviour
     #endregion
 
     #region Private Functions
+
+    private bool HasUI()
+    {
+        return _dialogContainer != null && _dialogContent != null && _dialogEntityName != null && _dialogEntitySprite != null;
+    }
 
     private IEnumerator StartDialog(Dialog_SO dialogData)
     {
