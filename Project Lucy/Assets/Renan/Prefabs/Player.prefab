@@ -335,11 +335,14 @@ MonoBehaviour:
   upperCornerCheckDistance: 0.08
   upperCornerCorrectionMax: 0.18
   upperCornerCorrectionSteps: 4
+  enemyTag: Inimigo
+  enemyTopSlideSpeed: 8
   CameraFollowObject: {fileID: 0}
   maxHealth: 100
   invulnerabilityTime: 0.4
   hitAnimationTime: 0.25
   deathRestartDelay: 1.5
+  maxBossDeathWait: 5
   attackTransform: {fileID: 5890962430133262475}
   attackRadius: 1.2
   attackableLayer:
@@ -360,6 +363,9 @@ MonoBehaviour:
   swingDamping: 0.5
   releaseJumpForce: 30
   maxReleaseSpeed: 35
+  footsteps:
+    interval: 0.35
+  footstepMinSpeed: 0.5
 --- !u!1 &482227086916469963
 GameObject:
   m_ObjectHideFlags: 0
@@ -633,7 +639,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 10
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 4723107735738678597, guid: 0bd97e23f8b532a4f8969605a3b00a4e, type: 3}
+  m_Sprite: {fileID: 4723107735738678597, guid: 8de2b15bae447d648ac055841c512825, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
