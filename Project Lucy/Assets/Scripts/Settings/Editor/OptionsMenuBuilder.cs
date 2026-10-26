@@ -56,7 +56,7 @@ public static class OptionsMenuBuilder
         "<b>W</b> ou <b>Espaço</b>: pular\n" +
         "<b>Mouse</b>: mirar\n" +
         "<b>Clique esquerdo</b>: atacar (clique de novo durante o golpe para emendar o combo)\n" +
-        "<b>F</b>: lançar o gancho no ponto de agarrar mais perto da mira\n" +
+        "<b>Clique direito</b> (segure): lançar o gancho no ponto de agarrar mais perto da mira\n" +
         "<b>A / D</b> pendurada no gancho: balançar\n" +
         "<b>Espaço</b> pendurada no gancho: soltar e ganhar impulso\n" +
         "<b>E</b>: conversar e interagir\n" +
