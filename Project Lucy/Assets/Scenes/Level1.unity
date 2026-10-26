@@ -605,6 +605,7 @@ GameObject:
   - component: {fileID: 159283172}
   - component: {fileID: 159283173}
   - component: {fileID: 159283171}
+  - component: {fileID: 1154950849}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -612,6 +613,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &1154950849
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 159283169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f876664aace4cb4aeaf13150c8763a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TextOutline
+  _color: {r: 0, g: 0, b: 0, a: 1}
+  _thickness: 0.05
 --- !u!224 &159283170
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8232,6 +8247,7 @@ GameObject:
   - component: {fileID: 1457103753}
   - component: {fileID: 1457103754}
   - component: {fileID: 1457103752}
+  - component: {fileID: 1149756940}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -8239,6 +8255,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &1149756940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1457103750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f876664aace4cb4aeaf13150c8763a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TextOutline
+  _color: {r: 0, g: 0, b: 0, a: 1}
+  _thickness: 0.05
 --- !u!224 &1457103751
 RectTransform:
   m_ObjectHideFlags: 0

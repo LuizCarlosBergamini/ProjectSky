@@ -313,11 +313,13 @@ public static class MovementTutorialBuilder
         prompt.transform.SetParent(parent, false);
 
         BuildIcon(prompt.transform, spec, sprites);
-        CreateText("Title", prompt.transform, spec.title, TitleFontSize, CreamColor, spec.titleCenter, new Vector2(6f, 1.2f), FrontOrder);
+        TextMeshPro title = CreateText("Title", prompt.transform, spec.title, TitleFontSize, CreamColor, spec.titleCenter,
+            new Vector2(6f, 1.2f), FrontOrder);
         TextMeshPro description = CreateText("Description", prompt.transform, spec.description, DescriptionFontSize,
             DescriptionColor, spec.descriptionCenter, new Vector2(8f, 2f), FrontOrder);
 
-        // The light description vanishes against the sky without a dark outline.
+        // The light texts and icons vanish against the sky without a dark outline.
+        title.gameObject.AddComponent<TextOutline>();
         description.gameObject.AddComponent<TextOutline>();
 
         for (int i = 0; i < spec.arrows.Length; i++)
@@ -336,14 +338,16 @@ public static class MovementTutorialBuilder
         if (spec.icon == IconKind.Key)
         {
             Vector2 size = new(spec.keyWidth, 0.7f);
-            CreateSprite("Shadow", icon.transform, sprites.key, ShadowColor, ShadowOrder, center + shadowShift, size, false);
-            CreateSprite("Cap", icon.transform, sprites.key, CreamColor, BodyOrder, center, size, false);
+            AddOutline(CreateSprite("Shadow", icon.transform, sprites.key, ShadowColor, ShadowOrder, center + shadowShift,
+                size, false));
+            AddOutline(CreateSprite("Cap", icon.transform, sprites.key, CreamColor, BodyOrder, center, size, false));
             CreateText("Label", icon.transform, spec.keyLabel, KeyLabelFontSize, KeyLabelColor, spec.iconCenter, size, FrontOrder);
             return;
         }
 
-        CreateSprite("Shadow", icon.transform, sprites.mouseBody, ShadowColor, ShadowOrder, center + shadowShift, Vector2.zero, false);
-        CreateSprite("Body", icon.transform, sprites.mouseBody, CreamColor, BodyOrder, center, Vector2.zero, false);
+        AddOutline(CreateSprite("Shadow", icon.transform, sprites.mouseBody, ShadowColor, ShadowOrder, center + shadowShift,
+            Vector2.zero, false));
+        AddOutline(CreateSprite("Body", icon.transform, sprites.mouseBody, CreamColor, BodyOrder, center, Vector2.zero, false));
         CreateSprite("Button", icon.transform, sprites.mouseButton, AccentColor, FrontOrder, center, Vector2.zero,
             spec.icon == IconKind.MouseRight);
     }
@@ -392,7 +396,16 @@ public static class MovementTutorialBuilder
         return line;
     }
 
-    private static void CreateSprite(string name, Transform parent, Sprite sprite, Color color, int order, Vector3 position,
+    // Every icon outline goes one order behind the shadow, so a single outline wraps the shadow and the cap.
+    private static void AddOutline(SpriteRenderer renderer)
+    {
+        SpriteOutline outline = renderer.gameObject.AddComponent<SpriteOutline>();
+        SerializedObject so = new(outline);
+        so.FindProperty("_sortingOrderOffset").intValue = ShadowOrder - 1 - renderer.sortingOrder;
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static SpriteRenderer CreateSprite(string name, Transform parent, Sprite sprite, Color color, int order, Vector3 position,
         Vector2 slicedSize, bool flipX)
     {
         GameObject go = new(name);
@@ -410,6 +423,8 @@ public static class MovementTutorialBuilder
             renderer.drawMode = SpriteDrawMode.Sliced;
             renderer.size = slicedSize;
         }
+
+        return renderer;
     }
 
     // A 3D TextMeshPro (like the Hub's NextLevelText), centred on its rect. Sorting goes through the TMP
