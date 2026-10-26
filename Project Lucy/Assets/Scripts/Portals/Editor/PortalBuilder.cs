@@ -381,6 +381,7 @@ public static class PortalBuilder
 
         TextMeshProUGUI labelText = CreateText("Label", container.transform, label, assets.font);
         labelText.alignment = TextAlignmentOptions.Midline;
+        labelText.gameObject.AddComponent<TextOutline>();
         LayoutElement labelLayout = labelText.gameObject.AddComponent<LayoutElement>();
         labelLayout.preferredHeight = KeyBoxSize;
 
