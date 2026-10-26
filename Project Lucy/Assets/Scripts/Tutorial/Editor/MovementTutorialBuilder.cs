@@ -314,8 +314,11 @@ public static class MovementTutorialBuilder
 
         BuildIcon(prompt.transform, spec, sprites);
         CreateText("Title", prompt.transform, spec.title, TitleFontSize, CreamColor, spec.titleCenter, new Vector2(6f, 1.2f), FrontOrder);
-        CreateText("Description", prompt.transform, spec.description, DescriptionFontSize, DescriptionColor,
-            spec.descriptionCenter, new Vector2(8f, 2f), FrontOrder);
+        TextMeshPro description = CreateText("Description", prompt.transform, spec.description, DescriptionFontSize,
+            DescriptionColor, spec.descriptionCenter, new Vector2(8f, 2f), FrontOrder);
+
+        // The light description vanishes against the sky without a dark outline.
+        description.gameObject.AddComponent<TextOutline>();
 
         for (int i = 0; i < spec.arrows.Length; i++)
         {
@@ -411,7 +414,7 @@ public static class MovementTutorialBuilder
 
     // A 3D TextMeshPro (like the Hub's NextLevelText), centred on its rect. Sorting goes through the TMP
     // property: the MeshRenderer's own value is overwritten when the scene loads.
-    private static void CreateText(string name, Transform parent, string text, float fontSize, Color color, Vector2 center,
+    private static TextMeshPro CreateText(string name, Transform parent, string text, float fontSize, Color color, Vector2 center,
         Vector2 size, int order)
     {
         GameObject go = new(name, typeof(RectTransform));
@@ -432,6 +435,7 @@ public static class MovementTutorialBuilder
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.sizeDelta = size;
         rect.position = new Vector3(center.x, center.y, 0f);
+        return tmp;
     }
 
     private static Material LoadLineMaterial()
