@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5521840193726015402}
   - component: {fileID: 5521840193726015403}
+  - component: {fileID: 5521840193726015404}
   m_Layer: 0
   m_Name: AudioManager
   m_TagString: Untagged
@@ -73,3 +74,25 @@ MonoBehaviour:
   _voices: 8
   _fullVolumeDistance: 6
   _silentDistance: 18
+--- !u!114 &5521840193726015404
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5521840193726015401}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 274966f183234e7aaf55a9f097c9107f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossMusic
+  _musicGroup: {fileID: 4305265768213241201, guid: 03831adfe83999d4e81c20c36e078481, type: 2}
+  _track:
+    clip: {fileID: 8300000, guid: 0c058e3f5064ad34b8e2f7818fe5668c, type: 3}
+    introEnd: 23
+    fightEnd: 120
+    outroLength: 8
+  _volume: 0.7
+  _outroCrossfade: 1.5
+  _stopFade: 1
+  _introFadeIn: 0.5
