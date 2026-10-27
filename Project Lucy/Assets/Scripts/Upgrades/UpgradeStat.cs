@@ -47,6 +47,20 @@ public static class UpgradeStatText
         return $"{sign}{FormatValue(value)} {stat.DisplayName()}";
     }
 
+    /// <summary>"+10% Vel. Ataque" for a 0.1 attack speed bonus.</summary>
+    public static string FormatAttackSpeedBonus(float value)
+    {
+        string sign = value >= 0f ? "+" : "";
+        return $"{sign}{FormatValue(value * 100f)}% Vel. Ataque";
+    }
+
+    /// <summary>The stat bonus, followed by the attack speed bonus when there is one.</summary>
+    public static string FormatBonuses(UpgradeStat stat, float value, float attackSpeed)
+    {
+        string text = stat.FormatBonus(value);
+        return attackSpeed != 0f ? $"{text}  {FormatAttackSpeedBonus(attackSpeed)}" : text;
+    }
+
     public static string FormatValue(float value)
     {
         return value.ToString("0.##", CultureInfo.InvariantCulture);

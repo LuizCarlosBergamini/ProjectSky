@@ -103,6 +103,18 @@ public class UpgradeManager : MonoBehaviour
         return total;
     }
 
+    /// <summary>Sum of attackSpeedBonus over the purchased nodes, whatever their stat.</summary>
+    public float GetAttackSpeedBonus()
+    {
+        float total = 0f;
+        foreach (UpgradeNode_SO node in _purchasedNodes)
+        {
+            if (node != null) total += node.attackSpeedBonus;
+        }
+
+        return total;
+    }
+
     /// <summary>
     /// The purchased node of <paramref name="tree"/> at the highest level (prerequisite depth); among nodes of the
     /// same level, the later one in the tree's list. Null when nothing in the tree was bought.
@@ -242,7 +254,7 @@ public class UpgradeManager : MonoBehaviour
             return UpgradePurchaseResult.NoInventory;
         }
 
-        Debug.Log($"Upgrade '{node.nodeId}' comprado: {node.stat.FormatBonus(node.bonusValue)}");
+        Debug.Log($"Upgrade '{node.nodeId}' comprado: {node.BonusText}");
         RaiseChanged();
         return UpgradePurchaseResult.Success;
     }

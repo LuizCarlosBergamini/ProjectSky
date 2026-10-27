@@ -55,6 +55,7 @@ public class UpgradeTreeUI : MonoBehaviour
         name = $"Tree_{tree.name}";
 
         if (_nameText != null) _nameText.text = tree.treeName;
+        UpgradeDetailPanel.ShrinkToFit(_bonusText);
         if (_headerIcon != null)
         {
             _headerIcon.sprite = tree.treeIcon;
@@ -148,6 +149,8 @@ public class UpgradeTreeUI : MonoBehaviour
             // Grouped per stat: a tree is free to mix stats, and "+5 Dano +10 Vida" must not add up to 15.
             List<UpgradeStat> stats = new();
             Dictionary<UpgradeStat, float> totals = new();
+            float attackSpeedTotal = 0f;
+            bool hasAttackSpeed = false;
             foreach (UpgradeNodeUI node in _nodes)
             {
                 if (!totals.ContainsKey(node.Node.stat))
@@ -155,7 +158,10 @@ public class UpgradeTreeUI : MonoBehaviour
                     stats.Add(node.Node.stat);
                     totals[node.Node.stat] = 0f;
                 }
-                if (node.State == UpgradeNodeState.Purchased) totals[node.Node.stat] += node.Node.bonusValue;
+                hasAttackSpeed |= node.Node.attackSpeedBonus != 0f;
+                if (node.State != UpgradeNodeState.Purchased) continue;
+                totals[node.Node.stat] += node.Node.bonusValue;
+                attackSpeedTotal += node.Node.attackSpeedBonus;
             }
 
             List<string> parts = new();
@@ -164,6 +170,11 @@ public class UpgradeTreeUI : MonoBehaviour
             {
                 parts.Add(stat.FormatBonus(totals[stat]));
                 anyBonus |= totals[stat] != 0f;
+            }
+            if (hasAttackSpeed)
+            {
+                parts.Add(UpgradeStatText.FormatAttackSpeedBonus(attackSpeedTotal));
+                anyBonus |= attackSpeedTotal != 0f;
             }
 
             _bonusText.text = string.Join("  ", parts);
