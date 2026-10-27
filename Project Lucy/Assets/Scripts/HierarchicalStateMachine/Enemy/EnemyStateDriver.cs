@@ -1240,7 +1240,6 @@ namespace HierarchicalStateMachine
             invulnerabilityTimer = invulnerabilityTime;
             ctx.Health -= amount;
             HealthChanged?.Invoke(ctx.Health, MaxHealth);
-            AudioManager.PlayAt(SoundEffect.Hit, transform.position);
 
             // rb.AddForce(knockback, ForceMode2D.Impulse);
             // Hits never interrupt the state machine. With super armor an attack keeps its clip and

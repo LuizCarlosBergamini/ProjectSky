@@ -2,18 +2,22 @@ using System;
 using UnityEngine;
 using UnityEngine.Audio;
 
-/// <summary>Every gameplay sound the AudioManager knows by name. The clip for each one is set on the AudioManager prefab.</summary>
+/// <summary>
+/// Every gameplay sound the AudioManager knows by name. The clip for each one is set on the AudioManager prefab.
+/// Unity saves these as numbers, so new names go at the end and the numbers below never change.
+/// </summary>
 public enum SoundEffect
 {
-    PlayerWalk,
-    EnemyWalk,
-    Jump,
-    Hit,
-    Grapple,
+    PlayerWalk = 0,
+    EnemyWalk = 1,
+    Land = 2,
+    SwordHit = 3,
+    Grapple = 4,
+    SwordSlash = 5,
 }
 
 /// <summary>
-/// Plays the game's sound effects. Gameplay code only says which sound it wants (AudioManager.Play(SoundEffect.Jump));
+/// Plays the game's sound effects. Gameplay code only says which sound it wants (AudioManager.Play(SoundEffect.Land));
 /// the clip, its volume and its pitch variation live on Resources/AudioManager, so a sound can be swapped without
 /// touching code. Created before the first scene loads, like SettingsManager, so every level has it no matter which
 /// scene the game (or the Editor) starts in. Persistent; a copy found in a scene removes itself.

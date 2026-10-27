@@ -34,7 +34,6 @@ public class Enemy : MonoBehaviour, IDamageable
         HasTakenDamage = true;
         animator.SetTrigger("hitted");
         currentHealth -= damage;
-        AudioManager.PlayAt(SoundEffect.Hit, transform.position);
 
         rb.AddForce(knockback, ForceMode2D.Impulse);
 
