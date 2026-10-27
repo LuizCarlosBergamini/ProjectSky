@@ -7,7 +7,8 @@ using UnityEngine.UI;
 /// Connects the boss-fight lifecycle to the HUD. Listens to BossGate's static fight events
 /// (the gate lives in the level, the HUD cannot be wired to it in the Inspector) and tells the
 /// boss bar to bind/show/hide. Also moves the task list below the boss bar while it is up, and plays the
-/// boss's defeat dialog (BossData_SO.defeatDialog) once it dies.
+/// boss's defeat dialog (BossData_SO.defeatDialog) once it dies, followed by its end screen message
+/// (BossData_SO.endScreenMessage, e.g. the end of the demo after the mage).
 /// </summary>
 public class BossFightUIController : MonoBehaviour
 {
@@ -22,7 +23,11 @@ public class BossFightUIController : MonoBehaviour
     [Tooltip("Espera depois da morte do chefe antes do dialogo de fim de luta, para a animacao de morte aparecer.")]
     [SerializeField] private float defeatDialogDelay = 1f;
 
+    [Tooltip("Tela com a mensagem de fim (BossData_SO.endScreenMessage) e o botao Continuar.")]
+    [SerializeField] private BossEndScreen endScreen;
+
     private bool taskListMoved;
+    private bool defeatDialogDone;
 
     private void OnEnable()
     {
@@ -36,6 +41,7 @@ public class BossFightUIController : MonoBehaviour
         BossGate.OnBossFightStarted -= HandleFightStarted;
         BossGate.OnBossFightEnded -= HandleFightEnded;
         BossGate.OnBossFightWon -= HandleFightWon;
+        DialogManager.OnDialogFinished -= HandleDefeatDialogFinished;
 
         // TaskManager survives scene loads: never leave the Hub with a pushed-down task list.
         RestoreTaskList();
@@ -64,23 +70,49 @@ public class BossFightUIController : MonoBehaviour
     {
         if (ReferenceEquals(boss, null)) return;
         BossData_SO data = boss.BossData;
-        if (data == null || data.defeatDialog == null) return;
+        if (data == null) return;
 
         // OnBossFightWon fires before the gate's onBossDefeated completes the reward task, so a task that is
-        // not finished yet means this is the first win. Without a TaskManager (level played on its own) it plays.
-        if (data.defeatDialogOnlyOnFirstWin && TaskManager.instance != null
-            && TaskManager.instance.GetStatus(data.rewardTaskId) == TaskManager.TaskStatus.Finished)
-        {
-            return;
-        }
+        // not finished yet means this is the first win. Without a TaskManager (level played on its own) it counts as one.
+        bool firstWin = TaskManager.instance == null
+            || TaskManager.instance.GetStatus(data.rewardTaskId) != TaskManager.TaskStatus.Finished;
 
-        StartCoroutine(PlayDefeatDialog(data.defeatDialog));
+        Dialog_SO dialog = data.defeatDialog != null && (firstWin || !data.defeatDialogOnlyOnFirstWin) ? data.defeatDialog : null;
+        string message = endScreen != null && !string.IsNullOrWhiteSpace(data.endScreenMessage)
+            && (firstWin || !data.endScreenOnlyOnFirstWin) ? data.endScreenMessage : null;
+        if (dialog == null && message == null) return;
+
+        StartCoroutine(PlayDefeatSequence(dialog, message));
     }
 
-    private IEnumerator PlayDefeatDialog(Dialog_SO dialog)
+    private IEnumerator PlayDefeatSequence(Dialog_SO dialog, string message)
     {
         if (defeatDialogDelay > 0f) yield return new WaitForSeconds(defeatDialogDelay);
-        if (DialogManager.instance != null) DialogManager.instance.Init(dialog);
+
+        if (dialog != null && DialogManager.instance != null)
+        {
+            // Any dialog closing releases the wait: if another one was open, Init ignored ours and that one ends it.
+            defeatDialogDone = false;
+            DialogManager.OnDialogFinished += HandleDefeatDialogFinished;
+            DialogManager.instance.Init(dialog);
+            yield return new WaitUntil(() => defeatDialogDone);
+            DialogManager.OnDialogFinished -= HandleDefeatDialogFinished;
+        }
+
+        if (message == null) yield break;
+
+        // Never on top of the pause, the game over or a scene change (the player may already be leaving).
+        yield return new WaitUntil(() => !PauseManager.IsGamePaused);
+        GameManager gameManager = GameManager.instance;
+        if (gameManager != null && gameManager.gameOverUI != null && gameManager.gameOverUI.activeInHierarchy) yield break;
+        if (LevelManager.instance != null && LevelManager.instance.IsLoading) yield break;
+
+        endScreen.Open(message);
+    }
+
+    private void HandleDefeatDialogFinished(Dialog_SO dialog)
+    {
+        defeatDialogDone = true;
     }
 
     private void MoveTaskListBelowBossBar()

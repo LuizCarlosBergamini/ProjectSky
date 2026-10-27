@@ -33,4 +33,6 @@ MonoBehaviour:
   lockedHint: 
   defeatDialog: {fileID: 0}
   defeatDialogOnlyOnFirstWin: 1
+  endScreenMessage: "Obrigado por jogar o teste Beta, a demo acaba por aqui, mas sinta-se a vontade para continuar enfrentando os inimigos quantas vezes quiser. N\xE3o se esque\xE7a de responder o Forms e nos dar o seu Feedback!"
+  endScreenOnlyOnFirstWin: 1
   upgradeScaling: {fileID: 11400000, guid: 18ef2cc57d7700140964c9454ca81c0b, type: 2}
