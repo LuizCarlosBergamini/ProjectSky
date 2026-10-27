@@ -717,7 +717,7 @@ public static class MageBossBuilder
             set.rangeEdgeScore = 0.6f;
             set.closeRange = 3f;
             // Phase 1: the arrow and the sphere, both from a distance. Phase 2 (half health) opens with the sphere,
-            // the arrow becomes a fan of three, and every attack comes back faster.
+            // the arrow and the sphere become fans of three, the sphere is cast twice, and every attack comes back faster.
             set.phases = new List<BossPhase>
             {
                 new() { name = "Fase 1", healthFraction = 1f },
@@ -853,8 +853,10 @@ public static class MageBossBuilder
         d.damage = 32f;
         d.knockback = 26f;
         d.count = 1;
-        d.extraProjectilesPerPhase = 0;
-        d.spreadAngle = 0f;
+        d.extraProjectilesPerPhase = 2; // second phase: a fan of three spheres...
+        d.extraCastsPerPhase = 1;       // ...cast twice in a row
+        d.recastFromSegment = 0;
+        d.spreadAngle = 24f;
         d.aimAtTarget = true;
         d.maxAimAngle = 30f;
         d.minRange = 3f;

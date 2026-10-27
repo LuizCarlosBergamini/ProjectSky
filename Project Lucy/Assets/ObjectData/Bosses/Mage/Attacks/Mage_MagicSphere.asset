@@ -140,8 +140,10 @@ MonoBehaviour:
   damage: 32
   knockback: 26
   count: 1
-  extraProjectilesPerPhase: 0
-  spreadAngle: 0
+  extraProjectilesPerPhase: 2
+  extraCastsPerPhase: 1
+  recastFromSegment: 0
+  spreadAngle: 24
   aimAtTarget: 1
   maxAimAngle: 30
   useSpawnOffset: 1

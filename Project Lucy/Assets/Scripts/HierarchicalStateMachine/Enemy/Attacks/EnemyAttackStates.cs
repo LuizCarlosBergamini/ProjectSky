@@ -22,6 +22,7 @@ namespace HierarchicalStateMachine
         private int hurtboxFrame;
         private bool settled;
         private bool offsetCommitted;
+        private int recastsLeft;
 
         protected EnemyAttackMove(StateMachine machine, State parent, EnemyContext ctx, EnemyAttackDefinition definition)
             : base(machine, parent)
@@ -47,6 +48,7 @@ namespace HierarchicalStateMachine
             segmentIndex = -1;
             hurtboxFrame = -1;
             OnMoveEnter();
+            recastsLeft = ExtraCasts;
 
             if (Definition.segments.Count == 0)
             {
@@ -76,6 +78,11 @@ namespace HierarchicalStateMachine
 
             if (segmentIndex + 1 >= Definition.segments.Count)
             {
+                if (recastsLeft > 0)
+                {
+                    Recast(overflow);
+                    return;
+                }
                 finished = true;
                 return;
             }
@@ -106,6 +113,16 @@ namespace HierarchicalStateMachine
             ctx.SetHurtboxFrame?.Invoke(null, 0);
 
             OnMoveExit();
+        }
+
+        // The whole timeline runs again (from RecastFromSegment), wind-up and telegraph included, so the player
+        // sees the second cast coming. The player may have jumped over during the first one.
+        private void Recast(float overflow)
+        {
+            recastsLeft--;
+            ctx.FaceTarget?.Invoke();
+            BeginSegment(Mathf.Clamp(RecastFromSegment, 0, Definition.segments.Count - 1));
+            segmentTime = overflow;
         }
 
         private void BeginSegment(int index)
@@ -158,7 +175,7 @@ namespace HierarchicalStateMachine
         // not back to rest. The first recoveryHoldTime still shows the last strike frame so the hit reads.
         private bool ShouldSettle(AttackSegment segment)
         {
-            if (settled || !Definition.driveAnimation || !Definition.settleIntoIdle) return false;
+            if (settled || recastsLeft > 0 || !Definition.driveAnimation || !Definition.settleIntoIdle) return false;
             if (segment.kind != AttackSegmentKind.Recovery || segmentIndex != Definition.segments.Count - 1) return false;
             return segmentTime >= Mathf.Min(Definition.recoveryHoldTime, segment.duration);
         }
@@ -187,6 +204,12 @@ namespace HierarchicalStateMachine
             ctx.HasForcedVelocity = false;
             ctx.ForcedVelocityX = 0f;
         }
+
+        /// <summary>How many more times the whole timeline runs after the first (double cast and so on).</summary>
+        protected virtual int ExtraCasts => 0;
+
+        /// <summary>Segment each extra cast starts from.</summary>
+        protected virtual int RecastFromSegment => 0;
 
         protected virtual void OnMoveEnter() { }
         protected virtual void OnMoveExit() { }
@@ -226,6 +249,9 @@ namespace HierarchicalStateMachine
         {
             projectile = definition;
         }
+
+        protected override int ExtraCasts => projectile.extraCastsPerPhase * ctx.Phase;
+        protected override int RecastFromSegment => projectile.recastFromSegment;
 
         protected override void OnSegmentStart(AttackSegment segment)
         {

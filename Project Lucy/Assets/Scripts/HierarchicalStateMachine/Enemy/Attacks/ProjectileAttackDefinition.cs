@@ -23,6 +23,12 @@ namespace HierarchicalStateMachine
         [Tooltip("Projeteis extras por fase do chefe (fase 1 = +1x, fase 2 = +2x...).")]
         [Min(0)] public int extraProjectilesPerPhase;
 
+        [Tooltip("Lancamentos extras por fase do chefe: o ataque se repete inteiro, com nova mira (fase 1 = +1x, fase 2 = +2x...).")]
+        [Min(0)] public int extraCastsPerPhase;
+
+        [Tooltip("Trecho onde cada repeticao recomeca (0 = desde o inicio da animacao).")]
+        [Min(0)] public int recastFromSegment;
+
         [Tooltip("Abertura total do leque quando ha mais de um projetil (graus).")]
         [Range(0f, 90f)] public float spreadAngle = 14f;
 
