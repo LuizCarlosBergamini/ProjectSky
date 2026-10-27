@@ -83,6 +83,12 @@ public class BossGate : MonoBehaviour
         RestoreDefeatFromThisVisit();
     }
 
+    private void Start()
+    {
+        // A boss still waiting in its arena: the pre-fight loop plays until the player walks in.
+        if (!bossDefeated && boss != null && !boss.IsDead) BossMusic.PlayIntro();
+    }
+
     private void OnEnable()
     {
         activeGates.Add(this);
@@ -143,6 +149,7 @@ public class BossGate : MonoBehaviour
         SetBarrierClosed(true);
 
         fightAnnounced = true;
+        BossMusic.StartFight(boss);
         OnBossFightStarted?.Invoke(boss);
     }
 

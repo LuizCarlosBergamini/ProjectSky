@@ -78,8 +78,12 @@ namespace HierarchicalStateMachine
         [SerializeField] private FootstepTimer footsteps = new FootstepTimer();
         [Tooltip("Abaixo desta velocidade horizontal (m/s) o player nao conta como andando.")]
         [SerializeField, Min(0f)] private float footstepMinSpeed = 0.5f;
+        [Tooltip("Tempo minimo no ar (s) para tocar o som de aterrissagem. Evita o som em degraus e tremidas do chao.")]
+        [SerializeField, Min(0f)] private float landingMinAirTime = 0.15f;
         
         private string lastPath;
+        private bool wasGrounded = true;
+        private float airTime;
         private float invulnerabilityTimer;
         private float hitAnimationTimer;
 
@@ -262,6 +266,7 @@ namespace HierarchicalStateMachine
             // While sliding off an enemy the input only picks the slide's side, it doesn't walk or turn.
             if (slideEnemy != null) ctx.MovementInput = Vector2.zero;
             ctx.IsGrounded = CheckGrounded();
+            UpdateLanding(Time.deltaTime);
             UpdateDamageTimers(Time.deltaTime);
 
             if (ctx.playerActions.Jump.WasPressedThisFrame())
@@ -359,8 +364,24 @@ namespace HierarchicalStateMachine
                 force -= ctx.rb.linearVelocityY;
         
             PlayStateAnimation("Player_Jump");
-            AudioManager.Play(SoundEffect.Jump);
             ctx.rb.AddForce(Vector2.up * force, ForceMode2D.Impulse);
+        }
+
+        // Landing is read off the ground check itself, not a state change, so it also sounds when an
+        // attack or the grapple ends in the air and the player comes down later.
+        private void UpdateLanding(float deltaTime)
+        {
+            if (!ctx.IsGrounded)
+            {
+                airTime += deltaTime;
+            }
+            else if (!wasGrounded && airTime >= landingMinAirTime && !ctx.isDead && !ctx.IsGrappling)
+            {
+                AudioManager.Play(SoundEffect.Land);
+            }
+
+            if (ctx.IsGrounded) airTime = 0f;
+            wasGrounded = ctx.IsGrounded;
         }
 
         // Walking = on the ground, moving because of the player's input, and not swinging, attacking
@@ -420,7 +441,6 @@ namespace HierarchicalStateMachine
 
             Debug.Log("health " + ctx.health);
             RaiseHealthChanged();
-            AudioManager.Play(SoundEffect.Hit);
 
             rb.AddForce(knockback, ForceMode2D.Impulse);
             CancelAttack();
@@ -588,14 +608,17 @@ namespace HierarchicalStateMachine
         {
             Vector2 center = attackTransform != null ? (Vector2)attackTransform.position : rb.position;
             Collider2D[] hits = Physics2D.OverlapCircleAll(center, attackRadius, attackableLayer);
+            bool struckEnemy = false;
 
             for (int i = 0; i < hits.Length; i++)
             {
                 IDamageable damageable = hits[i].GetComponentInParent<IDamageable>();
-                if (damageable == null) continue;
+                if (damageable == null || !damageable.IsAlive()) continue;
+                // The blade reached a live enemy, even if its invulnerability window swallows the damage.
+                struckEnemy = true;
                 // HasTakenDamage is the victim's own invulnerability window, and it also stops a
                 // single swing hitting the same enemy once per overlapping collider.
-                if (!damageable.IsAlive() || damageable.HasTakenDamage) continue;
+                if (damageable.HasTakenDamage) continue;
 
                 Vector2 direction = new Vector2(
                     ctx.isFacingRight ? 1f : -1f,
@@ -603,6 +626,9 @@ namespace HierarchicalStateMachine
 
                 damageable.TakeDamage(AttackDamage, direction * attackKnockbackForce);
             }
+
+            // One sound per swing: the impact when it connects, the swish when it cuts the air.
+            AudioManager.Play(struckEnemy ? SoundEffect.SwordHit : SoundEffect.SwordSlash);
         }
 
         public void FixedUpdate()
