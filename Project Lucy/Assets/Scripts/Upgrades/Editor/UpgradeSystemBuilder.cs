@@ -429,6 +429,7 @@ public static class UpgradeSystemBuilder
         public string name;
         public string description;
         public float bonus;
+        public float attackSpeed;
     }
 
     private static List<UpgradeTree_SO> BuildData(Sprites sprites, List<Item_SO> rowMaterials)
@@ -462,9 +463,9 @@ public static class UpgradeSystemBuilder
             }),
             BuildTree("Velocidade", "Velocidade", SpeedColor, sprites.iconSpeed, UpgradeStat.MoveSpeed, rowMaterials, new[]
             {
-                new NodeSpec { id = "velocidade-1", name = "Passo Leve", description = "Juntas lubrificadas deixam Lucy mais ágil. Aumenta a velocidade de corrida.", bonus = Speed(0.05f) },
-                new NodeSpec { id = "velocidade-2", name = "Propulsores", description = "Pequenos propulsores nas botas aceleram cada passada.", bonus = Speed(0.08f) },
-                new NodeSpec { id = "velocidade-3", name = "Corrida Cometa", description = "Lucy corre como um cometa cruzando o céu.", bonus = Speed(0.13f) }
+                new NodeSpec { id = "velocidade-1", name = "Passo Leve", description = "Juntas lubrificadas deixam Lucy mais ágil. Aumenta a velocidade de corrida e de ataque.", bonus = Speed(0.05f), attackSpeed = 0.15f },
+                new NodeSpec { id = "velocidade-2", name = "Propulsores", description = "Pequenos propulsores nas botas aceleram cada passada e cada golpe.", bonus = Speed(0.08f), attackSpeed = 0.15f },
+                new NodeSpec { id = "velocidade-3", name = "Corrida Cometa", description = "Lucy corre e ataca como um cometa cruzando o céu.", bonus = Speed(0.13f), attackSpeed = 0.1f }
             })
         };
     }
@@ -499,6 +500,7 @@ public static class UpgradeSystemBuilder
                 node.nodeIcon = icon;
                 node.stat = stat;
                 node.bonusValue = spec.bonus;
+                node.attackSpeedBonus = spec.attackSpeed;
 
                 // Base price is always 1 of the row's material; the manager adds the surcharge for
                 // upgrades already bought in that row.

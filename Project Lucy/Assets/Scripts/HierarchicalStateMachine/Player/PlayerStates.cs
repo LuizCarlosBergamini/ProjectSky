@@ -4,7 +4,9 @@ namespace HierarchicalStateMachine
 {
     public class Attack : State
     {
+        // Pause after the combo at AttackSpeed 1 (all speed upgrades); slower attack speeds stretch it.
         private const float AttackCooldownDuration = 0.35f;
+        private static readonly int AttackSpeedParam = Animator.StringToHash("AttackSpeed");
         private readonly PlayerContext ctx;
         private bool shouldExit;
         
@@ -42,7 +44,7 @@ namespace HierarchicalStateMachine
             if (!shouldExit) return null;
             
             ctx.ComboStep = 0;
-            ctx.AttackCooldownTime = AttackCooldownDuration;
+            ctx.AttackCooldownTime = AttackCooldownDuration / ctx.AttackSpeed;
             var root = (PlayerRoot)Parent;
             return ctx.IsGrounded ? root.Grounded : root.Airborne;
         }
@@ -69,6 +71,8 @@ namespace HierarchicalStateMachine
 
             // int maxComboStep = Mathf.Max(1, ctx.MaxComboStep);
             ctx.ComboStep = Mathf.Clamp(ctx.ComboStep + 1, 1, ctx.MaxComboStep);
+            // Set on every swing: the Animator drops its parameters when it is re-enabled.
+            ctx.animator.SetFloat(AttackSpeedParam, ctx.AttackSpeed);
             ctx.animator.Play("Player_Attack" + ctx.ComboStep);
         }
     }

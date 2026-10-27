@@ -45,6 +45,20 @@ public class UpgradeDetailPanel : MonoBehaviour
     private void Awake()
     {
         if (_purchaseButton != null) _purchaseButton.onClick.AddListener(Purchase);
+        ShrinkToFit(_bonusText);
+    }
+
+    /// <summary>
+    /// Speed nodes carry a second bonus ("+0.5 Velocidade  +15% Vel. Ataque"), longer than the line was
+    /// laid out for: shrink it to fit instead of letting it run past the panel.
+    /// </summary>
+    public static void ShrinkToFit(TextMeshProUGUI text)
+    {
+        if (text == null || text.enableAutoSizing) return;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+        text.fontSizeMax = text.fontSize;
+        text.fontSizeMin = text.fontSize * 0.6f;
+        text.enableAutoSizing = true;
     }
 
     private void OnDestroy()
@@ -88,7 +102,7 @@ public class UpgradeDetailPanel : MonoBehaviour
         SetText(_treeText, _tree != null ? _tree.treeName.ToUpperInvariant() : "", treeColor);
         SetText(_nameText, Node.nodeName, _textColor);
         SetText(_descriptionText, Node.nodeDescription, new Color(_textColor.r, _textColor.g, _textColor.b, 0.75f));
-        SetText(_bonusText, Node.stat.FormatBonus(Node.bonusValue), treeColor);
+        SetText(_bonusText, Node.BonusText, treeColor);
 
         switch (state)
         {

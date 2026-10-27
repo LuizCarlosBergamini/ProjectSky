@@ -53,6 +53,8 @@ namespace HierarchicalStateMachine
         [SerializeField] private float attackDamage = 10f;
         [SerializeField] private float attackKnockbackForce = 10f;
         [SerializeField] private float attackVerticalKnockback = 0.5f;
+        [Tooltip("Multiplicador de velocidade de ataque sem upgrades. Acelera as animacoes do combo e encurta a espera depois dele; os upgrades de Velocidade somam a este valor.")]
+        [SerializeField, Min(0.1f)] private float baseAttackSpeed = 0.6f;
 
         [Header("Grappling")]
         [SerializeField] private LineRenderer ropeRenderer;
@@ -86,12 +88,14 @@ namespace HierarchicalStateMachine
         private float damageBonus;
         private float maxHealthBonus;
         private float moveSpeedBonus;
+        private float attackSpeedBonus;
 
         public float AttackDamage => attackDamage + damageBonus;
         public float MaxHealth => maxHealth + maxHealthBonus;
         /// <summary>Max health before upgrades; the HUD sizes Lucy's bar relative to it.</summary>
         public float BaseMaxHealth => maxHealth;
         public float RunMaxSpeed => ctx.Data.runMaxSpeed + moveSpeedBonus;
+        public float AttackSpeed => baseAttackSpeed + attackSpeedBonus;
         public float CurrentHealth => ctx.health;
 
         /// <summary>Raised with (current, max) whenever either value changes: damage, healing or a max-health upgrade.</summary>
@@ -228,6 +232,8 @@ namespace HierarchicalStateMachine
             damageBonus = upgrades != null ? upgrades.GetBonus(UpgradeStat.Damage) : 0f;
             maxHealthBonus = upgrades != null ? upgrades.GetBonus(UpgradeStat.MaxHealth) : 0f;
             moveSpeedBonus = upgrades != null ? upgrades.GetBonus(UpgradeStat.MoveSpeed) : 0f;
+            attackSpeedBonus = upgrades != null ? upgrades.GetAttackSpeedBonus() : 0f;
+            ctx.AttackSpeed = AttackSpeed;
 
             if (!ctx.isDead)
             {
@@ -939,6 +945,7 @@ namespace HierarchicalStateMachine
         public bool ComboQueued;
         public bool AttackFinished;
         public float AttackCooldownTime;
+        public float AttackSpeed = 1f;
         public Action StartAttackHitbox;
         public Action StopAttackHitbox;
         public Transform playerTransform;
