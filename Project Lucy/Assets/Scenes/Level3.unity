@@ -1897,20 +1897,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1587319534
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 762221442}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f876664aace4cb4aeaf13150c8763a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TextOutline
-  _color: {r: 0, g: 0, b: 0, a: 1}
-  _thickness: 0.05
 --- !u!224 &762221443
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8478,6 +8464,20 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &1587319534
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 762221442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f876664aace4cb4aeaf13150c8763a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TextOutline
+  _color: {r: 0, g: 0, b: 0, a: 1}
+  _thickness: 0.05
 --- !u!1 &1607987578
 GameObject:
   m_ObjectHideFlags: 0
@@ -8589,20 +8589,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2098745116
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1721188932}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f876664aace4cb4aeaf13150c8763a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TextOutline
-  _color: {r: 0, g: 0, b: 0, a: 1}
-  _thickness: 0.05
 --- !u!224 &1721188933
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9615,6 +9601,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e670dde970a9bf942af05c251f21411e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollowObject
+--- !u!114 &2098745116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1721188932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f876664aace4cb4aeaf13150c8763a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TextOutline
+  _color: {r: 0, g: 0, b: 0, a: 1}
+  _thickness: 0.05
 --- !u!1001 &2099127575
 PrefabInstance:
   m_ObjectHideFlags: 0
