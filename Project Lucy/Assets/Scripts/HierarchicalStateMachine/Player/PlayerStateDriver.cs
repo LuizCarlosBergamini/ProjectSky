@@ -54,7 +54,7 @@ namespace HierarchicalStateMachine
         [SerializeField] private float attackKnockbackForce = 10f;
         [SerializeField] private float attackVerticalKnockback = 0.5f;
         [Tooltip("Multiplicador de velocidade de ataque sem upgrades. Acelera as animacoes do combo e encurta a espera depois dele; os upgrades de Velocidade somam a este valor.")]
-        [SerializeField, Min(0.1f)] private float baseAttackSpeed = 0.7f;
+        [SerializeField, Min(0.1f)] private float baseAttackSpeed = 0.4f;
 
         [Header("Grappling")]
         [SerializeField] private LineRenderer ropeRenderer;

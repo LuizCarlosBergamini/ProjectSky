@@ -17,7 +17,7 @@ public class UpgradeNode_SO : ScriptableObject
     [Tooltip("Somado ao multiplicador de velocidade de ataque (0.1 = +10%). Independe do atributo acima.")]
     public float attackSpeedBonus;
 
-    /// <summary>"+5 Dano", or "+0.5 Velocidade  +10% Vel. Ataque" when the node also speeds up attacks.</summary>
+    /// <summary>"+5 Dano", or "+0.5 Velocidade  +20% Vel. Ataque" when the node also speeds up attacks.</summary>
     public string BonusText => UpgradeStatText.FormatBonuses(stat, bonusValue, attackSpeedBonus);
 
     [Header("Custo")]
