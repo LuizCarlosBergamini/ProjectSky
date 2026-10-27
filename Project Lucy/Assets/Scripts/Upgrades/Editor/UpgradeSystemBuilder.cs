@@ -463,9 +463,9 @@ public static class UpgradeSystemBuilder
             }),
             BuildTree("Velocidade", "Velocidade", SpeedColor, sprites.iconSpeed, UpgradeStat.MoveSpeed, rowMaterials, new[]
             {
-                new NodeSpec { id = "velocidade-1", name = "Passo Leve", description = "Juntas lubrificadas deixam Lucy mais ágil. Aumenta a velocidade de corrida e de ataque.", bonus = Speed(0.05f), attackSpeed = 0.2f },
-                new NodeSpec { id = "velocidade-2", name = "Propulsores", description = "Pequenos propulsores nas botas aceleram cada passada e cada golpe.", bonus = Speed(0.08f), attackSpeed = 0.2f },
-                new NodeSpec { id = "velocidade-3", name = "Corrida Cometa", description = "Lucy corre e ataca como um cometa cruzando o céu.", bonus = Speed(0.13f), attackSpeed = 0.2f }
+                new NodeSpec { id = "velocidade-1", name = "Passo Leve", description = "Juntas lubrificadas deixam Lucy mais ágil. Aumenta a velocidade de corrida e de ataque.", bonus = Speed(0.05f), attackSpeed = 0.15f },
+                new NodeSpec { id = "velocidade-2", name = "Propulsores", description = "Pequenos propulsores nas botas aceleram cada passada e cada golpe.", bonus = Speed(0.08f), attackSpeed = 0.15f },
+                new NodeSpec { id = "velocidade-3", name = "Corrida Cometa", description = "Lucy corre e ataca como um cometa cruzando o céu.", bonus = Speed(0.13f), attackSpeed = 0.1f }
             })
         };
     }

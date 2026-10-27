@@ -49,7 +49,7 @@ public class UpgradeDetailPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Speed nodes carry a second bonus ("+0.5 Velocidade  +20% Vel. Ataque"), longer than the line was
+    /// Speed nodes carry a second bonus ("+0.5 Velocidade  +15% Vel. Ataque"), longer than the line was
     /// laid out for: shrink it to fit instead of letting it run past the panel.
     /// </summary>
     public static void ShrinkToFit(TextMeshProUGUI text)
