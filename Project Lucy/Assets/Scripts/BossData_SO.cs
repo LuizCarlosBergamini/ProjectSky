@@ -49,6 +49,13 @@ public class BossData_SO : ScriptableObject
     [Tooltip("Marcado: o dialogo so toca na primeira vitoria, nao a cada vez que o chefe e farmado.")]
     public bool defeatDialogOnlyOnFirstWin = true;
 
+    [Tooltip("Mensagem em tela depois da vitoria (e do dialogo acima), com um botao Continuar. Vazio = nenhuma.")]
+    [TextArea(3, 8)]
+    public string endScreenMessage;
+
+    [Tooltip("Marcado: a mensagem so aparece na primeira vitoria.")]
+    public bool endScreenOnlyOnFirstWin = true;
+
     [Header("Adaptacao")]
     [Tooltip("Como o chefe fica mais forte conforme os upgrades do jogador. Vazio = nao se adapta.")]
     public BossUpgradeScaling_SO upgradeScaling;
