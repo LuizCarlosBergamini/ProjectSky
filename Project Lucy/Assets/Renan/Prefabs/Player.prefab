@@ -338,19 +338,20 @@ MonoBehaviour:
   enemyTag: Inimigo
   enemyTopSlideSpeed: 8
   CameraFollowObject: {fileID: 0}
-  maxHealth: 100
+  maxHealth: 60
   invulnerabilityTime: 0.4
   hitAnimationTime: 0.25
   deathRestartDelay: 1.5
   maxBossDeathWait: 5
   attackTransform: {fileID: 5890962430133262475}
-  attackRadius: 1.2
+  attackRadius: 1.15
   attackableLayer:
     serializedVersion: 2
     m_Bits: 128
   attackDamage: 10
   attackKnockbackForce: 12
   attackVerticalKnockback: 0.5
+  baseAttackSpeed: 0.6
   ropeRenderer: {fileID: 0}
   grappleableLayer:
     serializedVersion: 2
