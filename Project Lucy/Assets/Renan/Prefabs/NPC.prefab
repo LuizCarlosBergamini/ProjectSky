@@ -291,6 +291,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _entity: {fileID: 0}
   _dialog: {fileID: 11400000, guid: 19d72b84f66f4a54a82a70be1a462135, type: 2}
+  _dialogRules: []
   _dialogAction: {fileID: 8577910489477151222, guid: cf940d471362bea409b2de06fbc33bb2, type: 3}
   _displayActionContainer: {fileID: 8772736529843497356}
   _displayActionText: {fileID: 7584067494583779604}
@@ -518,5 +519,5 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_TargetDisplay: 0
