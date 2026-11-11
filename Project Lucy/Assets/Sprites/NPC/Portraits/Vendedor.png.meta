@@ -5,6 +5,9 @@ TextureImporter:
   - first:
       213: -5658891951182378954
     second: Vendedor_0
+  - first:
+      213: -5553321275345030689
+    second: Vendedor
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -46,7 +49,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -113,23 +116,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Vendedor_0
+      name: Vendedor
       rect:
         serializedVersion: 2
-        x: 28
+        x: 27
         y: 0
-        width: 40
-        height: 64
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 42
+        height: 63
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6380573a0c39771b0800000000000000
-      internalID: -5658891951182378954
+      spriteID: fd1b07b09b3aee2b0800000000000000
+      internalID: -5553321275345030689
       vertices: []
       indices: 
       edges: []
@@ -148,6 +151,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
+      Vendedor: -5553321275345030689
       Vendedor_0: -5658891951182378954
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
