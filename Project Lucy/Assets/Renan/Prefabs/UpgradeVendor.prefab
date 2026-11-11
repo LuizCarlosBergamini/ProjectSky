@@ -11,26 +11,30 @@ PrefabInstance:
     - target: {fileID: 2655802621211536042, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 1036017153165947496, guid: d7473568df1644e49adf088507e09187, type: 3}
+      objectReference: {fileID: 3813722339356197605, guid: 4e8ac5fa5747bd347841c014da6ded57, type: 3}
     - target: {fileID: 2655802621211536042, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
       propertyPath: m_Color.b
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2655802621211536042, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
       propertyPath: m_Color.g
-      value: 0.82
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4241553974748319257, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
       propertyPath: m_Size.y
       value: 0.45
       objectReference: {fileID: 0}
     - target: {fileID: 4241553974748319257, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: m_SpriteTilingProperty.pivot.y
+      value: 0.375
+      objectReference: {fileID: 0}
+    - target: {fileID: 4241553974748319257, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
       propertyPath: m_SpriteTilingProperty.oldSize.x
-      value: 0.32
+      value: 0.96
       objectReference: {fileID: 0}
     - target: {fileID: 4241553974748319257, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
       propertyPath: m_SpriteTilingProperty.oldSize.y
-      value: 0.48
+      value: 0.64
       objectReference: {fileID: 0}
     - target: {fileID: 5128347928388424940, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
       propertyPath: m_Name
@@ -114,7 +118,7 @@ Animator:
   m_GameObject: {fileID: 675436140091959897}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 50f90e05635511645ba4834589ae01fc, type: 2}
+  m_Controller: {fileID: 9100000, guid: e5dca1ff67f2ba6478c7db6a9cd04a39, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -139,3 +143,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeVendorNPC
   _upgradeCanvas: {fileID: 0}
+  _requireBossDefeat: 1

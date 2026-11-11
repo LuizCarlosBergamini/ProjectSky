@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Mecanico
   m_EditorClassIdentifier: Assembly-CSharp::Entity_SO
   entityName: "Mec\xE2nico"
-  entitySprite: {fileID: 1036017153165947496, guid: 7c0a60eb46ef78b4f98437c1430ea177, type: 3}
-  enitityAnimation: {fileID: 7400000, guid: ddac818b0673a384fa8f8f5bed8c1c18, type: 2}
+  entitySprite: {fileID: 21300000, guid: 60636f1ac453d024f82f34e370343f6e, type: 3}
+  enitityAnimation: {fileID: 7400000, guid: 953154c044804834596826e5b3a55369, type: 2}

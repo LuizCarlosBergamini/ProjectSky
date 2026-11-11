@@ -14,6 +14,18 @@ TextureImporter:
   - first:
       213: 9063394040976323046
     second: Idle Wallace_3
+  - first:
+      213: -4098636499307721702
+    second: Idle Wallace_4
+  - first:
+      213: -7770897319973825073
+    second: Idle Wallace_5
+  - first:
+      213: -1996440049949477376
+    second: Idle Wallace_6
+  - first:
+      213: 3790844620424951905
+    second: Idle Wallace_7
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -84,7 +96,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -127,10 +139,10 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 32
-        height: 48
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -147,12 +159,12 @@ TextureImporter:
       name: Idle Wallace_1
       rect:
         serializedVersion: 2
-        x: 32
+        x: 96
         y: 0
-        width: 32
-        height: 48
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -169,12 +181,12 @@ TextureImporter:
       name: Idle Wallace_2
       rect:
         serializedVersion: 2
-        x: 64
+        x: 192
         y: 0
-        width: 32
-        height: 48
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -191,12 +203,12 @@ TextureImporter:
       name: Idle Wallace_3
       rect:
         serializedVersion: 2
-        x: 96
+        x: 288
         y: 0
-        width: 32
-        height: 48
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -205,6 +217,94 @@ TextureImporter:
       bones: []
       spriteID: 6e139cf3cd4a7cd70800000000000000
       internalID: 9063394040976323046
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Idle Wallace_4
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 0
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.375}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a1c0053c1d7be17c0800000000000000
+      internalID: -4098636499307721702
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Idle Wallace_5
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 0
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.375}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc5dce83f0a382490800000000000000
+      internalID: -7770897319973825073
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Idle Wallace_6
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 0
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.375}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 006f5672a583b44e0800000000000000
+      internalID: -1996440049949477376
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Idle Wallace_7
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 0
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.375}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1683127f819cb9430800000000000000
+      internalID: 3790844620424951905
       vertices: []
       indices: 
       edges: []
@@ -229,6 +329,10 @@ TextureImporter:
       Idle Wallace_1: -3327688426889223268
       Idle Wallace_2: 7264105882983403654
       Idle Wallace_3: 9063394040976323046
+      Idle Wallace_4: -4098636499307721702
+      Idle Wallace_5: -7770897319973825073
+      Idle Wallace_6: -1996440049949477376
+      Idle Wallace_7: 3790844620424951905
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
