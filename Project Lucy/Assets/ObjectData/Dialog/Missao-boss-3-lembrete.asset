@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
   dialogs:
   - dialogId: daisy-boss3lembrete-01
-    dialogContent: "O Mago est\xE1 logo \xE0 frente. Cuidado com as flechas e n\xE3o deixe ele fugir! Te espero no Hub."
+    dialogContent: "O mago est\xE1 logo \xE0 frente. Tome cuidado. Te espero do outro
+      lado."
     nextDialog: 
     triggerEvent: 
     dialogDuration: 0

@@ -88,6 +88,58 @@ PrefabInstance:
       propertyPath: _entity
       value: 
       objectReference: {fileID: 11400000, guid: b24bc1dd1c3d54648b355b212c78e4b7, type: 2}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[0].dialog
+      value: 
+      objectReference: {fileID: 11400000, guid: 5041f90ac6fae5947bff3bc5eb703b14, type: 2}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[0].status
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[0].taskId
+      value: missao-boss-3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[1].dialog
+      value: 
+      objectReference: {fileID: 11400000, guid: 025077086c1b3c2418a07a080c693a3c, type: 2}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[1].status
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[1].taskId
+      value: missao-boss-2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[2].dialog
+      value: 
+      objectReference: {fileID: 11400000, guid: 1c50245f1fa76b44692b0a452dfa598b, type: 2}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[2].status
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[2].taskId
+      value: missao-boss
+      objectReference: {fileID: 0}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[0].repeatDialog
+      value: 
+      objectReference: {fileID: 11400000, guid: 66efd5edafb8d4041883ad50add69b3b, type: 2}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[1].repeatDialog
+      value: 
+      objectReference: {fileID: 11400000, guid: 66efd5edafb8d4041883ad50add69b3b, type: 2}
+    - target: {fileID: 8562364778889481516, guid: 7c92c7e1ce44cb343ae3fb7accc78c12, type: 3}
+      propertyPath: _dialogRules.Array.data[2].repeatDialog
+      value: 
+      objectReference: {fileID: 11400000, guid: 66efd5edafb8d4041883ad50add69b3b, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -139,3 +191,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeVendorNPC
   _upgradeCanvas: {fileID: 0}
+  _requireBossDefeat: 1

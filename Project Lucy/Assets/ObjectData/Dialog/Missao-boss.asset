@@ -14,31 +14,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
   dialogs:
   - dialogId: daisy-boss-01
-    dialogContent: "Lucy! Que bom que voc\xEA chegou at\xE9 aqui. Logo \xE0 frente
-      fica a arena da Medusa."
+    dialogContent: "Que bom! Voc\xEA conseguiu."
+    nextDialog: daisy-boss-02
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: daisy-boss-02
+    dialogContent: "Logo \xE0 frente voc\xEA encontrar\xE1 a Medusa."
     nextDialog: lucy-boss-01
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: lucy-boss-01
-    dialogContent: "Medusa? Ningu\xE9m me falou nada sobre uma Medusa..."
-    nextDialog: daisy-boss-02
-    triggerEvent: 
-    dialogDuration: 0
-    dialogOptions: []
-    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
-  - dialogId: daisy-boss-02
-    dialogContent: "Ela protege a sa\xEDda da caverna. Derrote ela e eu te dou uma
-      recompensa!"
+    dialogContent: Medusa? Como assim?!
     nextDialog: daisy-boss-03
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
-    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
   - dialogId: daisy-boss-03
-    dialogContent: "Eu n\xE3o sou muito boa de briga, ent\xE3o vou voltar e te esperar
-      no Hub. Boa sorte!"
+    dialogContent: "Ela protege a arena... Derrotando-a, ganhar\xE1 uma recompensa
+      e, ao voltar do combate, podemos come\xE7ar os consertos!"
+    nextDialog: daisy-boss-04
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: daisy-boss-04
+    dialogContent: 'Wallace pediu para te avisar: tome cuidado com o ataque petrificante
+      da Medusa... Eu tenho muito medo de tudo isso... Te espero do outro lado!'
     nextDialog: 
     triggerEvent: missao-boss-iniciada
     dialogDuration: 0

@@ -14,31 +14,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
   dialogs:
   - dialogId: daisy-bossfim-01
-    dialogContent: "Lucy! Voc\xEA derrotou a Medusa? Eu sabia que voc\xEA conseguiria!"
+    dialogContent: "Parab\xE9ns por derrotar a Medusa! Espero que a dica do Wallace
+      tenha te ajudado."
     nextDialog: lucy-bossfim-01
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: lucy-bossfim-01
-    dialogContent: "N\xE3o foi f\xE1cil, mas ela n\xE3o vai mais bloquear o caminho."
-    nextDialog: daisy-bossfim-02
+    dialogContent: "N\xE3o foi f\xE1cil, mas ela n\xE3o vai mais bloquear o caminho.
+      Obrigada pelo aviso, Wallace!"
+    nextDialog: wallace-bossfim-01
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
-  - dialogId: daisy-bossfim-02
-    dialogContent: "Espero que a recompensa tenha valido a pena. Descansa um pouco,
-      voc\xEA mereceu!"
-    nextDialog: daisy-bossfim-03
+  - dialogId: wallace-bossfim-01
+    dialogContent: "Ei, pode contar comigo, Lucy, s\xF3 n\xE3o ponho a m\xE3o na
+      graxa, haha."
+    nextDialog: daisy-bossfim-02
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
-    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: daisy-bossfim-03
-    dialogContent: "Ah, tem um cara estranho que chegou a\xED e disse que pode te
-      ajudar a ficar mais forte. Eu n\xE3o recomendo falar com estranhos, mas se
-      ele realmente pode ajudar, talvez valha a pena dar uma olhada."
+    dialogEntity: {fileID: 11400000, guid: 1d7e921bde50cdb4a955a7e9536defb4, type: 2}
+  - dialogId: daisy-bossfim-02
+    dialogContent: "Inclusive, se voc\xEA ainda n\xE3o falou com o mec\xE2nico, d\xEA
+      uma passadinha l\xE1. Ele far\xE1 os reparos e as melhorias nas suas pe\xE7as.
+      J\xE1 o avisei sobre voc\xEA."
     nextDialog: 
     triggerEvent: 
     dialogDuration: 0
