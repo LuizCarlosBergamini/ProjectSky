@@ -118,6 +118,9 @@ public class DialogManager : MonoBehaviour
 
     #region Public Functions
 
+    /// <summary>True from Init until the dialog closes.</summary>
+    public bool IsDialogActive => _dialogData != null || _actualDialog != null;
+
     public void Init(Dialog_SO dialogData)
     {
         if (_actualDialog != null)

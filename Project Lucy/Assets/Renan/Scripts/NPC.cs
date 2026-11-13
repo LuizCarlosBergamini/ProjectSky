@@ -20,6 +20,9 @@ public class NPCDialogRule
     public bool requiresItems;
 
     public Dialog_SO dialog;
+
+    [Tooltip("Mostrado quando o jogador fala com o NPC de novo depois de ja ter ouvido 'dialog'. Vazio = repete 'dialog'.")]
+    public Dialog_SO repeatDialog;
 }
 
 [RequireComponent(typeof(Collider2D))]
@@ -43,6 +46,19 @@ public class NPC : MonoBehaviour
     private GameObject _player;
 
     private bool _inCollider;
+
+    // Short line used instead of _dialog once the player has heard _dialog (from the matching rule).
+    private Dialog_SO _repeatDialog;
+
+    // Dialogs the player already heard this session, shared by every NPC so a scene reload does not reset them.
+    private static readonly HashSet<Dialog_SO> HeardDialogs = new();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetHeardDialogs()
+    {
+        // Play mode can start without a domain reload, which would otherwise keep the last session's list.
+        HeardDialogs.Clear();
+    }
 
     /// <summary>Raised when the player starts this NPC's dialog, so companions know which dialog is theirs.</summary>
     public event Action<Dialog_SO> DialogStarted;
@@ -121,10 +137,13 @@ public class NPC : MonoBehaviour
         if (PauseManager.IsGamePaused) return;
 
         if (_inCollider && _dialog != null && _dialogAction != null && _dialogAction.action.WasPressedThisFrame()
-            && DialogManager.instance != null)
+            && DialogManager.instance != null && !DialogManager.instance.IsDialogActive)
         {
-            DialogManager.instance.Init(_dialog);
-            DialogStarted?.Invoke(_dialog);
+            Dialog_SO dialog = _repeatDialog != null && HeardDialogs.Contains(_dialog) ? _repeatDialog : _dialog;
+            HeardDialogs.Add(_dialog);
+
+            DialogManager.instance.Init(dialog);
+            DialogStarted?.Invoke(dialog);
         }
 
         if (_player == null) _player = GameObject.FindWithTag("Player");
@@ -152,6 +171,7 @@ public class NPC : MonoBehaviour
             }
 
             _dialog = rule.dialog;
+            _repeatDialog = rule.repeatDialog;
 
             // Keep the interaction prompt honest if the dialog appeared while the player is standing here.
             if (_inCollider && _displayActionContainer != null) _displayActionContainer.SetActive(true);
