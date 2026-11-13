@@ -14,35 +14,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
   dialogs:
   - dialogId: daisy-boss2-01
-    dialogContent: "Lucy, espera! A arena logo \xE0 frente \xE9 guardada por uma Kitsune, uma raposa de nove caudas."
+    dialogContent: "Lucy, seja cuidadosa, a arena \xE0 frente \xE9 defendida por
+      uma raposa mitol\xF3gica de nove caudas... a Kitsune."
     nextDialog: lucy-boss2-01
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: lucy-boss2-01
-    dialogContent: "Uma raposa? Depois da Medusa, isso n\xE3o deve ser t\xE3o dif\xEDcil..."
+    dialogContent: Depois da Medusa, uma raposa vai ser moleza!
     nextDialog: daisy-boss2-02
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
   - dialogId: daisy-boss2-02
-    dialogContent: "N\xE3o se engane! Ela lan\xE7a fogo-f\xE1tuo de longe e, quando se enfurece, solta rajadas de chamas por todo lado."
+    dialogContent: "N\xE3o se engane! Wallace j\xE1 me avisou: esse monstro lan\xE7a
+      fogo-f\xE1tuo \xE0 dist\xE2ncia e, quando se enfurece, solta rajadas de chama
+      por todos os lados! Al\xE9m disso, suas caudas flamejantes incendeiam o ch\xE3o
+      \xE0 sua volta."
     nextDialog: daisy-boss2-03
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: daisy-boss2-03
-    dialogContent: "E se chegar perto, cuidado com as caudas: elas incendeiam o ch\xE3o em volta dela. Pule as chamas!"
-    nextDialog: daisy-boss2-04
-    triggerEvent: 
-    dialogDuration: 0
-    dialogOptions: []
-    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: daisy-boss2-04
-    dialogContent: "Derrote ela e a Engrenagem de Ouro \xE9 sua. Vou voltar e te esperar no Hub. Boa sorte!"
+    dialogContent: "Tome cuidado! Lembre-se, ao vencer, ganhar\xE1 uma recompensa
+      e poderemos continuar os consertos."
     nextDialog: 
     triggerEvent: missao-boss-2-iniciada
     dialogDuration: 0

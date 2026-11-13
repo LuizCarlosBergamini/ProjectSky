@@ -13,70 +13,96 @@ MonoBehaviour:
   m_Name: Tutorial
   m_EditorClassIdentifier: 
   dialogs:
-  - dialogId: npc-01
-    dialogContent: "Ei... Voc\xEA!!"
-    nextDialog: jogador-01
+  - dialogId: daisy-inicio-01
+    dialogContent: "Ei, voc\xEA!"
+    nextDialog: lucy-inicio-01
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: jogador-01
-    dialogContent: ...
-    nextDialog: jogador-02
+  - dialogId: lucy-inicio-01
+    dialogContent: "... Quem \xE9 voc\xEA? Onde estou?"
+    nextDialog: daisy-inicio-02
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
-  - dialogId: jogador-02
-    dialogContent: "O que \xE9 voc\xEA?"
-    nextDialog: alma-02
-    triggerEvent: 
-    dialogDuration: 0
-    dialogOptions: []
-    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
-  - dialogId: alma-02
-    dialogContent: "Meu nome \xE9 Daisy e esse aqui \xE9 o Wallace, encontramos vc
-      ca\xEDda por aqui e resolvemos te concertar. Ou melhor, eu resolvi te concertar
-      n\xE9, meu irm\xE3o s\xF3 sabe ficar escrevendo os poemas esquisitos dele."
-    nextDialog: alma-03
+  - dialogId: daisy-inicio-02
+    dialogContent: "Eu sou a Daisy Macabell, e esse \xE9 o Wallace Macabell, meu
+      irm\xE3o. Te encontramos ca\xEDda aqui e queremos te ajudar a consertar suas
+      pe\xE7as."
+    nextDialog: daisy-inicio-02b
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: alma-03
-    dialogContent: "Ei, pelo menos eu n\xE3o fico com minha mao toda suja de gracha!"
-    nextDialog: alma-04
+  - dialogId: daisy-inicio-02b
+    dialogContent: Bom, eu vou te ajudar; o Wallace provavelmente vai continuar escrevendo
+      sua poesia estranha...
+    nextDialog: wallace-inicio-01
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: wallace-inicio-01
+    dialogContent: "Ei, pelo menos n\xE3o sujo minhas m\xE3os de graxa!"
+    nextDialog: daisy-inicio-03
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 1d7e921bde50cdb4a955a7e9536defb4, type: 2}
-  - dialogId: alma-04
-    dialogContent: Vou te explicar como as coisas funcionam aqui.
-    nextDialog: alma-05
+  - dialogId: daisy-inicio-03
+    dialogContent: "Mas... Qual \xE9 o seu nome? Como veio parar aqui?"
+    nextDialog: lucy-inicio-02
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: alma-05
-    dialogContent: "Voc\xEA pode se movimentar para os lados usando 'A' e 'D'\nPara
-      pular 'W' ou 'Espa\xE7o'\nPara atacar use o 'Bot\xE3o esquerdo do Mouse'"
-    nextDialog: alma-06
+  - dialogId: lucy-inicio-02
+    dialogContent: "N\xE3o me lembro muito bem de nada... est\xE1 tudo t\xE3o confuso...
+      acho que me chamo... Lucy! Lembro vagamente de um homem me dando esse nome..."
+    nextDialog: daisy-inicio-04
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
+  - dialogId: daisy-inicio-04
+    dialogContent: "Bom, Lucy, n\xF3s vamos te ajudar. Para isso, deixe-me explicar
+      como as coisas funcionam aqui."
+    nextDialog: daisy-inicio-05
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: alma-06
-    dialogContent: "Ah... Al\xE9m disso voc\xEA pode se pendurar em algumas coisas
-      com seu agarrador.\nSegure o 'Bot\xE3o direito do Mouse' para agarrar e solte para se soltar.\nNo
-      meio do balan\xE7o, aperte 'Espa\xE7o' para se soltar com um impulso para
-      cima."
-    nextDialog: alma-07
+  - dialogId: daisy-inicio-05
+    dialogContent: "Voc\xEA pode se mover para os lados usando 'A' e 'D'; para pular,
+      use 'W' ou 'espa\xE7o'. Quando encontrar inimigos, use o 'bot\xE3o esquerdo
+      do mouse' para atacar."
+    nextDialog: daisy-inicio-06
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: alma-07
-    dialogContent: Boa Sorte... Te encontro do outro lado.
+  - dialogId: daisy-inicio-06
+    dialogContent: "Ah! Al\xE9m disso, para usar seu agarrador e pendurar-se em blocos
+      de apoio, segure o 'bot\xE3o direito do mouse'; o 'espa\xE7o' pode te dar um
+      impulso na hora de soltar."
+    nextDialog: wallace-inicio-02
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
+  - dialogId: wallace-inicio-02
+    dialogContent: "Do outro lado da passagem \xE0 frente, voc\xEA encontrar\xE1
+      inimigos desafiadores. Fique firme; a Daisy estar\xE1 l\xE1 para te ajudar."
+    nextDialog: daisy-inicio-07
+    triggerEvent: 
+    dialogDuration: 0
+    dialogOptions: []
+    dialogEntity: {fileID: 11400000, guid: 1d7e921bde50cdb4a955a7e9536defb4, type: 2}
+  - dialogId: daisy-inicio-07
+    dialogContent: "Agora \xE9 com voc\xEA. Cruze a passagem usando o agarrador.
+      Te encontro do outro lado. Boa sorte!"
     nextDialog: 
     triggerEvent: tutorial-iniciado
     dialogDuration: 0

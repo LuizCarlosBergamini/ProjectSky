@@ -14,21 +14,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
   dialogs:
   - dialogId: daisy-boss3fim-01
-    dialogContent: "Lucy! Voc\xEA derrotou o Mago? Ent\xE3o era ele quem estava por tr\xE1s de todos aqueles guardi\xF5es!"
-    nextDialog: daisy-boss3fim-02
+    dialogContent: "Voc\xEA conseguiu?! Derrotou o mago e livrou todos n\xF3s dos
+      perigos de suas invoca\xE7\xF5es, a Medusa e a Kitsune. Muito obrigada, Lucy.
+      N\xE3o sabemos o que h\xE1 pela frente ainda, mas sabemos que podemos contar
+      com voc\xEA."
+    nextDialog: lucy-boss3fim-01
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: daisy-boss3fim-02
-    dialogContent: "Ele bem que tentou fugir, mas n\xE3o deu. E ainda consegui a Esmeralda."
-    nextDialog: daisy-boss3fim-03
+  - dialogId: lucy-boss3fim-01
+    dialogContent: "E eu sei que posso contar com voc\xEAs tamb\xE9m. Gra\xE7as \xE0s
+      dicas de Wallace, sua guia e os reparos do Mec\xE2nico, consigo me encontrar
+      agora, descobrir de onde vim."
+    nextDialog: daisy-boss3fim-02
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
-  - dialogId: daisy-boss3fim-03
-    dialogContent: "Com ela o mec\xE2nico consegue as melhorias mais fortes de todas. Vale a pena dar uma passada l\xE1!"
+  - dialogId: daisy-boss3fim-02
+    dialogContent: "Estaremos aqui para voc\xEA. Agora, com as recompensas do Mago,
+      voc\xEA pode terminar suas melhorias e continuar lutando para ficar cada vez
+      mais forte!"
     nextDialog: 
     triggerEvent: 
     dialogDuration: 0

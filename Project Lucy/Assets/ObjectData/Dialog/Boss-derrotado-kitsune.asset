@@ -14,28 +14,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialog_SO
   dialogs:
   - dialogId: daisy-kitsunederrota-01
-    dialogContent: "Lucy, a Kitsune caiu! Ainda t\xF4 vendo a fuma\xE7a daqui."
+    dialogContent: "Parab\xE9ns, Lucy! Voc\xEA conseguiu. Derrotou a Kitsune. Ainda
+      vejo a fuma\xE7a..."
     nextDialog: lucy-kitsunederrota-01
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
   - dialogId: lucy-kitsunederrota-01
-    dialogContent: "Foi por pouco. O pr\xF3ximo vai ser ainda pior, n\xE9?"
+    dialogContent: "Foi por pouco... Parece que fica cada vez mais dif\xEDcil..."
     nextDialog: daisy-kitsunederrota-02
     triggerEvent: 
     dialogDuration: 0
     dialogOptions: []
     dialogEntity: {fileID: 11400000, guid: 6621452ba489c924796fd9fe71c93adf, type: 2}
   - dialogId: daisy-kitsunederrota-02
-    dialogContent: "Provavelmente. Mas lembra: a Medusa e a Kitsune voltam pras arenas."
-    nextDialog: daisy-kitsunederrota-03
-    triggerEvent: 
-    dialogDuration: 0
-    dialogOptions: []
-    dialogEntity: {fileID: 11400000, guid: 48252c5877aa26d4da3cbd6950ce2808, type: 2}
-  - dialogId: daisy-kitsunederrota-03
-    dialogContent: "Enfrenta elas de novo, junta Engrenagens de Ouro e deixa o Mec\xE2nico te preparar. S\xF3 segue quando se sentir pronta!"
+    dialogContent: "O caminho n\xE3o \xE9 f\xE1cil, mas lembre-se: a Medusa e a Kitsune
+      retornam para suas arenas. Se precisar de mais melhorias antes de prosseguir,
+      um passo pra tr\xE1s pode significar dois para frente."
     nextDialog: 
     triggerEvent: 
     dialogDuration: 0
